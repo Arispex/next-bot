@@ -12,8 +12,8 @@ add_matcher = on_command("添加服务器")
 delete_matcher = on_command("删除服务器")
 list_matcher = on_command("服务器列表")
 
-ADD_USAGE = "格式错误，正确格式：添加服务器 [name] [IP] [game_port] [restapi_port] [key]"
-DELETE_USAGE = "格式错误，正确格式：删除服务器 [ID]"
+ADD_USAGE = "格式错误，正确格式：添加服务器 [显示的服务器名称] [IP] [游戏端口] [RestAPI 端口] [RestAPI Key]"
+DELETE_USAGE = "格式错误，正确格式：删除服务器 [服务器 ID]"
 
 
 def _parse_args(arg: Message) -> list[str]:

@@ -10,7 +10,7 @@ from next_bot.db import User, get_session
 
 add_matcher = on_command("添加白名单")
 
-ADD_USAGE = "格式错误，正确格式：添加白名单 [name]"
+ADD_USAGE = "格式错误，正确格式：添加白名单 [游戏名称]"
 
 
 def _parse_args(arg: Message) -> list[str]:
