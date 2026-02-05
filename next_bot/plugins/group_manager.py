@@ -74,7 +74,7 @@ async def handle_add_group(
     try:
         exists = session.query(Group).filter(Group.name == name).first()
         if exists is not None:
-            await bot.send(event, "已存在")
+            await bot.send(event, "添加失败，身份组已存在")
             return
 
         session.add(Group(name=name, permissions="", inherits=""))
@@ -98,14 +98,14 @@ async def handle_delete_group(
 
     name = args[0]
     if name in {"guest", "default"}:
-        await bot.send(event, "禁止删除")
+        await bot.send(event, "删除失败，系统内置身份组不可删除")
         return
 
     session = get_session()
     try:
         group = session.query(Group).filter(Group.name == name).first()
         if group is None:
-            await bot.send(event, "未找到")
+            await bot.send(event, "删除失败，身份组不存在")
             return
 
         session.delete(group)
@@ -139,7 +139,7 @@ async def handle_inherit_group(
 
     child, parent = args
     if child == parent:
-        await bot.send(event, "格式错误")
+        await bot.send(event, "修改失败，不能继承到自身")
         return
 
     session = get_session()
@@ -147,7 +147,7 @@ async def handle_inherit_group(
         child_group = session.query(Group).filter(Group.name == child).first()
         parent_group = session.query(Group).filter(Group.name == parent).first()
         if child_group is None or parent_group is None:
-            await bot.send(event, "未找到")
+            await bot.send(event, "修改失败，身份组不存在")
             return
 
         child_group.inherits = add_inherit(child_group.inherits, parent)
@@ -174,7 +174,7 @@ async def handle_clear_inherit_group(
     try:
         group = session.query(Group).filter(Group.name == name).first()
         if group is None:
-            await bot.send(event, "未找到")
+            await bot.send(event, "修改失败，身份组不存在")
             return
 
         group.inherits = ""
@@ -201,7 +201,7 @@ async def handle_add_group_perm(
     try:
         group = session.query(Group).filter(Group.name == name).first()
         if group is None:
-            await bot.send(event, "未找到")
+            await bot.send(event, "添加失败，身份组不存在")
             return
 
         group.permissions = add_permission(group.permissions, permission)
@@ -228,7 +228,7 @@ async def handle_remove_group_perm(
     try:
         group = session.query(Group).filter(Group.name == name).first()
         if group is None:
-            await bot.send(event, "未找到")
+            await bot.send(event, "删除失败，身份组不存在")
             return
 
         group.permissions = remove_permission(group.permissions, permission)

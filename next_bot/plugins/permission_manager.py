@@ -40,7 +40,7 @@ async def handle_add_user_perm(
     try:
         user = session.query(User).filter(User.user_id == user_id).first()
         if user is None:
-            await bot.send(event, "未在白名单")
+            await bot.send(event, "添加失败，用户不存在")
             return
 
         user.permissions = add_permission(user.permissions, permission)
@@ -67,7 +67,7 @@ async def handle_remove_user_perm(
     try:
         user = session.query(User).filter(User.user_id == user_id).first()
         if user is None:
-            await bot.send(event, "未在白名单")
+            await bot.send(event, "删除失败，用户不存在")
             return
 
         user.permissions = remove_permission(user.permissions, permission)
@@ -94,12 +94,12 @@ async def handle_set_user_group(
     try:
         user = session.query(User).filter(User.user_id == target_user_id).first()
         if user is None:
-            await bot.send(event, "未找到用户")
+            await bot.send(event, "修改失败，用户不存在")
             return
 
         group = session.query(Group).filter(Group.name == group_name).first()
         if group is None:
-            await bot.send(event, "未找到身份组")
+            await bot.send(event, "修改失败，身份组不存在")
             return
 
         user.group = group_name

@@ -73,7 +73,7 @@ async def handle_delete_server(
     try:
         server = session.query(Server).filter(Server.id == target_id).first()
         if server is None:
-            await bot.send(event, "未找到匹配的服务器记录")
+            await bot.send(event, "删除失败，服务器不存在")
             return
 
         deleted_id = server.id
