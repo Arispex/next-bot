@@ -9,6 +9,7 @@ from next_bot.db import Server, get_session
 
 add_matcher = on_command("添加服务器")
 delete_matcher = on_command("删除服务器")
+list_matcher = on_command("服务器列表")
 
 ADD_USAGE = "格式错误，正确格式：添加服务器 [name] [IP] [port] [key]"
 DELETE_USAGE = "格式错误，正确格式：删除服务器 [ID]"
@@ -78,3 +79,27 @@ async def handle_delete_server(
 
     logger.info(f"删除服务器成功：ID={deleted_id}")
     await bot.send(event, "删除成功")
+
+
+@list_matcher.handle()
+async def handle_list_servers(bot: Bot, event: MessageEvent):
+    session = get_session()
+    try:
+        servers = session.query(Server).order_by(Server.id.asc()).all()
+    finally:
+        session.close()
+
+    if not servers:
+        await bot.send(event, "暂无服务器")
+        return
+
+    lines: list[str] = []
+    for server in servers:
+        lines.append(f"{server.id}.{server.name}")
+        lines.append(f"IP：{server.ip}")
+        lines.append(f"端口：{server.port}")
+        lines.append("")
+
+    message = "\n".join(lines).rstrip()
+    logger.info(f"输出服务器列表，共 {len(servers)} 条")
+    await bot.send(event, message)
