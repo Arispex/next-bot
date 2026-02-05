@@ -21,7 +21,8 @@ class Server(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
     name: Mapped[str] = mapped_column(String, nullable=False)
     ip: Mapped[str] = mapped_column(String, nullable=False)
-    port: Mapped[str] = mapped_column(String, nullable=False)
+    game_port: Mapped[str] = mapped_column(String, nullable=False)
+    restapi_port: Mapped[str] = mapped_column(String, nullable=False)
     key: Mapped[str] = mapped_column(String, nullable=False)
 
 

@@ -11,7 +11,7 @@ add_matcher = on_command("添加服务器")
 delete_matcher = on_command("删除服务器")
 list_matcher = on_command("服务器列表")
 
-ADD_USAGE = "格式错误，正确格式：添加服务器 [name] [IP] [port] [key]"
+ADD_USAGE = "格式错误，正确格式：添加服务器 [name] [IP] [game_port] [restapi_port] [key]"
 DELETE_USAGE = "格式错误，正确格式：删除服务器 [ID]"
 
 
@@ -24,22 +24,29 @@ async def handle_add_server(
     bot: Bot, event: MessageEvent, arg: Message = CommandArg()
 ):
     args = _parse_args(arg)
-    if len(args) != 4:
+    if len(args) != 5:
         await bot.send(event, ADD_USAGE)
         return
 
-    name, ip, port, key = args
+    name, ip, game_port, restapi_port, key = args
     session = get_session()
     try:
         count = session.query(Server).count()
-        server = Server(id=count + 1, name=name, ip=ip, port=port, key=key)
+        server = Server(
+            id=count + 1,
+            name=name,
+            ip=ip,
+            game_port=game_port,
+            restapi_port=restapi_port,
+            key=key,
+        )
         session.add(server)
         session.commit()
     finally:
         session.close()
 
     logger.info(
-        f"添加服务器成功：ID={count + 1} name={name} ip={ip} port={port}"
+        f"添加服务器成功：ID={count + 1} name={name} ip={ip} game_port={game_port} restapi_port={restapi_port}"
     )
     await bot.send(event, "添加成功")
 
@@ -97,7 +104,7 @@ async def handle_list_servers(bot: Bot, event: MessageEvent):
     for server in servers:
         lines.append(f"{server.id}.{server.name}")
         lines.append(f"IP：{server.ip}")
-        lines.append(f"端口：{server.port}")
+        lines.append(f"端口：{server.game_port}")
         lines.append("")
 
     message = "\n".join(lines).rstrip()
