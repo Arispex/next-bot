@@ -34,9 +34,19 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
+    permissions: Mapped[str] = mapped_column(String, nullable=False, default="")
+    group: Mapped[str] = mapped_column(String, nullable=False, default="guest")
     created_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=datetime.utcnow
     )
+
+
+class Group(Base):
+    __tablename__ = "user_group"
+
+    name: Mapped[str] = mapped_column(String, primary_key=True)
+    permissions: Mapped[str] = mapped_column(String, nullable=False, default="")
+    inherits: Mapped[str] = mapped_column(String, nullable=False, default="")
 
 
 def get_engine() -> Engine:
@@ -51,9 +61,31 @@ def get_engine() -> Engine:
 def init_db() -> None:
     engine = get_engine()
     Base.metadata.create_all(engine)
+    ensure_default_groups()
 
 
 def get_session() -> Session:
     engine = get_engine()
     session_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
     return session_factory()
+
+
+def ensure_default_groups() -> None:
+    session = get_session()
+    try:
+        guest = session.query(Group).filter(Group.name == "guest").first()
+        if guest is None:
+            session.add(Group(name="guest", permissions="um.add", inherits=""))
+
+        default = session.query(Group).filter(Group.name == "default").first()
+        if default is None:
+            session.add(
+                Group(
+                    name="default",
+                    permissions="sm.*,gm.*,pm.*",
+                    inherits="guest",
+                )
+            )
+        session.commit()
+    finally:
+        session.close()

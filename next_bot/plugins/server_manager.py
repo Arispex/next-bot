@@ -6,6 +6,7 @@ from nonebot.log import logger
 from nonebot.params import CommandArg
 
 from next_bot.db import Server, get_session
+from next_bot.permissions import require_permission
 
 add_matcher = on_command("添加服务器")
 delete_matcher = on_command("删除服务器")
@@ -20,6 +21,7 @@ def _parse_args(arg: Message) -> list[str]:
 
 
 @add_matcher.handle()
+@require_permission("sm.add")
 async def handle_add_server(
     bot: Bot, event: MessageEvent, arg: Message = CommandArg()
 ):
@@ -52,6 +54,7 @@ async def handle_add_server(
 
 
 @delete_matcher.handle()
+@require_permission("sm.delete")
 async def handle_delete_server(
     bot: Bot, event: MessageEvent, arg: Message = CommandArg()
 ):
@@ -89,6 +92,7 @@ async def handle_delete_server(
 
 
 @list_matcher.handle()
+@require_permission("sm.list")
 async def handle_list_servers(bot: Bot, event: MessageEvent):
     session = get_session()
     try:

@@ -4,6 +4,7 @@ from nonebot.adapters.console import Bot
 from nonebot.adapters.console.event import MessageEvent
 from nonebot.log import logger
 from nonebot.params import CommandArg
+from next_bot.permissions import require_permission
 
 from next_bot.db import User, get_session
 
@@ -17,6 +18,7 @@ def _parse_args(arg: Message) -> list[str]:
 
 
 @add_matcher.handle()
+@require_permission("um.add")
 async def handle_add_whitelist(
     bot: Bot, event: MessageEvent, arg: Message = CommandArg()
 ):
@@ -36,7 +38,7 @@ async def handle_add_whitelist(
             await bot.send(event, "已存在")
             return
 
-        user = User(user_id=user_id, name=name)
+        user = User(user_id=user_id, name=name, group="default")
         session.add(user)
         session.commit()
     finally:
