@@ -5,15 +5,19 @@ from nonebot.adapters.console.event import MessageEvent
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
+import httpx
+
 from next_bot.db import Server, get_session
 from next_bot.permissions import require_permission
 
 add_matcher = on_command("添加服务器")
 delete_matcher = on_command("删除服务器")
 list_matcher = on_command("服务器列表")
+test_matcher = on_command("测试连通性")
 
 ADD_USAGE = "格式错误，正确格式：添加服务器 [显示的服务器名称] [IP] [游戏端口] [RestAPI 端口] [RestAPI Key]"
 DELETE_USAGE = "格式错误，正确格式：删除服务器 [服务器 ID]"
+TEST_USAGE = "格式错误，正确格式：测试连通性 [服务器 ID]"
 
 
 def _parse_args(arg: Message) -> list[str]:
@@ -114,3 +118,61 @@ async def handle_list_servers(bot: Bot, event: MessageEvent):
     message = "\n".join(lines).rstrip()
     logger.info(f"输出服务器列表，共 {len(servers)} 条")
     await bot.send(event, message)
+
+
+@test_matcher.handle()
+@require_permission("sm.test")
+async def handle_test_server(
+    bot: Bot, event: MessageEvent, arg: Message = CommandArg()
+):
+    args = _parse_args(arg)
+    if len(args) != 1:
+        await bot.send(event, TEST_USAGE)
+        return
+
+    try:
+        target_id = int(args[0])
+    except ValueError:
+        await bot.send(event, TEST_USAGE)
+        return
+
+    session = get_session()
+    try:
+        server = session.query(Server).filter(Server.id == target_id).first()
+    finally:
+        session.close()
+
+    if server is None:
+        await bot.send(event, "测试失败，服务器不存在")
+        return
+
+    url = f"http://{server.ip}:{server.restapi_port}/tokentest"
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get(url, params={"token": server.key})
+    except httpx.RequestError:
+        logger.info(
+            f"测试连通性失败：id={target_id} ip={server.ip} port={server.restapi_port}"
+        )
+        await bot.send(event, "测试失败，无法连接服务器")
+        return
+
+    status_code = response.status_code
+    try:
+        data = response.json()
+    except ValueError:
+        data = {}
+
+    status_value = str(data.get("status", "")).strip()
+    logger.info(
+        f"测试连通性完成：id={target_id} http={status_code} status={status_value}"
+    )
+
+    if status_value == "200" or status_code == 200:
+        await bot.send(event, "测试成功，一切正常")
+        return
+    if status_value == "403" or status_code == 403:
+        await bot.send(event, "测试失败，token 错误")
+        return
+
+    await bot.send(event, f"测试失败，状态码 {status_value or status_code}")

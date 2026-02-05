@@ -8,6 +8,7 @@ dependencies = [
     "nonebot2[fastapi]>=2.4.4",
     "nonebot-adapter-console>=0.9.0",
     "SQLAlchemy>=2.0.0",
+    "httpx>=0.27.0",
 ]
 
 [project.optional-dependencies]
