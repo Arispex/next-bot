@@ -4,7 +4,7 @@ from pathlib import Path
 
 from sqlalchemy import String
 from sqlalchemy.engine import Engine, create_engine
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DB_PATH = BASE_DIR / "app.db"
@@ -37,3 +37,9 @@ def get_engine() -> Engine:
 def init_db() -> None:
     engine = get_engine()
     Base.metadata.create_all(engine)
+
+
+def get_session() -> Session:
+    engine = get_engine()
+    session_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    return session_factory()
