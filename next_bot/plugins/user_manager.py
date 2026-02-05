@@ -37,6 +37,11 @@ async def handle_add_whitelist(
             logger.info(f"白名单已存在：user_id={user_id} name={exists.name}")
             await bot.send(event, "已存在")
             return
+        name_exists = session.query(User).filter(User.name == name).first()
+        if name_exists is not None:
+            logger.info(f"白名单名称已存在：name={name}")
+            await bot.send(event, "已存在")
+            return
 
         user = User(user_id=user_id, name=name, group="default")
         session.add(user)
