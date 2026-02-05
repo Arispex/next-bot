@@ -18,12 +18,14 @@ list_matcher = on_command("身份组列表")
 add_matcher = on_command("添加身份组")
 delete_matcher = on_command("删除身份组")
 inherit_matcher = on_command("继承身份组")
+clear_inherit_matcher = on_command("取消继承身份组")
 add_perm_matcher = on_command("添加身份组权限")
 remove_perm_matcher = on_command("删除身份组权限")
 
 ADD_USAGE = "格式错误，正确格式：添加身份组 [新身份组名称]"
 DELETE_USAGE = "格式错误，正确格式：删除身份组 [要删除的身份组名称]"
 INHERIT_USAGE = "格式错误，正确格式：继承身份组 [身份组名称] [要继承的身份组名称]"
+CLEAR_INHERIT_USAGE = "格式错误，正确格式：取消继承身份组 [身份组名称]"
 ADD_PERM_USAGE = "格式错误，正确格式：添加身份组权限 [身份组名称] [权限名称]"
 REMOVE_PERM_USAGE = "格式错误，正确格式：删除身份组权限 [身份组名称] [权限名称]"
 
@@ -154,6 +156,33 @@ async def handle_inherit_group(
         session.close()
 
     logger.info(f"身份组继承成功：{child} -> {parent}")
+    await bot.send(event, "修改成功")
+
+
+@clear_inherit_matcher.handle()
+@require_permission("gm.inherit.clear")
+async def handle_clear_inherit_group(
+    bot: Bot, event: MessageEvent, arg: Message = CommandArg()
+):
+    args = _parse_args(arg)
+    if len(args) != 1:
+        await bot.send(event, CLEAR_INHERIT_USAGE)
+        return
+
+    name = args[0]
+    session = get_session()
+    try:
+        group = session.query(Group).filter(Group.name == name).first()
+        if group is None:
+            await bot.send(event, "未找到")
+            return
+
+        group.inherits = ""
+        session.commit()
+    finally:
+        session.close()
+
+    logger.info(f"取消身份组继承成功：name={name}")
     await bot.send(event, "修改成功")
 
 
