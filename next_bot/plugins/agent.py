@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 import httpx
@@ -99,16 +99,13 @@ def _parse_args(arg: Message) -> list[str]:
 
 def _get_llm_config() -> tuple[str, str, str]:
     config = get_driver().config
-    api_key = str(
-        getattr(config, "qwen_api_key", "")
-        or getattr(config, "dashscope_api_key", "")
-    ).strip()
-    model = str(getattr(config, "qwen_model", "qwen-plus")).strip()
+    api_key = str(getattr(config, "llm_api_key", "")).strip()
+    model = str(getattr(config, "llm_model", "")).strip()
     base_url = str(
         getattr(
             config,
-            "qwen_base_url",
-            "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+            "llm_base_url",
+            "",
         )
     ).strip()
     return api_key, model, base_url
@@ -147,7 +144,7 @@ def _get_or_create_session(user_id: str) -> AgentSession:
     return session
 
 
-async def _call_qwen(messages: list[dict[str, Any]]) -> dict[str, Any]:
+async def _call_llm(messages: list[dict[str, Any]]) -> dict[str, Any]:
     api_key, model, base_url = _get_llm_config()
     if not api_key:
         raise RuntimeError("missing_api_key")
@@ -239,7 +236,7 @@ def _execute_tool_call(
 
 async def _run_agent(session: AgentSession) -> str:
     for _ in range(8):
-        message = await _call_qwen(session.messages)
+        message = await _call_llm(session.messages)
         content = message.get("content")
         content_text = content.strip() if isinstance(content, str) else ""
 
@@ -320,7 +317,7 @@ async def handle_agent(
         reply = await _run_agent(session)
     except RuntimeError as exc:
         if str(exc) == "missing_api_key":
-            await bot.send(event, "代理失败，未配置通义千问 API Key")
+            await bot.send(event, "代理失败，未配置 LLM_API_KEY")
             return
         logger.info(f"代理失败：llm_error={exc}")
         await bot.send(event, "代理失败，模型服务异常")
