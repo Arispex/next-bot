@@ -5,10 +5,9 @@ from nonebot.adapters.console.event import MessageEvent
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
-import httpx
-
 from next_bot.db import Server, get_session
 from next_bot.permissions import require_permission
+from next_bot.tshock_api import TShockRequestError, request_server_api
 
 add_matcher = on_command("添加服务器")
 delete_matcher = on_command("删除服务器")
@@ -146,24 +145,17 @@ async def handle_test_server(
         await bot.send(event, "测试失败，服务器不存在")
         return
 
-    url = f"http://{server.ip}:{server.restapi_port}/tokentest"
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            response = await client.get(url, params={"token": server.key})
-    except httpx.RequestError:
+        response = await request_server_api(server, "/tokentest")
+    except TShockRequestError:
         logger.info(
             f"测试连通性失败：id={target_id} ip={server.ip} port={server.restapi_port}"
         )
         await bot.send(event, "测试失败，无法连接服务器")
         return
 
-    status_code = response.status_code
-    try:
-        data = response.json()
-    except ValueError:
-        data = {}
-
-    status_value = str(data.get("status", "")).strip()
+    status_code = response.http_status
+    status_value = response.api_status
     logger.info(
         f"测试连通性完成：id={target_id} http={status_code} status={status_value}"
     )
