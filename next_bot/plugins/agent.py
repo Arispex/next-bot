@@ -11,6 +11,7 @@ from nonebot.log import logger
 from nonebot.params import CommandArg
 
 from next_bot.db import Server, get_session
+from next_bot.permissions import require_permission
 from next_bot.tshock_api import (
     TShockRequestError,
     get_error_reason,
@@ -297,6 +298,7 @@ def _finalize_session_if_needed(user_id: str, session: AgentSession) -> str | No
 
 
 @agent_matcher.handle()
+@require_permission("ag.ask")
 async def handle_agent(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -342,6 +344,7 @@ async def handle_agent(
 
 
 @approve_matcher.handle()
+@require_permission("ag.approve")
 async def handle_approve(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -405,6 +408,7 @@ async def handle_approve(
 
 
 @reject_matcher.handle()
+@require_permission("ag.reject")
 async def handle_reject(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
