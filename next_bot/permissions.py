@@ -76,13 +76,29 @@ def has_permission(user_id: str, permission: str) -> bool:
 def require_permission(permission: str):
     def decorator(func):
         import inspect
+        import typing
         from functools import wraps
 
         signature = inspect.signature(func)
+        try:
+            type_hints = typing.get_type_hints(func)
+        except Exception:
+            type_hints = {}
+
+        parameters = [
+            parameter.replace(
+                annotation=type_hints.get(parameter.name, parameter.annotation)
+            )
+            for parameter in signature.parameters.values()
+        ]
+        resolved_signature = signature.replace(
+            parameters=parameters,
+            return_annotation=type_hints.get("return", signature.return_annotation),
+        )
 
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            bound = signature.bind_partial(*args, **kwargs)
+            bound = resolved_signature.bind_partial(*args, **kwargs)
             bot = bound.arguments.get("bot")
             event = bound.arguments.get("event")
             if bot is None or event is None:
@@ -97,7 +113,7 @@ def require_permission(permission: str):
                 return
             return await func(*args, **kwargs)
 
-        wrapper.__signature__ = signature
+        setattr(wrapper, "__signature__", resolved_signature)
         return wrapper
 
     return decorator
