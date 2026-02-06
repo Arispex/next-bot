@@ -19,7 +19,7 @@ delete_matcher = on_command("删除服务器")
 list_matcher = on_command("服务器列表")
 test_matcher = on_command("测试连通性")
 
-ADD_USAGE = "格式错误，正确格式：添加服务器 [显示的服务器名称] [IP] [游戏端口] [RestAPI 端口] [RestAPI Key]"
+ADD_USAGE = "格式错误，正确格式：添加服务器 [显示的服务器名称] [IP] [游戏端口] [RestAPI 端口] [RestAPI Token]"
 DELETE_USAGE = "格式错误，正确格式：删除服务器 [服务器 ID]"
 TEST_USAGE = "格式错误，正确格式：测试连通性 [服务器 ID]"
 
@@ -38,7 +38,7 @@ async def handle_add_server(
         await bot.send(event, ADD_USAGE)
         return
 
-    name, ip, game_port, restapi_port, key = args
+    name, ip, game_port, restapi_port, token = args
     session = get_session()
     try:
         count = session.query(Server).count()
@@ -48,7 +48,7 @@ async def handle_add_server(
             ip=ip,
             game_port=game_port,
             restapi_port=restapi_port,
-            key=key,
+            token=token,
         )
         session.add(server)
         session.commit()

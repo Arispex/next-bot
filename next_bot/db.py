@@ -25,7 +25,7 @@ class Server(Base):
     ip: Mapped[str] = mapped_column(String, nullable=False)
     game_port: Mapped[str] = mapped_column(String, nullable=False)
     restapi_port: Mapped[str] = mapped_column(String, nullable=False)
-    key: Mapped[str] = mapped_column(String, nullable=False)
+    token: Mapped[str] = mapped_column(String, nullable=False)
 
 
 class User(Base):

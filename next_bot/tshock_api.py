@@ -51,7 +51,7 @@ async def request_server_api(
     request_path = path if path.startswith("/") else f"/{path}"
     query = dict(params or {})
     if include_token and "token" not in query:
-        query["token"] = server.key
+        query["token"] = server.token
 
     url = f"http://{server.ip}:{server.restapi_port}{request_path}"
     try:
