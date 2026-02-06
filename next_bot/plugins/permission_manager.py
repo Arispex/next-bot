@@ -1,7 +1,5 @@
 from nonebot import on_command
-from nonebot.adapters import Message
-from nonebot.adapters.console import Bot
-from nonebot.adapters.console.event import MessageEvent
+from nonebot.adapters import Bot, Event, Message
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
@@ -28,7 +26,7 @@ def _parse_args(arg: Message) -> list[str]:
 @add_user_perm_matcher.handle()
 @require_permission("pm.user.add_perm")
 async def handle_add_user_perm(
-    bot: Bot, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, event: Event, arg: Message = CommandArg()
 ):
     args = _parse_args(arg)
     if len(args) != 2:
@@ -55,7 +53,7 @@ async def handle_add_user_perm(
 @remove_user_perm_matcher.handle()
 @require_permission("pm.user.remove_perm")
 async def handle_remove_user_perm(
-    bot: Bot, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, event: Event, arg: Message = CommandArg()
 ):
     args = _parse_args(arg)
     if len(args) != 2:
@@ -82,7 +80,7 @@ async def handle_remove_user_perm(
 @set_user_group_matcher.handle()
 @require_permission("pm.user.group")
 async def handle_set_user_group(
-    bot: Bot, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, event: Event, arg: Message = CommandArg()
 ):
     args = _parse_args(arg)
     if len(args) != 2:

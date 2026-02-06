@@ -6,9 +6,7 @@ from typing import Any
 
 import httpx
 from nonebot import get_driver, on_command
-from nonebot.adapters import Message
-from nonebot.adapters.console import Bot
-from nonebot.adapters.console.event import MessageEvent
+from nonebot.adapters import Bot, Event, Message
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
@@ -300,7 +298,7 @@ def _finalize_session_if_needed(user_id: str, session: AgentSession) -> str | No
 
 @agent_matcher.handle()
 async def handle_agent(
-    bot: Bot, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, event: Event, arg: Message = CommandArg()
 ):
     args = _parse_args(arg)
     if not args:
@@ -345,7 +343,7 @@ async def handle_agent(
 
 @approve_matcher.handle()
 async def handle_approve(
-    bot: Bot, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, event: Event, arg: Message = CommandArg()
 ):
     args = _parse_args(arg)
     if args:
@@ -408,7 +406,7 @@ async def handle_approve(
 
 @reject_matcher.handle()
 async def handle_reject(
-    bot: Bot, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, event: Event, arg: Message = CommandArg()
 ):
     args = _parse_args(arg)
     if args:

@@ -1,7 +1,5 @@
 from nonebot import on_command
-from nonebot.adapters import Message
-from nonebot.adapters.console import Bot
-from nonebot.adapters.console.event import MessageEvent
+from nonebot.adapters import Bot, Event, Message
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
@@ -31,7 +29,7 @@ def _parse_args(arg: Message) -> list[str]:
 @add_matcher.handle()
 @require_permission("sm.add")
 async def handle_add_server(
-    bot: Bot, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, event: Event, arg: Message = CommandArg()
 ):
     args = _parse_args(arg)
     if len(args) != 5:
@@ -64,7 +62,7 @@ async def handle_add_server(
 @delete_matcher.handle()
 @require_permission("sm.delete")
 async def handle_delete_server(
-    bot: Bot, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, event: Event, arg: Message = CommandArg()
 ):
     args = _parse_args(arg)
     if len(args) != 1:
@@ -101,7 +99,7 @@ async def handle_delete_server(
 
 @list_matcher.handle()
 @require_permission("sm.list")
-async def handle_list_servers(bot: Bot, event: MessageEvent):
+async def handle_list_servers(bot: Bot, event: Event):
     session = get_session()
     try:
         servers = session.query(Server).order_by(Server.id.asc()).all()
@@ -127,7 +125,7 @@ async def handle_list_servers(bot: Bot, event: MessageEvent):
 @test_matcher.handle()
 @require_permission("sm.test")
 async def handle_test_server(
-    bot: Bot, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, event: Event, arg: Message = CommandArg()
 ):
     args = _parse_args(arg)
     if len(args) != 1:

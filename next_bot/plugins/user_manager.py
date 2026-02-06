@@ -1,7 +1,5 @@
 from nonebot import on_command
-from nonebot.adapters import Message
-from nonebot.adapters.console import Bot
-from nonebot.adapters.console.event import MessageEvent
+from nonebot.adapters import Bot, Event, Message
 from nonebot.log import logger
 from nonebot.params import CommandArg
 from next_bot.permissions import require_permission
@@ -66,7 +64,7 @@ async def _sync_whitelist_to_all_servers(
 @add_matcher.handle()
 @require_permission("um.add")
 async def handle_add_whitelist(
-    bot: Bot, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, event: Event, arg: Message = CommandArg()
 ):
     args = _parse_args(arg)
     if len(args) != 1:
@@ -104,7 +102,7 @@ async def handle_add_whitelist(
 @sync_matcher.handle()
 @require_permission("um.sync")
 async def handle_sync_whitelist(
-    bot: Bot, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, event: Event, arg: Message = CommandArg()
 ):
     args = _parse_args(arg)
     if args:

@@ -1,7 +1,5 @@
 from nonebot import on_command
-from nonebot.adapters import Message
-from nonebot.adapters.console import Bot
-from nonebot.adapters.console.event import MessageEvent
+from nonebot.adapters import Bot, Event, Message
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
@@ -36,7 +34,7 @@ def _parse_args(arg: Message) -> list[str]:
 
 @list_matcher.handle()
 @require_permission("gm.list")
-async def handle_list_groups(bot: Bot, event: MessageEvent):
+async def handle_list_groups(bot: Bot, event: Event):
     session = get_session()
     try:
         groups = session.query(Group).order_by(Group.name.asc()).all()
@@ -62,7 +60,7 @@ async def handle_list_groups(bot: Bot, event: MessageEvent):
 @add_matcher.handle()
 @require_permission("gm.add")
 async def handle_add_group(
-    bot: Bot, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, event: Event, arg: Message = CommandArg()
 ):
     args = _parse_args(arg)
     if len(args) != 1:
@@ -89,7 +87,7 @@ async def handle_add_group(
 @delete_matcher.handle()
 @require_permission("gm.delete")
 async def handle_delete_group(
-    bot: Bot, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, event: Event, arg: Message = CommandArg()
 ):
     args = _parse_args(arg)
     if len(args) != 1:
@@ -130,7 +128,7 @@ async def handle_delete_group(
 @inherit_matcher.handle()
 @require_permission("gm.inherit")
 async def handle_inherit_group(
-    bot: Bot, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, event: Event, arg: Message = CommandArg()
 ):
     args = _parse_args(arg)
     if len(args) != 2:
@@ -162,7 +160,7 @@ async def handle_inherit_group(
 @clear_inherit_matcher.handle()
 @require_permission("gm.inherit.clear")
 async def handle_clear_inherit_group(
-    bot: Bot, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, event: Event, arg: Message = CommandArg()
 ):
     args = _parse_args(arg)
     if len(args) != 1:
@@ -189,7 +187,7 @@ async def handle_clear_inherit_group(
 @add_perm_matcher.handle()
 @require_permission("gm.perm.add")
 async def handle_add_group_perm(
-    bot: Bot, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, event: Event, arg: Message = CommandArg()
 ):
     args = _parse_args(arg)
     if len(args) != 2:
@@ -216,7 +214,7 @@ async def handle_add_group_perm(
 @remove_perm_matcher.handle()
 @require_permission("gm.perm.delete")
 async def handle_remove_group_perm(
-    bot: Bot, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, event: Event, arg: Message = CommandArg()
 ):
     args = _parse_args(arg)
     if len(args) != 2:

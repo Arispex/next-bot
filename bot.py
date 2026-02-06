@@ -1,5 +1,6 @@
 import nonebot
-from nonebot.adapters.console import Adapter
+from nonebot.adapters.console import Adapter as ConsoleAdapter
+from nonebot.adapters.onebot.v11 import Adapter as OneBotV11Adapter
 from nonebot.log import logger
 
 from next_bot.db import DB_PATH, init_db, ensure_default_groups, get_engine, Base
@@ -7,7 +8,8 @@ from next_bot.db import DB_PATH, init_db, ensure_default_groups, get_engine, Bas
 nonebot.init()
 
 driver = nonebot.get_driver()
-driver.register_adapter(Adapter)
+driver.register_adapter(ConsoleAdapter)
+driver.register_adapter(OneBotV11Adapter)
 
 @driver.on_startup
 async def _init_database() -> None:
