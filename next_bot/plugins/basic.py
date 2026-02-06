@@ -7,7 +7,12 @@ from nonebot.params import CommandArg
 
 from next_bot.db import Server, get_session
 from next_bot.permissions import require_permission
-from next_bot.tshock_api import TShockRequestError, request_server_api
+from next_bot.tshock_api import (
+    TShockRequestError,
+    get_error_reason,
+    is_success,
+    request_server_api,
+)
 
 online_matcher = on_command("在线")
 
@@ -16,14 +21,6 @@ ONLINE_USAGE = "格式错误，正确格式：在线"
 
 def _parse_args(arg: Message) -> list[str]:
     return [item for item in arg.extract_plain_text().strip().split() if item]
-
-
-def _build_fail_reason(http_status: int, api_status: str) -> str:
-    if http_status != 200:
-        return f"HTTP 状态码 {http_status}"
-    if api_status and api_status != "200":
-        return f"接口状态 {api_status}"
-    return "返回数据格式错误"
 
 
 @online_matcher.handle()
@@ -59,12 +56,8 @@ async def handle_online(
             lines.append("查询失败，无法连接服务器")
             continue
 
-        if response.http_status != 200 or (
-            response.api_status and response.api_status != "200"
-        ):
-            lines.append(
-                f"查询失败，{_build_fail_reason(response.http_status, response.api_status)}"
-            )
+        if not is_success(response):
+            lines.append(f"查询失败，{get_error_reason(response)}")
             continue
 
         players = response.payload.get("players")

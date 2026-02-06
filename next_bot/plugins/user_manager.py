@@ -7,7 +7,12 @@ from nonebot.params import CommandArg
 from next_bot.permissions import require_permission
 
 from next_bot.db import Server, User, get_session
-from next_bot.tshock_api import TShockRequestError, request_server_api
+from next_bot.tshock_api import (
+    TShockRequestError,
+    get_error_reason,
+    is_success,
+    request_server_api,
+)
 
 add_matcher = on_command("添加白名单")
 sync_matcher = on_command("同步白名单")
@@ -18,21 +23,6 @@ SYNC_USAGE = "格式错误，正确格式：同步白名单"
 
 def _parse_args(arg: Message) -> list[str]:
     return [item for item in arg.extract_plain_text().strip().split() if item]
-
-
-def _extract_fail_reason(
-    response_payload: dict[str, object], http_status: int, api_status: str
-) -> str:
-    if http_status != 200:
-        return f"HTTP 状态码 {http_status}"
-    if api_status and api_status != "200":
-        return f"接口状态 {api_status}"
-    response_value = response_payload.get("response")
-    if isinstance(response_value, list) and response_value:
-        return str(response_value[0])
-    if isinstance(response_value, str) and response_value.strip():
-        return response_value.strip()
-    return "未知错误"
 
 
 async def _sync_whitelist_to_all_servers(
@@ -59,15 +49,11 @@ async def _sync_whitelist_to_all_servers(
             results.append((server, False, "无法连接服务器"))
             continue
 
-        if response.http_status == 200 and (
-            not response.api_status or response.api_status == "200"
-        ):
+        if is_success(response):
             results.append((server, True, ""))
             continue
 
-        reason = _extract_fail_reason(
-            response.payload, response.http_status, response.api_status
-        )
+        reason = get_error_reason(response)
         logger.info(
             "白名单同步失败："
             f"server_id={server.id} user_id={user_id} name={name} "

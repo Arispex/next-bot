@@ -19,6 +19,27 @@ class TShockResponse:
     api_status: str
 
 
+def is_success(response: TShockResponse) -> bool:
+    return response.http_status == 200 and (
+        not response.api_status or response.api_status == "200"
+    )
+
+
+def get_error_reason(response: TShockResponse) -> str:
+    status_reason_map = {
+        "400": "出现错误",
+        "401": "未提供令牌",
+        "403": "无效的令牌",
+        "404": "端点不存在",
+    }
+    status_code = response.api_status or str(response.http_status)
+    if status_code in status_reason_map:
+        return status_reason_map[status_code]
+    if status_code != "200":
+        return f"状态码 {status_code}"
+    return "返回数据格式错误"
+
+
 async def request_server_api(
     server: Server,
     path: str,

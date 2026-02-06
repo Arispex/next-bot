@@ -7,7 +7,12 @@ from nonebot.params import CommandArg
 
 from next_bot.db import Server, get_session
 from next_bot.permissions import require_permission
-from next_bot.tshock_api import TShockRequestError, request_server_api
+from next_bot.tshock_api import (
+    TShockRequestError,
+    get_error_reason,
+    is_success,
+    request_server_api,
+)
 
 add_matcher = on_command("添加服务器")
 delete_matcher = on_command("删除服务器")
@@ -160,11 +165,9 @@ async def handle_test_server(
         f"测试连通性完成：id={target_id} http={status_code} status={status_value}"
     )
 
-    if status_value == "200" or status_code == 200:
+    if is_success(response):
         await bot.send(event, "测试成功，一切正常")
         return
-    if status_value == "403" or status_code == 403:
-        await bot.send(event, "测试失败，token 错误")
-        return
 
-    await bot.send(event, f"测试失败，状态码 {status_value or status_code}")
+    reason = get_error_reason(response)
+    await bot.send(event, f"测试失败，{reason}")
