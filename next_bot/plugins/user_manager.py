@@ -15,10 +15,12 @@ from next_bot.tshock_api import (
 add_matcher = on_command("注册账号")
 sync_matcher = on_command("同步白名单")
 info_matcher = on_command("用户信息")
+self_info_matcher = on_command("我的信息")
 
 ADD_USAGE = "格式错误，正确格式：注册账号 <游戏名称>"
 SYNC_USAGE = "格式错误，正确格式：同步白名单"
 INFO_USAGE = "格式错误，正确格式：用户信息 <用户 ID>"
+SELF_INFO_USAGE = "格式错误，正确格式：我的信息"
 
 
 def _parse_args(arg: Message) -> list[str]:
@@ -159,6 +161,40 @@ async def handle_user_info(
 
     if user is None:
         await bot.send(event, "查询失败，用户不存在")
+        return
+
+    created_at = user.created_at.strftime("%Y-%m-%d %H:%M:%S")
+    message = "\n".join(
+        [
+            f"用户 ID：{user.user_id}",
+            f"游戏名称：{user.name}",
+            f"权限：{user.permissions or '无'}",
+            f"身份组：{user.group}",
+            f"创建时间：{created_at}",
+        ]
+    )
+    await bot.send(event, message)
+
+
+@self_info_matcher.handle()
+@require_permission("um.info.self")
+async def handle_self_info(
+    bot: Bot, event: Event, arg: Message = CommandArg()
+):
+    args = _parse_args(arg)
+    if args:
+        await bot.send(event, SELF_INFO_USAGE)
+        return
+
+    user_id = event.get_user_id()
+    session = get_session()
+    try:
+        user = session.query(User).filter(User.user_id == user_id).first()
+    finally:
+        session.close()
+
+    if user is None:
+        await bot.send(event, "查询失败，未注册账号")
         return
 
     created_at = user.created_at.strftime("%Y-%m-%d %H:%M:%S")
