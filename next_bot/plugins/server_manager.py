@@ -17,7 +17,7 @@ delete_matcher = on_command("删除服务器")
 list_matcher = on_command("服务器列表")
 test_matcher = on_command("测试连通性")
 
-ADD_USAGE = "格式错误，正确格式：添加服务器 <显示的服务器名称> <IP> <游戏端口> <RestAPI 端口> <RestAPI Token>"
+ADD_USAGE = "格式错误，正确格式：添加服务器 <服务器名称> <IP> <游戏端口> <RestAPI 端口> <RestAPI Token>"
 DELETE_USAGE = "格式错误，正确格式：删除服务器 <服务器 ID>"
 LIST_USAGE = "格式错误，正确格式：服务器列表"
 TEST_USAGE = "格式错误，正确格式：测试连通性 <服务器 ID>"
