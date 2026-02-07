@@ -103,7 +103,7 @@ def require_permission(permission: str):
                 logger.info(
                     f"权限不足：user_id={user_id} permission={permission}"
                 )
-                await bot.send(event, "没有权限")
+                await bot.send(event, f"没有权限，需要权限：{permission}")
                 return
             return await func(*args, **kwargs)
 
