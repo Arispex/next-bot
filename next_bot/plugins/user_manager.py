@@ -15,7 +15,7 @@ from next_bot.tshock_api import (
 add_matcher = on_command("添加白名单")
 sync_matcher = on_command("同步白名单")
 
-ADD_USAGE = "格式错误，正确格式：添加白名单 [游戏名称]"
+ADD_USAGE = "格式错误，正确格式：添加白名单 <游戏名称>"
 SYNC_USAGE = "格式错误，正确格式：同步白名单"
 
 

@@ -20,12 +20,12 @@ clear_inherit_matcher = on_command("取消继承身份组")
 add_perm_matcher = on_command("添加身份组权限")
 remove_perm_matcher = on_command("删除身份组权限")
 
-ADD_USAGE = "格式错误，正确格式：添加身份组 [新身份组名称]"
-DELETE_USAGE = "格式错误，正确格式：删除身份组 [要删除的身份组名称]"
-INHERIT_USAGE = "格式错误，正确格式：继承身份组 [身份组名称] [要继承的身份组名称]"
-CLEAR_INHERIT_USAGE = "格式错误，正确格式：取消继承身份组 [身份组名称]"
-ADD_PERM_USAGE = "格式错误，正确格式：添加身份组权限 [身份组名称] [权限名称]"
-REMOVE_PERM_USAGE = "格式错误，正确格式：删除身份组权限 [身份组名称] [权限名称]"
+ADD_USAGE = "格式错误，正确格式：添加身份组 <新身份组名称>"
+DELETE_USAGE = "格式错误，正确格式：删除身份组 <要删除的身份组名称>"
+INHERIT_USAGE = "格式错误，正确格式：继承身份组 <身份组名称> <要继承的身份组名称>"
+CLEAR_INHERIT_USAGE = "格式错误，正确格式：取消继承身份组 <身份组名称>"
+ADD_PERM_USAGE = "格式错误，正确格式：添加身份组权限 <身份组名称> <权限名称>"
+REMOVE_PERM_USAGE = "格式错误，正确格式：删除身份组权限 <身份组名称> <权限名称>"
 
 
 def _parse_args(arg: Message) -> list[str]:

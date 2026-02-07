@@ -16,7 +16,7 @@ online_matcher = on_command("在线")
 execute_matcher = on_command("执行")
 
 ONLINE_USAGE = "格式错误，正确格式：在线"
-EXECUTE_USAGE = "格式错误，正确格式：执行 [服务器 ID] [命令]"
+EXECUTE_USAGE = "格式错误，正确格式：执行 <服务器 ID> <命令>"
 
 
 def _parse_args(arg: Message) -> list[str]:

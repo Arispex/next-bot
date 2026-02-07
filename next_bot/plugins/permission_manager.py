@@ -14,9 +14,9 @@ add_user_perm_matcher = on_command("添加用户权限")
 remove_user_perm_matcher = on_command("删除用户权限")
 set_user_group_matcher = on_command("修改用户身份组")
 
-ADD_USER_PERM_USAGE = "格式错误，正确格式：添加用户权限 [用户 ID] [权限名称]"
-REMOVE_USER_PERM_USAGE = "格式错误，正确格式：删除用户权限 [用户 ID] [权限名称]"
-SET_USER_GROUP_USAGE = "格式错误，正确格式：修改用户身份组 [用户 ID] [身份组]"
+ADD_USER_PERM_USAGE = "格式错误，正确格式：添加用户权限 <用户 ID> <权限名称>"
+REMOVE_USER_PERM_USAGE = "格式错误，正确格式：删除用户权限 <用户 ID> <权限名称>"
+SET_USER_GROUP_USAGE = "格式错误，正确格式：修改用户身份组 <用户 ID> <身份组>"
 
 
 def _parse_args(arg: Message) -> list[str]:

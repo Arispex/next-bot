@@ -23,7 +23,7 @@ agent_matcher = on_command("代理")
 approve_matcher = on_command("允许执行命令")
 reject_matcher = on_command("拒绝执行命令")
 
-AGENT_USAGE = "格式错误，正确格式：代理 [内容]"
+AGENT_USAGE = "格式错误，正确格式：代理 <内容>"
 APPROVE_USAGE = "格式错误，正确格式：允许执行命令"
 REJECT_USAGE = "格式错误，正确格式：拒绝执行命令"
 
