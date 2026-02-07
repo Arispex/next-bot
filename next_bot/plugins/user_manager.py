@@ -14,9 +14,11 @@ from next_bot.tshock_api import (
 
 add_matcher = on_command("注册账号")
 sync_matcher = on_command("同步白名单")
+info_matcher = on_command("用户信息")
 
 ADD_USAGE = "格式错误，正确格式：注册账号 <游戏名称>"
 SYNC_USAGE = "格式错误，正确格式：同步白名单"
+INFO_USAGE = "格式错误，正确格式：用户信息 <用户 ID>"
 
 
 def _parse_args(arg: Message) -> list[str]:
@@ -117,7 +119,7 @@ async def handle_sync_whitelist(
         session.close()
 
     if user is None:
-        await bot.send(event, "同步失败，用户未在白名单")
+        await bot.send(event, "同步失败，未注册账号")
         return
 
     results = await _sync_whitelist_to_all_servers(user_id, user.name)
@@ -136,3 +138,37 @@ async def handle_sync_whitelist(
         f"同步白名单完成：user_id={user_id} name={user.name} server_count={len(results)}"
     )
     await bot.send(event, "\n".join(lines))
+
+
+@info_matcher.handle()
+@require_permission("um.info")
+async def handle_user_info(
+    bot: Bot, event: Event, arg: Message = CommandArg()
+):
+    args = _parse_args(arg)
+    if len(args) != 1:
+        await bot.send(event, INFO_USAGE)
+        return
+
+    target_user_id = args[0]
+    session = get_session()
+    try:
+        user = session.query(User).filter(User.user_id == target_user_id).first()
+    finally:
+        session.close()
+
+    if user is None:
+        await bot.send(event, "查询失败，用户不存在")
+        return
+
+    created_at = user.created_at.strftime("%Y-%m-%d %H:%M:%S")
+    message = "\n".join(
+        [
+            f"用户 ID：{user.user_id}",
+            f"游戏名称：{user.name}",
+            f"权限：{user.permissions or '无'}",
+            f"身份组：{user.group}",
+            f"创建时间：{created_at}",
+        ]
+    )
+    await bot.send(event, message)
