@@ -12,10 +12,10 @@ from next_bot.tshock_api import (
     request_server_api,
 )
 
-add_matcher = on_command("添加白名单")
+add_matcher = on_command("注册账号")
 sync_matcher = on_command("同步白名单")
 
-ADD_USAGE = "格式错误，正确格式：添加白名单 <游戏名称>"
+ADD_USAGE = "格式错误，正确格式：注册账号 <游戏名称>"
 SYNC_USAGE = "格式错误，正确格式：同步白名单"
 
 
@@ -78,13 +78,13 @@ async def handle_add_whitelist(
     try:
         exists = session.query(User).filter(User.user_id == user_id).first()
         if exists is not None:
-            logger.info(f"白名单已存在：user_id={user_id} name={exists.name}")
-            await bot.send(event, "添加失败，该账号已在白名单")
+            logger.info(f"账号已注册：user_id={user_id} name={exists.name}")
+            await bot.send(event, "注册失败，该账号已注册")
             return
         name_exists = session.query(User).filter(User.name == name).first()
         if name_exists is not None:
-            logger.info(f"白名单名称已存在：name={name}")
-            await bot.send(event, "添加失败，名称已被占用")
+            logger.info(f"账号名称已存在：name={name}")
+            await bot.send(event, "注册失败，名称已被占用")
             return
 
         user = User(user_id=user_id, name=name, group="default")
@@ -95,8 +95,8 @@ async def handle_add_whitelist(
 
     await _sync_whitelist_to_all_servers(user_id, name)
 
-    logger.info(f"添加白名单成功：user_id={user_id} name={name}")
-    await bot.send(event, "添加成功")
+    logger.info(f"注册账号成功：user_id={user_id} name={name}")
+    await bot.send(event, "注册成功")
 
 
 @sync_matcher.handle()
