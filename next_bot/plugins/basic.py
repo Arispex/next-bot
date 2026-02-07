@@ -3,7 +3,7 @@ from nonebot.adapters import Bot, Event, Message
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
-from next_bot.db import Server, get_session
+from next_bot.db import Server, User, get_session
 from next_bot.permissions import require_permission
 from next_bot.tshock_api import (
     TShockRequestError,
@@ -14,9 +14,11 @@ from next_bot.tshock_api import (
 
 online_matcher = on_command("在线")
 execute_matcher = on_command("执行")
+self_kick_matcher = on_command("自踢")
 
 ONLINE_USAGE = "格式错误，正确格式：在线"
 EXECUTE_USAGE = "格式错误，正确格式：执行 <服务器 ID> <命令>"
+SELF_KICK_USAGE = "格式错误，正确格式：自踢"
 
 
 def _parse_args(arg: Message) -> list[str]:
@@ -164,3 +166,54 @@ async def handle_execute(
         return
 
     await bot.send(event, "执行成功，无返回内容")
+
+
+@self_kick_matcher.handle()
+@require_permission("bf.selfkick")
+async def handle_self_kick(
+    bot: Bot, event: Event, arg: Message = CommandArg()
+):
+    args = _parse_args(arg)
+    if args:
+        await bot.send(event, SELF_KICK_USAGE)
+        return
+
+    user_id = event.get_user_id()
+    session = get_session()
+    try:
+        user = session.query(User).filter(User.user_id == user_id).first()
+        servers = session.query(Server).order_by(Server.id.asc()).all()
+    finally:
+        session.close()
+
+    if user is None:
+        await bot.send(event, "执行失败，未注册账号")
+        return
+
+    if not servers:
+        await bot.send(event, "执行失败，暂无服务器")
+        return
+
+    lines: list[str] = []
+    for server in servers:
+        try:
+            response = await request_server_api(
+                server,
+                "/v3/server/rawcmd",
+                params={"cmd": f"/kick {user.name}"},
+            )
+        except TShockRequestError:
+            lines.append(f"{server.id}.{server.name}：执行失败，无法连接服务器")
+            continue
+
+        if is_success(response):
+            lines.append(f"{server.id}.{server.name}：执行成功")
+            continue
+
+        reason = get_error_reason(response)
+        lines.append(f"{server.id}.{server.name}：执行失败，{reason}")
+
+    logger.info(
+        f"自踢执行完成：user_id={user_id} name={user.name} server_count={len(servers)}"
+    )
+    await bot.send(event, "\n".join(lines))
