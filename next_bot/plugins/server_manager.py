@@ -19,6 +19,7 @@ test_matcher = on_command("测试连通性")
 
 ADD_USAGE = "格式错误，正确格式：添加服务器 <显示的服务器名称> <IP> <游戏端口> <RestAPI 端口> <RestAPI Token>"
 DELETE_USAGE = "格式错误，正确格式：删除服务器 <服务器 ID>"
+LIST_USAGE = "格式错误，正确格式：服务器列表"
 TEST_USAGE = "格式错误，正确格式：测试连通性 <服务器 ID>"
 
 
@@ -99,7 +100,14 @@ async def handle_delete_server(
 
 @list_matcher.handle()
 @require_permission("sm.list")
-async def handle_list_servers(bot: Bot, event: Event):
+async def handle_list_servers(
+    bot: Bot, event: Event, arg: Message = CommandArg()
+):
+    args = _parse_args(arg)
+    if args:
+        await bot.send(event, LIST_USAGE)
+        return
+
     session = get_session()
     try:
         servers = session.query(Server).order_by(Server.id.asc()).all()

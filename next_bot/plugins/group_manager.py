@@ -26,6 +26,7 @@ INHERIT_USAGE = "格式错误，正确格式：继承身份组 <身份组名称>
 CLEAR_INHERIT_USAGE = "格式错误，正确格式：取消继承身份组 <身份组名称>"
 ADD_PERM_USAGE = "格式错误，正确格式：添加身份组权限 <身份组名称> <权限名称>"
 REMOVE_PERM_USAGE = "格式错误，正确格式：删除身份组权限 <身份组名称> <权限名称>"
+LIST_USAGE = "格式错误，正确格式：身份组列表"
 
 
 def _parse_args(arg: Message) -> list[str]:
@@ -34,7 +35,14 @@ def _parse_args(arg: Message) -> list[str]:
 
 @list_matcher.handle()
 @require_permission("gm.list")
-async def handle_list_groups(bot: Bot, event: Event):
+async def handle_list_groups(
+    bot: Bot, event: Event, arg: Message = CommandArg()
+):
+    args = _parse_args(arg)
+    if args:
+        await bot.send(event, LIST_USAGE)
+        return
+
     session = get_session()
     try:
         groups = session.query(Group).order_by(Group.name.asc()).all()
