@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from nonebot import get_driver
 from nonebot.log import logger
 
+from next_bot.access_control import get_owner_ids
 from next_bot.db import Group, User, get_session
 
 
@@ -59,15 +59,9 @@ def _get_group_permissions(
     return perms
 
 
-def _get_owner_id() -> str:
-    config = get_driver().config
-    owner_id = getattr(config, "owner_id", "")
-    return str(owner_id).strip() if owner_id is not None else ""
-
-
 def has_permission(user_id: str, permission: str) -> bool:
-    owner_id = _get_owner_id()
-    if owner_id and user_id == owner_id:
+    owner_ids = get_owner_ids()
+    if user_id in owner_ids:
         return True
     perms = get_effective_permissions(user_id)
     return any(_match_permission(granted, permission) for granted in perms)
