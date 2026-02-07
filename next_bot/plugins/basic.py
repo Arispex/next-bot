@@ -13,12 +13,45 @@ from next_bot.tshock_api import (
 )
 
 online_matcher = on_command("在线")
+execute_matcher = on_command("执行")
 
 ONLINE_USAGE = "格式错误，正确格式：在线"
+EXECUTE_USAGE = "格式错误，正确格式：执行 [服务器 ID] [命令]"
 
 
 def _parse_args(arg: Message) -> list[str]:
     return [item for item in arg.extract_plain_text().strip().split() if item]
+
+
+def _parse_execute_arg(arg: Message) -> tuple[int, str] | None:
+    text = arg.extract_plain_text().strip()
+    if not text:
+        return None
+
+    parts = text.split(maxsplit=1)
+    if len(parts) != 2:
+        return None
+
+    server_id_text, command = parts
+    try:
+        server_id = int(server_id_text)
+    except ValueError:
+        return None
+
+    command_text = command.strip()
+    if not command_text:
+        return None
+    return server_id, command_text
+
+
+def _extract_response_text(payload: dict[str, object]) -> str:
+    value = payload.get("response")
+    if isinstance(value, list):
+        lines = [str(item).strip() for item in value if str(item).strip()]
+        return "\n".join(lines)
+    if isinstance(value, str):
+        return value.strip()
+    return ""
 
 
 @online_matcher.handle()
@@ -88,3 +121,46 @@ async def handle_online(
 
     logger.info(f"在线查询完成：server_count={len(servers)}")
     await bot.send(event, "\n".join(lines))
+
+
+@execute_matcher.handle()
+@require_permission("bf.exec")
+async def handle_execute(
+    bot: Bot, event: Event, arg: Message = CommandArg()
+):
+    parsed = _parse_execute_arg(arg)
+    if parsed is None:
+        await bot.send(event, EXECUTE_USAGE)
+        return
+
+    target_id, command = parsed
+    session = get_session()
+    try:
+        server = session.query(Server).filter(Server.id == target_id).first()
+    finally:
+        session.close()
+
+    if server is None:
+        await bot.send(event, "执行失败，服务器不存在")
+        return
+
+    try:
+        response = await request_server_api(
+            server,
+            "/v3/server/rawcmd",
+            params={"cmd": command},
+        )
+    except TShockRequestError:
+        await bot.send(event, "执行失败，无法连接服务器")
+        return
+
+    if not is_success(response):
+        await bot.send(event, f"执行失败，{get_error_reason(response)}")
+        return
+
+    result_text = _extract_response_text(response.payload)
+    if result_text:
+        await bot.send(event, f"执行成功，返回内容：\n{result_text}")
+        return
+
+    await bot.send(event, "执行成功，无返回内容")
