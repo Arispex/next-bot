@@ -12,8 +12,8 @@ from next_bot.db import DB_PATH, init_db, ensure_default_groups, get_engine, Bas
 nonebot.init()
 
 driver = nonebot.get_driver()
-# driver.register_adapter(ConsoleAdapter)
-driver.register_adapter(OneBotV11Adapter)
+driver.register_adapter(ConsoleAdapter)
+# driver.register_adapter(OneBotV11Adapter)
 
 
 @event_preprocessor
@@ -25,17 +25,30 @@ async def _filter_allowed_messages(event: Event) -> None:
     group_ids = get_group_ids()
     message_type = getattr(event, "message_type", "")
     if message_type == "private":
-        user_id = str(getattr(event, "user_id", "")).strip()
+        user_id = event.get_user_id()
         if user_id in owner_ids:
             return
+        logger.info(f"消息被过滤：type=private user_id={user_id}")
         raise IgnoredException("private message blocked by owner_id allowlist")
 
     if message_type == "group":
         group_id = str(getattr(event, "group_id", "")).strip()
+        user_id = event.get_user_id()
         if group_id in group_ids:
             return
+        logger.info(
+            f"消息被过滤：type=group group_id={group_id} user_id={user_id}"
+        )
         raise IgnoredException("group message blocked by group_id allowlist")
 
+    if event.get_user_id() == "user":
+        return
+
+    user_id = event.get_user_id()
+    group_id = str(getattr(event, "group_id", "")).strip()
+    logger.info(
+        f"消息被过滤：type={message_type or 'unknown'} group_id={group_id} user_id={user_id}"
+    )
     raise IgnoredException("message blocked by access allowlist")
 
 
