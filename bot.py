@@ -12,8 +12,8 @@ from next_bot.db import DB_PATH, init_db, ensure_default_groups, get_engine, Bas
 nonebot.init()
 
 driver = nonebot.get_driver()
-driver.register_adapter(ConsoleAdapter)
-# driver.register_adapter(OneBotV11Adapter)
+# driver.register_adapter(ConsoleAdapter)
+driver.register_adapter(OneBotV11Adapter)
 
 
 @event_preprocessor
