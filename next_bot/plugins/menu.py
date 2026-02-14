@@ -1,6 +1,7 @@
 from nonebot import on_command
 from nonebot.adapters import Bot, Event, Message
 from nonebot.params import CommandArg
+from next_bot.message_parser import parse_command_args_with_fallback
 from next_bot.permissions import require_permission
 
 menu_matcher = on_command("菜单")
@@ -59,16 +60,10 @@ SERVER_TEXT = "\n".join(
 )
 USER_TEXT = "\n".join(["注册账号", "同步白名单"])
 AGENT_TEXT = "\n".join(["代理", "允许执行命令", "拒绝执行命令"])
-
-
-def _parse_args(arg: Message) -> list[str]:
-    return [item for item in arg.extract_plain_text().strip().split() if item]
-
-
 @menu_matcher.handle()
 @require_permission("mn.menu")
 async def handle_menu(bot: Bot, event: Event, arg: Message = CommandArg()):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "菜单")
     if args:
         await bot.send(event, MENU_USAGE)
         return
@@ -80,7 +75,7 @@ async def handle_menu(bot: Bot, event: Event, arg: Message = CommandArg()):
 async def handle_basic_menu(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "基础功能")
     if args:
         await bot.send(event, BASIC_USAGE)
         return
@@ -92,7 +87,7 @@ async def handle_basic_menu(
 async def handle_group_menu(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "身份组管理")
     if args:
         await bot.send(event, GROUP_USAGE)
         return
@@ -104,7 +99,7 @@ async def handle_group_menu(
 async def handle_permission_menu(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "权限管理")
     if args:
         await bot.send(event, PERMISSION_USAGE)
         return
@@ -116,7 +111,7 @@ async def handle_permission_menu(
 async def handle_server_menu(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "服务器管理")
     if args:
         await bot.send(event, SERVER_USAGE)
         return
@@ -126,7 +121,7 @@ async def handle_server_menu(
 @user_matcher.handle()
 @require_permission("mn.user")
 async def handle_user_menu(bot: Bot, event: Event, arg: Message = CommandArg()):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "用户管理")
     if args:
         await bot.send(event, USER_USAGE)
         return
@@ -136,7 +131,7 @@ async def handle_user_menu(bot: Bot, event: Event, arg: Message = CommandArg()):
 @agent_matcher.handle()
 @require_permission("mn.agent")
 async def handle_agent_menu(bot: Bot, event: Event, arg: Message = CommandArg()):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "代理功能")
     if args:
         await bot.send(event, AGENT_USAGE)
         return

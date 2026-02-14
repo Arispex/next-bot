@@ -40,6 +40,14 @@ def _segments_to_plain_text(segments: list[Any]) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+def _extract_args_text(text: str, command_name: str) -> str | None:
+    cmd = re.escape(command_name)
+    match = re.match(rf"^/?{cmd}(?:\s+|$)", text)
+    if match is None:
+        return None
+    return text[match.end() :].strip()
+
+
 def parse_command_args(event: Any, command_name: str) -> list[str]:
     segments = _message_segments_from_event(event)
     if not segments:
@@ -49,15 +57,47 @@ def parse_command_args(event: Any, command_name: str) -> list[str]:
     if not text:
         return []
 
-    cmd = re.escape(command_name)
-    match = re.match(rf"^/?{cmd}(?:\s+|$)", text)
-    if match is None:
+    args_text = _extract_args_text(text, command_name)
+    if args_text is None:
         return []
 
-    args_text = text[match.end() :].strip()
     if not args_text:
         logger.info(f"消息解析器：command={command_name} text={text} args=[]")
         return []
     args = args_text.split()
     logger.info(f"消息解析器：command={command_name} text={text} args={args}")
     return args
+
+
+def parse_command_text(event: Any, command_name: str) -> str | None:
+    segments = _message_segments_from_event(event)
+    if not segments:
+        return None
+
+    text = _segments_to_plain_text(segments)
+    if not text:
+        return None
+
+    args_text = _extract_args_text(text, command_name)
+    if args_text is None:
+        return None
+    return args_text
+
+
+def parse_command_args_with_fallback(
+    event: Any, arg: Any, command_name: str
+) -> list[str]:
+    args = parse_command_args(event, command_name)
+    if args:
+        return args
+    text = getattr(arg, "extract_plain_text", lambda: "")().strip()
+    return [item for item in text.split() if item]
+
+
+def parse_command_text_with_fallback(
+    event: Any, arg: Any, command_name: str
+) -> str:
+    text = parse_command_text(event, command_name)
+    if text is not None:
+        return text
+    return getattr(arg, "extract_plain_text", lambda: "")().strip()

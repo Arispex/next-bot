@@ -4,6 +4,7 @@ from nonebot.log import logger
 from nonebot.params import CommandArg
 
 from next_bot.db import Group, User, get_session
+from next_bot.message_parser import parse_command_args_with_fallback
 from next_bot.permissions import (
     add_permission,
     remove_permission,
@@ -17,18 +18,12 @@ set_user_group_matcher = on_command("修改用户身份组")
 ADD_USER_PERM_USAGE = "格式错误，正确格式：添加用户权限 <用户 ID> <权限名称>"
 REMOVE_USER_PERM_USAGE = "格式错误，正确格式：删除用户权限 <用户 ID> <权限名称>"
 SET_USER_GROUP_USAGE = "格式错误，正确格式：修改用户身份组 <用户 ID> <身份组名称>"
-
-
-def _parse_args(arg: Message) -> list[str]:
-    return [item for item in arg.extract_plain_text().strip().split() if item]
-
-
 @add_user_perm_matcher.handle()
 @require_permission("pm.user.add_perm")
 async def handle_add_user_perm(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "添加用户权限")
     if len(args) != 2:
         await bot.send(event, ADD_USER_PERM_USAGE)
         return
@@ -55,7 +50,7 @@ async def handle_add_user_perm(
 async def handle_remove_user_perm(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "删除用户权限")
     if len(args) != 2:
         await bot.send(event, REMOVE_USER_PERM_USAGE)
         return
@@ -82,7 +77,7 @@ async def handle_remove_user_perm(
 async def handle_set_user_group(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "修改用户身份组")
     if len(args) != 2:
         await bot.send(event, SET_USER_GROUP_USAGE)
         return

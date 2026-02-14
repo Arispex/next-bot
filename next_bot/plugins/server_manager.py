@@ -4,6 +4,7 @@ from nonebot.log import logger
 from nonebot.params import CommandArg
 
 from next_bot.db import Server, get_session
+from next_bot.message_parser import parse_command_args_with_fallback
 from next_bot.permissions import require_permission
 from next_bot.tshock_api import (
     TShockRequestError,
@@ -21,18 +22,12 @@ ADD_USAGE = "格式错误，正确格式：添加服务器 <服务器名称> <IP
 DELETE_USAGE = "格式错误，正确格式：删除服务器 <服务器 ID>"
 LIST_USAGE = "格式错误，正确格式：服务器列表"
 TEST_USAGE = "格式错误，正确格式：测试连通性 <服务器 ID>"
-
-
-def _parse_args(arg: Message) -> list[str]:
-    return [item for item in arg.extract_plain_text().strip().split() if item]
-
-
 @add_matcher.handle()
 @require_permission("sm.add")
 async def handle_add_server(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "添加服务器")
     if len(args) != 5:
         await bot.send(event, ADD_USAGE)
         return
@@ -65,7 +60,7 @@ async def handle_add_server(
 async def handle_delete_server(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "删除服务器")
     if len(args) != 1:
         await bot.send(event, DELETE_USAGE)
         return
@@ -103,7 +98,7 @@ async def handle_delete_server(
 async def handle_list_servers(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "服务器列表")
     if args:
         await bot.send(event, LIST_USAGE)
         return
@@ -135,7 +130,7 @@ async def handle_list_servers(
 async def handle_test_server(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "测试连通性")
     if len(args) != 1:
         await bot.send(event, TEST_USAGE)
         return

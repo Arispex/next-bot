@@ -4,6 +4,10 @@ from nonebot.log import logger
 from nonebot.params import CommandArg
 
 from next_bot.db import Server, User, get_session
+from next_bot.message_parser import (
+    parse_command_args_with_fallback,
+    parse_command_text_with_fallback,
+)
 from next_bot.permissions import require_permission
 from next_bot.tshock_api import (
     TShockRequestError,
@@ -19,14 +23,7 @@ self_kick_matcher = on_command("自踢")
 ONLINE_USAGE = "格式错误，正确格式：在线"
 EXECUTE_USAGE = "格式错误，正确格式：执行 <服务器 ID> <命令>"
 SELF_KICK_USAGE = "格式错误，正确格式：自踢"
-
-
-def _parse_args(arg: Message) -> list[str]:
-    return [item for item in arg.extract_plain_text().strip().split() if item]
-
-
-def _parse_execute_arg(arg: Message) -> tuple[int, str] | None:
-    text = arg.extract_plain_text().strip()
+def _parse_execute_arg_text(text: str) -> tuple[int, str] | None:
     if not text:
         return None
 
@@ -61,7 +58,7 @@ def _extract_response_text(payload: dict[str, object]) -> str:
 async def handle_online(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "在线")
     if args:
         await bot.send(event, ONLINE_USAGE)
         return
@@ -130,7 +127,8 @@ async def handle_online(
 async def handle_execute(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    parsed = _parse_execute_arg(arg)
+    text = parse_command_text_with_fallback(event, arg, "执行")
+    parsed = _parse_execute_arg_text(text)
     if parsed is None:
         await bot.send(event, EXECUTE_USAGE)
         return
@@ -173,7 +171,7 @@ async def handle_execute(
 async def handle_self_kick(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "自踢")
     if args:
         await bot.send(event, SELF_KICK_USAGE)
         return

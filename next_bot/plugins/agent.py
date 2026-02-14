@@ -11,6 +11,7 @@ from nonebot.log import logger
 from nonebot.params import CommandArg
 
 from next_bot.db import Server, get_session
+from next_bot.message_parser import parse_command_args_with_fallback
 from next_bot.permissions import require_permission
 from next_bot.tshock_api import (
     TShockRequestError,
@@ -91,12 +92,6 @@ TOOLS: list[dict[str, Any]] = [
         },
     },
 ]
-
-
-def _parse_args(arg: Message) -> list[str]:
-    return [item for item in arg.extract_plain_text().strip().split() if item]
-
-
 def _get_llm_config() -> tuple[str, str, str]:
     config = get_driver().config
     api_key = str(getattr(config, "llm_api_key", "")).strip()
@@ -299,7 +294,7 @@ def _finalize_session_if_needed(user_id: str, session: AgentSession) -> str | No
 async def handle_agent(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "代理")
     if not args:
         await bot.send(event, AGENT_USAGE)
         return
@@ -345,7 +340,7 @@ async def handle_agent(
 async def handle_approve(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "允许执行命令")
     if args:
         await bot.send(event, APPROVE_USAGE)
         return
@@ -409,7 +404,7 @@ async def handle_approve(
 async def handle_reject(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "拒绝执行命令")
     if args:
         await bot.send(event, REJECT_USAGE)
         return

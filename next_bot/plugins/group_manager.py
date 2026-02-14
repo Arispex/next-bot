@@ -4,6 +4,7 @@ from nonebot.log import logger
 from nonebot.params import CommandArg
 
 from next_bot.db import Group, User, get_session
+from next_bot.message_parser import parse_command_args_with_fallback
 from next_bot.permissions import (
     add_inherit,
     add_permission,
@@ -27,18 +28,12 @@ CLEAR_INHERIT_USAGE = "格式错误，正确格式：取消继承身份组 <身�
 ADD_PERM_USAGE = "格式错误，正确格式：添加身份组权限 <身份组名称> <权限名称>"
 REMOVE_PERM_USAGE = "格式错误，正确格式：删除身份组权限 <身份组名称> <权限名称>"
 LIST_USAGE = "格式错误，正确格式：身份组列表"
-
-
-def _parse_args(arg: Message) -> list[str]:
-    return [item for item in arg.extract_plain_text().strip().split() if item]
-
-
 @list_matcher.handle()
 @require_permission("gm.list")
 async def handle_list_groups(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "身份组列表")
     if args:
         await bot.send(event, LIST_USAGE)
         return
@@ -70,7 +65,7 @@ async def handle_list_groups(
 async def handle_add_group(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "添加身份组")
     if len(args) != 1:
         await bot.send(event, ADD_USAGE)
         return
@@ -97,7 +92,7 @@ async def handle_add_group(
 async def handle_delete_group(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "删除身份组")
     if len(args) != 1:
         await bot.send(event, DELETE_USAGE)
         return
@@ -138,7 +133,7 @@ async def handle_delete_group(
 async def handle_inherit_group(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "继承身份组")
     if len(args) != 2:
         await bot.send(event, INHERIT_USAGE)
         return
@@ -170,7 +165,7 @@ async def handle_inherit_group(
 async def handle_clear_inherit_group(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "取消继承身份组")
     if len(args) != 1:
         await bot.send(event, CLEAR_INHERIT_USAGE)
         return
@@ -197,7 +192,7 @@ async def handle_clear_inherit_group(
 async def handle_add_group_perm(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "添加身份组权限")
     if len(args) != 2:
         await bot.send(event, ADD_PERM_USAGE)
         return
@@ -224,7 +219,7 @@ async def handle_add_group_perm(
 async def handle_remove_group_perm(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    args = parse_command_args_with_fallback(event, arg, "删除身份组权限")
     if len(args) != 2:
         await bot.send(event, REMOVE_PERM_USAGE)
         return
