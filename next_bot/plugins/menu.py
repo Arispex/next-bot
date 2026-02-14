@@ -31,7 +31,7 @@ MENU_TEXT = "\n".join(
     ]
 )
 
-BASIC_TEXT = "\n".join(["在线", "执行"])
+BASIC_TEXT = "\n".join(["在线", "执行", "自踢", "用户背包"])
 GROUP_TEXT = "\n".join(
     [
         "身份组列表",

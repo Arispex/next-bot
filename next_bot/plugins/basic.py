@@ -1,8 +1,15 @@
+import base64
+from datetime import datetime
+from pathlib import Path
+
 from nonebot import on_command
 from nonebot.adapters import Bot, Event, Message
+from nonebot.adapters.onebot.v11 import MessageSegment as OBV11MessageSegment
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
+from server.screenshot import RenderScreenshotError, screenshot_url
+from server.web_server import create_inventory_page
 from next_bot.db import Server, User, get_session
 from next_bot.message_parser import (
     parse_command_args_with_fallback,
@@ -19,10 +26,12 @@ from next_bot.tshock_api import (
 online_matcher = on_command("在线")
 execute_matcher = on_command("执行")
 self_kick_matcher = on_command("自踢")
+inventory_matcher = on_command("用户背包")
 
 ONLINE_USAGE = "格式错误，正确格式：在线"
 EXECUTE_USAGE = "格式错误，正确格式：执行 <服务器 ID> <命令>"
 SELF_KICK_USAGE = "格式错误，正确格式：自踢"
+INVENTORY_USAGE = "格式错误，正确格式：用户背包 <服务器 ID> <用户 ID/@用户>"
 def _parse_execute_arg_text(text: str) -> tuple[int, str] | None:
     if not text:
         return None
@@ -51,6 +60,12 @@ def _extract_response_text(payload: dict[str, object]) -> str:
     if isinstance(value, str):
         return value.strip()
     return ""
+
+
+def _to_base64_image_uri(path: Path) -> str:
+    raw = path.read_bytes()
+    encoded = base64.b64encode(raw).decode("ascii")
+    return f"base64://{encoded}"
 
 
 @online_matcher.handle()
@@ -215,3 +230,85 @@ async def handle_self_kick(
         f"自踢执行完成：user_id={user_id} name={user.name} server_count={len(servers)}"
     )
     await bot.send(event, "\n".join(lines))
+
+
+@inventory_matcher.handle()
+@require_permission("bf.inventory")
+async def handle_user_inventory(
+    bot: Bot, event: Event, arg: Message = CommandArg()
+):
+    args = parse_command_args_with_fallback(event, arg, "用户背包")
+    if len(args) != 2:
+        await bot.send(event, INVENTORY_USAGE)
+        return
+
+    try:
+        server_id = int(args[0])
+    except ValueError:
+        await bot.send(event, INVENTORY_USAGE)
+        return
+    target_user_id = args[1]
+
+    session = get_session()
+    try:
+        server = session.query(Server).filter(Server.id == server_id).first()
+        target_user = session.query(User).filter(User.user_id == target_user_id).first()
+    finally:
+        session.close()
+
+    if server is None:
+        await bot.send(event, "查询失败，服务器不存在")
+        return
+    if target_user is None:
+        await bot.send(event, "查询失败，用户不存在")
+        return
+
+    try:
+        response = await request_server_api(
+            server,
+            "/v2/users/inventory",
+            params={"user": target_user.name},
+        )
+    except TShockRequestError:
+        await bot.send(event, "查询失败，无法连接服务器")
+        return
+
+    if not is_success(response):
+        await bot.send(event, f"查询失败，{get_error_reason(response)}")
+        return
+
+    inventory = response.payload.get("response")
+    if not isinstance(inventory, list):
+        await bot.send(event, "查询失败，返回数据格式错误")
+        return
+
+    page_url = create_inventory_page(
+        user_id=target_user.user_id,
+        user_name=target_user.name,
+        server_name=server.name,
+        slots=[item for item in inventory if isinstance(item, dict)],
+    )
+    logger.info(
+        f"用户背包渲染地址：server_id={server.id} target_user_id={target_user.user_id} url={page_url}"
+    )
+    screenshot_path = Path("/tmp") / (
+        f"inventory-{server.id}-{target_user.user_id}-{datetime.now().strftime('%Y%m%d%H%M%S')}.png"
+    )
+    try:
+        await screenshot_url(page_url, screenshot_path)
+    except RenderScreenshotError as exc:
+        await bot.send(event, f"查询失败，{exc}")
+        return
+
+    logger.info(
+        f"用户背包截图成功：server_id={server.id} target_user_id={target_user.user_id} file={screenshot_path}"
+    )
+    if bot.adapter.get_name() == "OneBot V11":
+        try:
+            image_uri = _to_base64_image_uri(screenshot_path)
+        except OSError:
+            await bot.send(event, "查询失败，读取截图文件失败")
+            return
+        await bot.send(event, OBV11MessageSegment.image(file=image_uri))
+        return
+    await bot.send(event, f"截图成功，文件：{screenshot_path}")

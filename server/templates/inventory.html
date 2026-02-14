@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>用户背包</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: "#eff6ff",
+              100: "#dbeafe",
+              600: "#2563eb",
+              700: "#1d4ed8"
+            }
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-brand-50 to-slate-100 p-4 text-slate-900">
+  <main class="mx-auto max-w-[1600px] overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-xl shadow-blue-100/50">
+    <header class="bg-gradient-to-r from-brand-600 to-brand-700 px-6 py-5 text-white">
+      <h1 class="text-2xl font-bold">Terraria 用户背包</h1>
+      <div class="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+        <div><span class="font-semibold">用户 ID：</span><span id="meta-user-id"></span></div>
+        <div><span class="font-semibold">用户名称：</span><span id="meta-user-name"></span></div>
+        <div><span class="font-semibold">服务器：</span><span id="meta-server-name"></span></div>
+        <div><span class="font-semibold">生成时间：</span><span id="meta-generated-at"></span></div>
+      </div>
+    </header>
+    <section class="p-4">
+      <div id="slot-grid" class="grid grid-cols-10 gap-2 sm:grid-cols-14 md:grid-cols-18 lg:grid-cols-22 xl:grid-cols-25"></div>
+    </section>
+  </main>
+
+  <script id="inventory-data" type="application/json">__INVENTORY_DATA_JSON__</script>
+  <script>
+    const data = JSON.parse(document.getElementById("inventory-data").textContent);
+    document.getElementById("meta-user-id").textContent = data.user_id || "";
+    document.getElementById("meta-user-name").textContent = data.user_name || "";
+    document.getElementById("meta-server-name").textContent = data.server_name || "";
+    document.getElementById("meta-generated-at").textContent = data.generated_at || "";
+
+    const grid = document.getElementById("slot-grid");
+    const slots = Array.isArray(data.slots) ? data.slots : [];
+    slots.forEach((slot, i) => {
+      const netId = Number(slot.net_id || 0);
+      const stack = Number(slot.stack || 0);
+
+      const cell = document.createElement("div");
+      cell.className = "relative aspect-square overflow-hidden rounded-md border border-slate-300 bg-brand-50";
+
+      if (netId <= 0) {
+        cell.classList.remove("bg-brand-50");
+        cell.classList.add("bg-slate-100");
+      }
+
+      const idx = document.createElement("span");
+      idx.className = "absolute left-1 top-0.5 z-10 text-[10px] text-slate-500";
+      idx.textContent = String(i + 1);
+      cell.appendChild(idx);
+
+      if (netId > 0) {
+        const img = document.createElement("img");
+        img.className = "h-full w-full object-contain p-1.5";
+        img.style.imageRendering = "pixelated";
+        img.src = `/assets/items/Item_${netId}.png`;
+        img.alt = `Item ${netId}`;
+        img.loading = "lazy";
+        cell.appendChild(img);
+      }
+
+      if (stack > 1) {
+        const stackTag = document.createElement("span");
+        stackTag.className = "absolute bottom-0.5 right-0.5 rounded bg-slate-900/80 px-1 text-[11px] font-bold text-white";
+        stackTag.textContent = String(stack);
+        cell.appendChild(stackTag);
+      }
+
+      grid.appendChild(cell);
+    });
+  </script>
+</body>
+</html>
+
