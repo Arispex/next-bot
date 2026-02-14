@@ -2,6 +2,7 @@ from nonebot import on_command
 from nonebot.adapters import Bot, Event, Message
 from nonebot.log import logger
 from nonebot.params import CommandArg
+from next_bot.message_parser import parse_command_args
 from next_bot.permissions import require_permission
 
 from next_bot.db import Server, User, get_session
@@ -19,7 +20,7 @@ self_info_matcher = on_command("我的信息")
 
 ADD_USAGE = "格式错误，正确格式：注册账号 <游戏名称>"
 SYNC_USAGE = "格式错误，正确格式：同步白名单"
-INFO_USAGE = "格式错误，正确格式：用户信息 <用户 ID>"
+INFO_USAGE = "格式错误，正确格式：用户信息 <用户 ID/@用户>"
 SELF_INFO_USAGE = "格式错误，正确格式：我的信息"
 
 
@@ -147,7 +148,10 @@ async def handle_sync_whitelist(
 async def handle_user_info(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
-    args = _parse_args(arg)
+    # Prefer original_message parsing so @user becomes qq user_id.
+    args = parse_command_args(event, "用户信息")
+    if not args:
+        args = _parse_args(arg)
     if len(args) != 1:
         await bot.send(event, INFO_USAGE)
         return
