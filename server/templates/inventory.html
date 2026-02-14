@@ -13,8 +13,10 @@
             brand: {
               50: "#eff6ff",
               100: "#dbeafe",
+              500: "#3b82f6",
               600: "#2563eb",
-              700: "#1d4ed8"
+              700: "#1d4ed8",
+              800: "#1e40af"
             }
           }
         }
@@ -22,19 +24,42 @@
     };
   </script>
 </head>
-<body class="min-h-screen bg-gradient-to-b from-brand-50 to-slate-100 p-4 text-slate-900">
-  <main class="mx-auto max-w-[1600px] overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-xl shadow-blue-100/50">
-    <header class="bg-gradient-to-r from-brand-600 to-brand-700 px-6 py-5 text-white">
-      <h1 class="text-2xl font-bold">Terraria 用户背包</h1>
-      <div class="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-        <div><span class="font-semibold">用户 ID：</span><span id="meta-user-id"></span></div>
-        <div><span class="font-semibold">用户名称：</span><span id="meta-user-name"></span></div>
-        <div><span class="font-semibold">服务器：</span><span id="meta-server-name"></span></div>
-        <div><span class="font-semibold">生成时间：</span><span id="meta-generated-at"></span></div>
+<body class="min-h-screen bg-[radial-gradient(circle_at_top,#dbeafe_0%,#f8fafc_35%,#e2e8f0_100%)] p-5 text-slate-900">
+  <main class="mx-auto max-w-[2100px] overflow-hidden rounded-3xl border border-slate-200 bg-white/90 shadow-2xl shadow-blue-200/60 backdrop-blur">
+    <header class="relative overflow-hidden bg-gradient-to-r from-brand-700 via-brand-600 to-brand-800 px-6 py-5 text-white">
+      <div class="absolute -left-10 -top-12 h-40 w-40 rounded-full bg-white/15 blur-2xl"></div>
+      <div class="absolute -right-16 top-0 h-44 w-44 rounded-full bg-cyan-200/20 blur-3xl"></div>
+      <div class="relative">
+        <h1 class="text-3xl font-bold tracking-wide">用户背包</h1>
+        <div class="mt-4 grid grid-cols-2 gap-2 text-sm md:grid-cols-4">
+          <div class="rounded-lg bg-white/15 px-3 py-2">
+            <div class="text-[11px] text-blue-100">用户 ID</div>
+            <div id="meta-user-id" class="truncate font-semibold"></div>
+          </div>
+          <div class="rounded-lg bg-white/15 px-3 py-2">
+            <div class="text-[11px] text-blue-100">用户名称</div>
+            <div id="meta-user-name" class="truncate font-semibold"></div>
+          </div>
+          <div class="rounded-lg bg-white/15 px-3 py-2">
+            <div class="text-[11px] text-blue-100">服务器</div>
+            <div id="meta-server-name" class="truncate font-semibold"></div>
+          </div>
+          <div class="rounded-lg bg-white/15 px-3 py-2">
+            <div class="text-[11px] text-blue-100">生成时间</div>
+            <div id="meta-generated-at" class="truncate font-semibold"></div>
+          </div>
+        </div>
       </div>
     </header>
+    <section class="border-b border-slate-200 bg-gradient-to-r from-brand-50 to-slate-50 px-5 py-3 text-sm text-slate-700">
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="rounded-full border border-brand-200 bg-white px-3 py-1">显示格数：<b id="meta-total">0</b></span>
+        <span class="rounded-full border border-emerald-200 bg-white px-3 py-1">已占用：<b id="meta-used">0</b></span>
+        <span class="rounded-full border border-slate-200 bg-white px-3 py-1">空格：<b id="meta-empty">0</b></span>
+      </div>
+    </section>
     <section class="p-4">
-      <div id="slot-grid" class="grid grid-cols-10 gap-2 sm:grid-cols-14 md:grid-cols-18 lg:grid-cols-22 xl:grid-cols-25"></div>
+      <div id="section-rows" class="space-y-4"></div>
     </section>
   </main>
 
@@ -46,45 +71,159 @@
     document.getElementById("meta-server-name").textContent = data.server_name || "";
     document.getElementById("meta-generated-at").textContent = data.generated_at || "";
 
-    const grid = document.getElementById("slot-grid");
     const slots = Array.isArray(data.slots) ? data.slots : [];
-    slots.forEach((slot, i) => {
-      const netId = Number(slot.net_id || 0);
-      const stack = Number(slot.stack || 0);
+    const sectionRows = document.getElementById("section-rows");
 
+    function range(start, end) {
+      const out = [];
+      for (let i = start; i <= end; i += 1) out.push(i);
+      return out;
+    }
+
+    const sections = [
+      { id: "main", title: "主背包", indices: range(0, 49), cols: 10 },
+      { id: "ammo_1", title: "货币", indices: range(50, 53), cols: 1 },
+      { id: "ammo_2", title: "弹药", indices: range(54, 57), cols: 1 },
+      { id: "loadout_1", title: "第一套装备/饰品/染料", indices: range(59, 88), cols: 3 },
+      { id: "misc_equip", title: "饰品", indices: range(89, 93), cols: 1 },
+      { id: "misc_dye", title: "染料", indices: range(94, 98), cols: 1 },
+      { id: "piggy", title: "猪猪存钱罐", indices: range(99, 138), cols: 10 },
+      { id: "safe", title: "保险箱", indices: range(139, 178), cols: 10 },
+      { id: "trash", title: "垃圾桶", indices: [179], cols: 1 },
+      { id: "forge", title: "护卫熔炉", indices: range(180, 219), cols: 10 },
+      { id: "void", title: "虚空袋", indices: range(220, 259), cols: 10 },
+      { id: "loadout_2", title: "第二套装备/饰品/染料", indices: range(290, 319), cols: 3 },
+      { id: "loadout_3", title: "第三套装备/饰品/染料", indices: range(320, 349), cols: 3 }
+    ];
+    const sectionById = Object.fromEntries(sections.map((section) => [section.id, section]));
+    const sectionRowsConfig = [
+      ["main", "piggy", "safe"],
+      ["loadout_1", "loadout_2", "loadout_3", "misc_equip_stack", "misc_dye", "ammo_1", "ammo_2", "forge_stack"]
+    ];
+
+    function getSlot(index) {
+      const raw = slots[index];
+      const netId = Number(raw?.net_id || 0);
+      const stack = Number(raw?.stack || 0);
+      return { index, netId: netId > 0 ? netId : 0, stack: stack > 0 ? stack : 0 };
+    }
+
+    function createCell(slot) {
       const cell = document.createElement("div");
-      cell.className = "relative aspect-square overflow-hidden rounded-md border border-slate-300 bg-brand-50";
+      cell.className = "group relative h-[52px] w-[52px] overflow-hidden rounded-lg border border-slate-300 bg-gradient-to-b from-brand-50 to-slate-100 shadow-sm";
 
-      if (netId <= 0) {
-        cell.classList.remove("bg-brand-50");
+      if (slot.netId <= 0) {
+        cell.classList.remove("from-brand-50", "to-slate-100");
         cell.classList.add("bg-slate-100");
       }
 
       const idx = document.createElement("span");
-      idx.className = "absolute left-1 top-0.5 z-10 text-[10px] text-slate-500";
-      idx.textContent = String(i + 1);
+      idx.className = "absolute left-1 top-0.5 z-10 text-[9px] font-medium text-slate-500";
+      idx.textContent = String(slot.index);
       cell.appendChild(idx);
 
-      if (netId > 0) {
+      if (slot.netId > 0) {
         const img = document.createElement("img");
-        img.className = "h-full w-full object-contain p-1.5";
+        img.className = "h-full w-full object-contain p-1.5 transition-transform duration-150 group-hover:scale-110";
         img.style.imageRendering = "pixelated";
-        img.src = `/assets/items/Item_${netId}.png`;
-        img.alt = `Item ${netId}`;
+        img.src = `/assets/items/Item_${slot.netId}.png`;
+        img.alt = `Item ${slot.netId}`;
         img.loading = "lazy";
         cell.appendChild(img);
       }
 
-      if (stack > 1) {
+      if (slot.stack > 1) {
         const stackTag = document.createElement("span");
-        stackTag.className = "absolute bottom-0.5 right-0.5 rounded bg-slate-900/80 px-1 text-[11px] font-bold text-white";
-        stackTag.textContent = String(stack);
+        stackTag.className = "absolute bottom-0.5 right-0.5 rounded-md border border-white/20 bg-slate-900/80 px-1 text-[10px] font-bold text-white";
+        stackTag.textContent = String(slot.stack);
         cell.appendChild(stackTag);
       }
 
-      grid.appendChild(cell);
+      return cell;
+    }
+
+    function createSectionCard(section) {
+      const sectionSlots = section.indices.map(getSlot);
+      const used = sectionSlots.filter((slot) => slot.netId > 0).length;
+
+      const card = document.createElement("article");
+      card.className = "inline-block w-fit overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm";
+
+      const head = document.createElement("header");
+      head.className = "flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3";
+
+      const titleWrap = document.createElement("div");
+      const title = document.createElement("h2");
+      title.className = "text-base font-semibold text-slate-900";
+      title.textContent = section.title;
+      titleWrap.appendChild(title);
+
+      const badge = document.createElement("span");
+      badge.className = "rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700";
+      badge.textContent = `${used}/${sectionSlots.length}`;
+
+      head.appendChild(titleWrap);
+      head.appendChild(badge);
+
+      const body = document.createElement("div");
+      body.className = "overflow-x-auto p-4";
+
+      const grid = document.createElement("div");
+      grid.className = "grid gap-2";
+      grid.style.gridTemplateColumns = `repeat(${section.cols}, 52px)`;
+      grid.style.minWidth = `${section.cols * 52 + Math.max(section.cols - 1, 0) * 8}px`;
+
+      sectionSlots.forEach((slot) => grid.appendChild(createCell(slot)));
+      body.appendChild(grid);
+
+      card.appendChild(head);
+      card.appendChild(body);
+      return { card, used, total: sectionSlots.length };
+    }
+
+    let usedTotal = 0;
+    let total = 0;
+    sectionRowsConfig.forEach((rowIds) => {
+      const row = document.createElement("div");
+      row.className = "flex items-start gap-4 overflow-x-auto";
+      rowIds.forEach((id) => {
+        if (id === "forge_stack") {
+          const stackWrap = document.createElement("div");
+          stackWrap.className = "flex flex-col gap-4";
+          const forgeCard = createSectionCard(sectionById.forge);
+          const voidCard = createSectionCard(sectionById.void);
+          stackWrap.appendChild(forgeCard.card);
+          stackWrap.appendChild(voidCard.card);
+          row.appendChild(stackWrap);
+          usedTotal += forgeCard.used + voidCard.used;
+          total += forgeCard.total + voidCard.total;
+          return;
+        }
+        if (id === "misc_equip_stack") {
+          const stackWrap = document.createElement("div");
+          stackWrap.className = "flex flex-col gap-4";
+          const miscEquipCard = createSectionCard(sectionById.misc_equip);
+          const trashCard = createSectionCard(sectionById.trash);
+          stackWrap.appendChild(miscEquipCard.card);
+          stackWrap.appendChild(trashCard.card);
+          row.appendChild(stackWrap);
+          usedTotal += miscEquipCard.used + trashCard.used;
+          total += miscEquipCard.total + trashCard.total;
+          return;
+        }
+        const section = sectionById[id];
+        if (!section) return;
+        const { card, used, total: sectionTotal } = createSectionCard(section);
+        row.appendChild(card);
+        usedTotal += used;
+        total += sectionTotal;
+      });
+      sectionRows.appendChild(row);
     });
+
+    document.getElementById("meta-total").textContent = String(total);
+    document.getElementById("meta-used").textContent = String(usedTotal);
+    document.getElementById("meta-empty").textContent = String(Math.max(0, total - usedTotal));
   </script>
 </body>
 </html>
-
