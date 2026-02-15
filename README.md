@@ -1,5 +1,7 @@
 <h1 align="center">
-next-bot
+<img src="logos/logo__white_background_with_black_text.png" width=200>
+
+NextBot
 <br>
 <h4 align="center">
 一个基于 <a href="https://nonebot.dev/">NoneBot2</a> 的 Terraria <a href="https://github.com/Pryaxis/TShock">TShock</a> QQ 机器人
