@@ -1,3 +1,5 @@
+import re
+
 from nonebot import on_command
 from nonebot.adapters import Bot, Event, Message
 from nonebot.log import logger
@@ -22,6 +24,22 @@ ADD_USAGE = "格式错误，正确格式：注册账号 <用户名称>"
 SYNC_USAGE = "格式错误，正确格式：同步白名单"
 INFO_USAGE = "格式错误，正确格式：用户信息 <用户 ID/@用户>"
 SELF_INFO_USAGE = "格式错误，正确格式：我的信息"
+MAX_USER_NAME_LENGTH = 16
+
+
+def _validate_user_name(name: str) -> str | None:
+    value = name.strip()
+    if not value:
+        return "用户名称不能为空"
+    if len(value) > MAX_USER_NAME_LENGTH:
+        return f"用户名称过长，最多 {MAX_USER_NAME_LENGTH} 个字符"
+    if value.isdigit():
+        return "用户名称不能为纯数字"
+    if not re.fullmatch(r"[A-Za-z0-9\u4e00-\u9fff]+", value):
+        return "用户名称不能包含符号，只能使用中文、英文和数字"
+    return None
+
+
 async def _sync_whitelist_to_all_servers(
     user_id: str, name: str
 ) -> list[tuple[Server, bool, str]]:
@@ -70,7 +88,12 @@ async def handle_add_whitelist(
         await bot.send(event, ADD_USAGE)
         return
 
-    name = args[0]
+    name = args[0].strip()
+    invalid_reason = _validate_user_name(name)
+    if invalid_reason is not None:
+        await bot.send(event, f"注册失败，{invalid_reason}")
+        return
+
     user_id = event.get_user_id()
 
     session = get_session()
