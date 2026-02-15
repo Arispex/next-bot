@@ -18,7 +18,7 @@ sync_matcher = on_command("同步白名单")
 info_matcher = on_command("用户信息")
 self_info_matcher = on_command("我的信息")
 
-ADD_USAGE = "格式错误，正确格式：注册账号 <游戏名称>"
+ADD_USAGE = "格式错误，正确格式：注册账号 <用户名称>"
 SYNC_USAGE = "格式错误，正确格式：同步白名单"
 INFO_USAGE = "格式错误，正确格式：用户信息 <用户 ID/@用户>"
 SELF_INFO_USAGE = "格式错误，正确格式：我的信息"
@@ -82,8 +82,8 @@ async def handle_add_whitelist(
             return
         name_exists = session.query(User).filter(User.name == name).first()
         if name_exists is not None:
-            logger.info(f"账号名称已存在：name={name}")
-            await bot.send(event, "注册失败，名称已被占用")
+            logger.info(f"用户名称已存在：name={name}")
+            await bot.send(event, "注册失败，用户名称已被占用")
             return
 
         user = User(user_id=user_id, name=name, group="default")
@@ -162,7 +162,7 @@ async def handle_user_info(
     message = "\n".join(
         [
             f"用户 ID：{user.user_id}",
-            f"游戏名称：{user.name}",
+            f"用户名称：{user.name}",
             f"权限：{user.permissions or '无'}",
             f"身份组：{user.group}",
             f"创建时间：{created_at}",
@@ -196,7 +196,7 @@ async def handle_self_info(
     message = "\n".join(
         [
             f"用户 ID：{user.user_id}",
-            f"游戏名称：{user.name}",
+            f"用户名称：{user.name}",
             f"权限：{user.permissions or '无'}",
             f"身份组：{user.group}",
             f"创建时间：{created_at}",
