@@ -190,7 +190,9 @@
     let total = 0;
     sectionRowsConfig.forEach((rowIds) => {
       const row = document.createElement("div");
-      row.className = "flex items-start gap-4 overflow-x-auto";
+      row.className = "overflow-x-auto";
+      const rowInner = document.createElement("div");
+      rowInner.className = "mx-auto flex w-max items-start gap-4 px-2";
       rowIds.forEach((id) => {
         if (id === "forge_stack") {
           const stackWrap = document.createElement("div");
@@ -199,7 +201,7 @@
           const voidCard = createSectionCard(sectionById.void);
           stackWrap.appendChild(forgeCard.card);
           stackWrap.appendChild(voidCard.card);
-          row.appendChild(stackWrap);
+          rowInner.appendChild(stackWrap);
           usedTotal += forgeCard.used + voidCard.used;
           total += forgeCard.total + voidCard.total;
           return;
@@ -211,7 +213,7 @@
           const trashCard = createSectionCard(sectionById.trash);
           stackWrap.appendChild(miscEquipCard.card);
           stackWrap.appendChild(trashCard.card);
-          row.appendChild(stackWrap);
+          rowInner.appendChild(stackWrap);
           usedTotal += miscEquipCard.used + trashCard.used;
           total += miscEquipCard.total + trashCard.total;
           return;
@@ -219,10 +221,11 @@
         const section = sectionById[id];
         if (!section) return;
         const { card, used, total: sectionTotal } = createSectionCard(section);
-        row.appendChild(card);
+        rowInner.appendChild(card);
         usedTotal += used;
         total += sectionTotal;
       });
+      row.appendChild(rowInner);
       sectionRows.appendChild(row);
     });
 
