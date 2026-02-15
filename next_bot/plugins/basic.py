@@ -1,8 +1,9 @@
 import base64
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlparse, urlunparse
 
-from nonebot import on_command
+from nonebot import get_driver, on_command
 from nonebot.adapters import Bot, Event, Message
 from nonebot.adapters.onebot.v11 import MessageSegment as OBV11MessageSegment
 from nonebot.log import logger
@@ -71,6 +72,34 @@ def _to_base64_image_uri(path: Path) -> str:
     raw = path.read_bytes()
     encoded = base64.b64encode(raw).decode("ascii")
     return f"base64://{encoded}"
+
+
+def _to_public_render_url(url: str) -> str:
+    base_url = str(
+        getattr(get_driver().config, "render_server_public_base_url", "")
+    ).strip()
+    if not base_url:
+        return url
+
+    try:
+        target = urlparse(url)
+        base = urlparse(base_url)
+    except Exception:
+        return url
+
+    if not base.scheme or not base.netloc:
+        return url
+
+    return urlunparse(
+        (
+            base.scheme,
+            base.netloc,
+            target.path,
+            target.params,
+            target.query,
+            target.fragment,
+        )
+    )
 
 
 @online_matcher.handle()
@@ -294,9 +323,13 @@ async def handle_user_inventory(
         server_name=server.name,
         slots=[item for item in inventory if isinstance(item, dict)],
     )
+    public_page_url = _to_public_render_url(page_url)
     logger.info(
-        f"用户背包渲染地址：server_id={server.id} target_user_id={target_user.user_id} url={page_url}"
+        "用户背包渲染地址："
+        f"server_id={server.id} target_user_id={target_user.user_id} "
+        f"internal_url={page_url} public_url={public_page_url}"
     )
+    await bot.send(event, f"用户背包链接：{public_page_url}")
     screenshot_path = Path("/tmp") / (
         f"inventory-{server.id}-{target_user.user_id}-{datetime.now().strftime('%Y%m%d%H%M%S')}.png"
     )
