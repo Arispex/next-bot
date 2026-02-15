@@ -77,6 +77,42 @@ def _extract_response_text(payload: dict[str, object]) -> str:
     return ""
 
 
+def _to_non_negative_int(value: object) -> int | None:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return None
+    if parsed < 0:
+        return None
+    return parsed
+
+
+def _parse_user_info_texts(response_payload: dict[str, object]) -> dict[str, str] | None:
+    raw = response_payload.get("response")
+    if not isinstance(raw, dict):
+        return None
+
+    current_life = _to_non_negative_int(raw.get("当前生命值"))
+    max_life = _to_non_negative_int(raw.get("最大生命值"))
+    current_mana = _to_non_negative_int(raw.get("当前魔力值"))
+    max_mana = _to_non_negative_int(raw.get("最大魔力值"))
+    fishing_tasks = _to_non_negative_int(raw.get("渔夫任务数"))
+    if (
+        current_life is None
+        or max_life is None
+        or current_mana is None
+        or max_mana is None
+        or fishing_tasks is None
+    ):
+        return None
+
+    return {
+        "life_text": f"{current_life}/{max_life}",
+        "mana_text": f"{current_mana}/{max_mana}",
+        "fishing_tasks_text": str(fishing_tasks),
+    }
+
+
 def _to_base64_image_uri(path: Path) -> str:
     raw = path.read_bytes()
     encoded = base64.b64encode(raw).decode("ascii")
@@ -324,11 +360,33 @@ async def handle_user_inventory(
         await bot.send(event, "查询失败，返回数据格式错误")
         return
 
+    try:
+        info_response = await request_server_api(
+            server,
+            "/v2/users/info",
+            params={"user": target_user.name},
+        )
+    except TShockRequestError:
+        await bot.send(event, "查询失败，无法连接服务器")
+        return
+
+    if not is_success(info_response):
+        await bot.send(event, f"查询失败，{get_error_reason(info_response)}")
+        return
+
+    info_texts = _parse_user_info_texts(info_response.payload)
+    if info_texts is None:
+        await bot.send(event, "查询失败，返回数据格式错误")
+        return
+
     page_url = create_inventory_page(
         user_id=target_user.user_id,
         user_name=target_user.name,
         server_id=server.id,
         server_name=server.name,
+        life_text=info_texts["life_text"],
+        mana_text=info_texts["mana_text"],
+        fishing_tasks_text=info_texts["fishing_tasks_text"],
         slots=[item for item in inventory if isinstance(item, dict)],
     )
     public_page_url = _to_public_render_url(page_url)
@@ -415,11 +473,33 @@ async def handle_my_inventory(
         await bot.send(event, "查询失败，返回数据格式错误")
         return
 
+    try:
+        info_response = await request_server_api(
+            server,
+            "/v2/users/info",
+            params={"user": user.name},
+        )
+    except TShockRequestError:
+        await bot.send(event, "查询失败，无法连接服务器")
+        return
+
+    if not is_success(info_response):
+        await bot.send(event, f"查询失败，{get_error_reason(info_response)}")
+        return
+
+    info_texts = _parse_user_info_texts(info_response.payload)
+    if info_texts is None:
+        await bot.send(event, "查询失败，返回数据格式错误")
+        return
+
     page_url = create_inventory_page(
         user_id=user.user_id,
         user_name=user.name,
         server_id=server.id,
         server_name=server.name,
+        life_text=info_texts["life_text"],
+        mana_text=info_texts["mana_text"],
+        fishing_tasks_text=info_texts["fishing_tasks_text"],
         slots=[item for item in inventory if isinstance(item, dict)],
     )
     public_page_url = _to_public_render_url(page_url)

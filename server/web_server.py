@@ -48,6 +48,9 @@ def create_inventory_page(
     user_name: str,
     server_id: int,
     server_name: str,
+    life_text: str,
+    mana_text: str,
+    fishing_tasks_text: str,
     slots: list[dict[str, Any]],
 ) -> str:
     payload = inventory_page.build_payload(
@@ -55,6 +58,9 @@ def create_inventory_page(
         user_name=user_name,
         server_id=server_id,
         server_name=server_name,
+        life_text=life_text,
+        mana_text=mana_text,
+        fishing_tasks_text=fishing_tasks_text,
         slots=slots,
     )
     token = create_page("inventory", payload)

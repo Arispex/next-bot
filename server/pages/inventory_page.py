@@ -47,6 +47,9 @@ def build_payload(
     user_name: str,
     server_id: int,
     server_name: str,
+    life_text: str,
+    mana_text: str,
+    fishing_tasks_text: str,
     slots: list[dict[str, Any]],
 ) -> dict[str, Any]:
     return {
@@ -55,6 +58,9 @@ def build_payload(
         "user_name": str(user_name),
         "server_id": str(server_id),
         "server_name": str(server_name),
+        "life_text": str(life_text),
+        "mana_text": str(mana_text),
+        "fishing_tasks_text": str(fishing_tasks_text),
         "slots": _normalize_slots(slots),
     }
 
@@ -67,6 +73,9 @@ def render(payload: dict[str, Any]) -> bytes:
         "server_id": payload.get("server_id", ""),
         "server_name": payload.get("server_name", ""),
         "generated_at": payload.get("generated_at", ""),
+        "life_text": payload.get("life_text", ""),
+        "mana_text": payload.get("mana_text", ""),
+        "fishing_tasks_text": payload.get("fishing_tasks_text", ""),
         "slots": payload.get("slots", []),
     }
     data_json = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
