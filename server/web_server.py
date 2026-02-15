@@ -15,6 +15,7 @@ from server.pages import inventory_page
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 ITEMS_DIR = BASE_DIR / "server" / "assets" / "items"
+DICTS_DIR = BASE_DIR / "server" / "assets" / "dicts"
 _server_started = False
 _server_lock = threading.Lock()
 
@@ -75,6 +76,9 @@ class _RenderRequestHandler(BaseHTTPRequestHandler):
         if path.startswith("/assets/items/"):
             self._handle_item_file(path)
             return
+        if path.startswith("/assets/dicts/"):
+            self._handle_dict_file(path)
+            return
         if path == "/health":
             self._send_bytes(200, b"ok", "text/plain; charset=utf-8")
             return
@@ -103,6 +107,20 @@ class _RenderRequestHandler(BaseHTTPRequestHandler):
         file_path = (ITEMS_DIR / file_name).resolve()
         try:
             file_path.relative_to(ITEMS_DIR.resolve())
+        except ValueError:
+            self._send_bytes(403, b"forbidden", "text/plain; charset=utf-8")
+            return
+        if not file_path.is_file():
+            self._send_bytes(404, b"not found", "text/plain; charset=utf-8")
+            return
+        content_type = mimetypes.guess_type(str(file_path))[0] or "application/octet-stream"
+        self._send_bytes(200, file_path.read_bytes(), content_type)
+
+    def _handle_dict_file(self, path: str) -> None:
+        file_name = unquote(path.removeprefix("/assets/dicts/"))
+        file_path = (DICTS_DIR / file_name).resolve()
+        try:
+            file_path.relative_to(DICTS_DIR.resolve())
         except ValueError:
             self._send_bytes(403, b"forbidden", "text/plain; charset=utf-8")
             return

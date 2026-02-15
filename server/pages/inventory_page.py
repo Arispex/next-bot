@@ -13,19 +13,31 @@ def _normalize_slots(slots: list[dict[str, Any]]) -> list[dict[str, int]]:
     normalized: list[dict[str, int]] = []
     for index in range(350):
         net_id = 0
+        prefix_id = 0
         stack = 0
         if index < len(slots) and isinstance(slots[index], dict):
             raw_net_id = slots[index].get("netID", 0)
+            raw_prefix_id = slots[index].get("prefix", 0)
             raw_stack = slots[index].get("stack", 0)
             try:
                 net_id = int(raw_net_id)
             except (TypeError, ValueError):
                 net_id = 0
             try:
+                prefix_id = int(raw_prefix_id)
+            except (TypeError, ValueError):
+                prefix_id = 0
+            try:
                 stack = int(raw_stack)
             except (TypeError, ValueError):
                 stack = 0
-        normalized.append({"net_id": max(net_id, 0), "stack": max(stack, 0)})
+        normalized.append(
+            {
+                "net_id": max(net_id, 0),
+                "prefix_id": max(prefix_id, 0),
+                "stack": max(stack, 0),
+            }
+        )
     return normalized
 
 
@@ -60,4 +72,3 @@ def render(payload: dict[str, Any]) -> bytes:
     data_json = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     content = template.replace("__INVENTORY_DATA_JSON__", data_json)
     return content.encode("utf-8")
-

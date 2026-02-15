@@ -81,6 +81,44 @@
 
     const slots = Array.isArray(data.slots) ? data.slots : [];
     const sectionRows = document.getElementById("section-rows");
+    const itemNameMap = new Map();
+    const prefixNameMap = new Map();
+    let activeHintEl = null;
+
+    async function loadNameDicts() {
+      try {
+        const [itemRes, prefixRes] = await Promise.all([
+          fetch("/assets/dicts/item.json"),
+          fetch("/assets/dicts/prefix.json")
+        ]);
+        if (itemRes.ok) {
+          const itemList = await itemRes.json();
+          if (Array.isArray(itemList)) {
+            itemList.forEach((entry) => {
+              const id = Number(entry?.id);
+              const name = String(entry?.name || "").trim();
+              if (id > 0 && name) {
+                itemNameMap.set(id, name);
+              }
+            });
+          }
+        }
+        if (prefixRes.ok) {
+          const prefixList = await prefixRes.json();
+          if (Array.isArray(prefixList)) {
+            prefixList.forEach((entry) => {
+              const id = Number(entry?.id);
+              const name = String(entry?.name || "").trim();
+              if (id > 0 && name) {
+                prefixNameMap.set(id, name);
+              }
+            });
+          }
+        }
+      } catch (_) {
+        // 字典加载失败时回退为显示 ID，不阻塞页面渲染
+      }
+    }
 
     function range(start, end) {
       const out = [];
@@ -112,13 +150,33 @@
     function getSlot(index) {
       const raw = slots[index];
       const netId = Number(raw?.net_id || 0);
+      const prefixId = Number(raw?.prefix_id || raw?.prefix || 0);
       const stack = Number(raw?.stack || 0);
-      return { index, netId: netId > 0 ? netId : 0, stack: stack > 0 ? stack : 0 };
+      return {
+        index,
+        netId: netId > 0 ? netId : 0,
+        prefixId: prefixId > 0 ? prefixId : 0,
+        stack: stack > 0 ? stack : 0
+      };
+    }
+
+    function clearActiveHint() {
+      if (activeHintEl) {
+        activeHintEl.remove();
+        activeHintEl = null;
+      }
+    }
+
+    function buildItemHint(slot) {
+      if (slot.netId <= 0) return "";
+      const itemName = itemNameMap.get(slot.netId) || `物品ID:${slot.netId}`;
+      const prefixName = slot.prefixId > 0 ? (prefixNameMap.get(slot.prefixId) || `前缀ID:${slot.prefixId}`) : "";
+      return prefixName ? `${prefixName} ${itemName}` : itemName;
     }
 
     function createCell(slot) {
       const cell = document.createElement("div");
-      cell.className = "group relative h-[52px] w-[52px] overflow-hidden rounded-lg border border-slate-300 bg-gradient-to-b from-brand-50 to-slate-100 shadow-sm";
+      cell.className = "group relative h-[52px] w-[52px] rounded-lg border border-slate-300 bg-gradient-to-b from-brand-50 to-slate-100 shadow-sm";
 
       if (slot.netId <= 0) {
         cell.classList.remove("from-brand-50", "to-slate-100");
@@ -146,6 +204,18 @@
         stackTag.textContent = String(slot.stack);
         cell.appendChild(stackTag);
       }
+
+      cell.addEventListener("click", (event) => {
+        event.stopPropagation();
+        clearActiveHint();
+        const hintText = buildItemHint(slot);
+        if (!hintText) return;
+        const hint = document.createElement("span");
+        hint.className = "pointer-events-none absolute left-1/2 top-0 z-20 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-md border border-slate-200 bg-slate-900/95 px-2 py-1 text-[11px] font-medium text-white shadow-md";
+        hint.textContent = hintText;
+        cell.appendChild(hint);
+        activeHintEl = hint;
+      });
 
       return cell;
     }
@@ -189,52 +259,59 @@
       return { card, used, total: sectionSlots.length };
     }
 
-    let usedTotal = 0;
-    let total = 0;
-    sectionRowsConfig.forEach((rowIds) => {
-      const row = document.createElement("div");
-      row.className = "overflow-x-auto";
-      const rowInner = document.createElement("div");
-      rowInner.className = "mx-auto flex w-max items-start gap-4 px-2";
-      rowIds.forEach((id) => {
-        if (id === "forge_stack") {
-          const stackWrap = document.createElement("div");
-          stackWrap.className = "flex flex-col gap-4";
-          const forgeCard = createSectionCard(sectionById.forge);
-          const voidCard = createSectionCard(sectionById.void);
-          stackWrap.appendChild(forgeCard.card);
-          stackWrap.appendChild(voidCard.card);
-          rowInner.appendChild(stackWrap);
-          usedTotal += forgeCard.used + voidCard.used;
-          total += forgeCard.total + voidCard.total;
-          return;
-        }
-        if (id === "misc_equip_stack") {
-          const stackWrap = document.createElement("div");
-          stackWrap.className = "flex flex-col gap-4";
-          const miscEquipCard = createSectionCard(sectionById.misc_equip);
-          const trashCard = createSectionCard(sectionById.trash);
-          stackWrap.appendChild(miscEquipCard.card);
-          stackWrap.appendChild(trashCard.card);
-          rowInner.appendChild(stackWrap);
-          usedTotal += miscEquipCard.used + trashCard.used;
-          total += miscEquipCard.total + trashCard.total;
-          return;
-        }
-        const section = sectionById[id];
-        if (!section) return;
-        const { card, used, total: sectionTotal } = createSectionCard(section);
-        rowInner.appendChild(card);
-        usedTotal += used;
-        total += sectionTotal;
-      });
-      row.appendChild(rowInner);
-      sectionRows.appendChild(row);
-    });
+    async function init() {
+      await loadNameDicts();
 
-    document.getElementById("meta-total").textContent = String(total);
-    document.getElementById("meta-used").textContent = String(usedTotal);
-    document.getElementById("meta-empty").textContent = String(Math.max(0, total - usedTotal));
+      let usedTotal = 0;
+      let total = 0;
+      sectionRowsConfig.forEach((rowIds) => {
+        const row = document.createElement("div");
+        row.className = "overflow-x-auto";
+        const rowInner = document.createElement("div");
+        rowInner.className = "mx-auto flex w-max items-start gap-4 px-2";
+        rowIds.forEach((id) => {
+          if (id === "forge_stack") {
+            const stackWrap = document.createElement("div");
+            stackWrap.className = "flex flex-col gap-4";
+            const forgeCard = createSectionCard(sectionById.forge);
+            const voidCard = createSectionCard(sectionById.void);
+            stackWrap.appendChild(forgeCard.card);
+            stackWrap.appendChild(voidCard.card);
+            rowInner.appendChild(stackWrap);
+            usedTotal += forgeCard.used + voidCard.used;
+            total += forgeCard.total + voidCard.total;
+            return;
+          }
+          if (id === "misc_equip_stack") {
+            const stackWrap = document.createElement("div");
+            stackWrap.className = "flex flex-col gap-4";
+            const miscEquipCard = createSectionCard(sectionById.misc_equip);
+            const trashCard = createSectionCard(sectionById.trash);
+            stackWrap.appendChild(miscEquipCard.card);
+            stackWrap.appendChild(trashCard.card);
+            rowInner.appendChild(stackWrap);
+            usedTotal += miscEquipCard.used + trashCard.used;
+            total += miscEquipCard.total + trashCard.total;
+            return;
+          }
+          const section = sectionById[id];
+          if (!section) return;
+          const { card, used, total: sectionTotal } = createSectionCard(section);
+          rowInner.appendChild(card);
+          usedTotal += used;
+          total += sectionTotal;
+        });
+        row.appendChild(rowInner);
+        sectionRows.appendChild(row);
+      });
+
+      document.getElementById("meta-total").textContent = String(total);
+      document.getElementById("meta-used").textContent = String(usedTotal);
+      document.getElementById("meta-empty").textContent = String(Math.max(0, total - usedTotal));
+    }
+
+    document.addEventListener("click", clearActiveHint);
+    init();
   </script>
 </body>
 </html>
