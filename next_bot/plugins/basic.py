@@ -285,6 +285,7 @@ async def handle_user_inventory(
     page_url = create_inventory_page(
         user_id=target_user.user_id,
         user_name=target_user.name,
+        server_id=server.id,
         server_name=server.name,
         slots=[item for item in inventory if isinstance(item, dict)],
     )

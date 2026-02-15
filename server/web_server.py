@@ -82,6 +82,7 @@ def create_inventory_page(
     *,
     user_id: str,
     user_name: str,
+    server_id: int,
     server_name: str,
     slots: list[dict[str, Any]],
 ) -> str:
@@ -91,6 +92,7 @@ def create_inventory_page(
         "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "user_id": str(user_id),
         "user_name": str(user_name),
+        "server_id": str(server_id),
         "server_name": str(server_name),
         "slots": _normalize_inventory_slots(slots),
     }
@@ -105,6 +107,7 @@ def _render_inventory_page(payload: dict[str, Any]) -> bytes:
     data = {
         "user_id": payload.get("user_id", ""),
         "user_name": payload.get("user_name", ""),
+        "server_id": payload.get("server_id", ""),
         "server_name": payload.get("server_name", ""),
         "generated_at": payload.get("generated_at", ""),
         "slots": payload.get("slots", []),

@@ -31,7 +31,7 @@
       <div class="absolute -right-16 top-0 h-44 w-44 rounded-full bg-cyan-200/20 blur-3xl"></div>
       <div class="relative">
         <h1 class="text-3xl font-bold tracking-wide">用户背包</h1>
-        <div class="mt-4 grid grid-cols-2 gap-2 text-sm md:grid-cols-4">
+        <div class="mt-4 grid grid-cols-2 gap-2 text-sm md:grid-cols-5">
           <div class="rounded-lg bg-white/15 px-3 py-2">
             <div class="text-[11px] text-blue-100">用户 ID</div>
             <div id="meta-user-id" class="truncate font-semibold"></div>
@@ -41,7 +41,11 @@
             <div id="meta-user-name" class="truncate font-semibold"></div>
           </div>
           <div class="rounded-lg bg-white/15 px-3 py-2">
-            <div class="text-[11px] text-blue-100">服务器</div>
+            <div class="text-[11px] text-blue-100">服务器 ID</div>
+            <div id="meta-server-id" class="truncate font-semibold"></div>
+          </div>
+          <div class="rounded-lg bg-white/15 px-3 py-2">
+            <div class="text-[11px] text-blue-100">服务器名称</div>
             <div id="meta-server-name" class="truncate font-semibold"></div>
           </div>
           <div class="rounded-lg bg-white/15 px-3 py-2">
@@ -68,6 +72,7 @@
     const data = JSON.parse(document.getElementById("inventory-data").textContent);
     document.getElementById("meta-user-id").textContent = data.user_id || "";
     document.getElementById("meta-user-name").textContent = data.user_name || "";
+    document.getElementById("meta-server-id").textContent = data.server_id || "";
     document.getElementById("meta-server-name").textContent = data.server_name || "";
     document.getElementById("meta-generated-at").textContent = data.generated_at || "";
 
