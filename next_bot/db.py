@@ -4,7 +4,7 @@ from pathlib import Path
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, String
+from sqlalchemy import DateTime, Integer, String
 from sqlalchemy.engine import Engine, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
@@ -34,6 +34,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
+    coins: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     permissions: Mapped[str] = mapped_column(String, nullable=False, default="")
     group: Mapped[str] = mapped_column(String, nullable=False, default="guest")
     created_at: Mapped[datetime] = mapped_column(
