@@ -84,9 +84,8 @@ def _to_base64_image_uri(path: Path) -> str:
 
 
 def _to_public_render_url(url: str) -> str:
-    base_url = str(
-        getattr(get_driver().config, "render_server_public_base_url", "")
-    ).strip()
+    config = get_driver().config
+    base_url = str(getattr(config, "RENDER_SERVER_PUBLIC_BASE_URL", "")).strip()
     if not base_url:
         return url
 

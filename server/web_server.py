@@ -22,12 +22,13 @@ _server_lock = threading.Lock()
 
 def _get_host() -> str:
     config = get_driver().config
-    return str(getattr(config, "render_server_host", "127.0.0.1")).strip() or "127.0.0.1"
+    value = getattr(config, "RENDER_SERVER_HOST", "127.0.0.1")
+    return str(value).strip() or "127.0.0.1"
 
 
 def _get_port() -> int:
     config = get_driver().config
-    value = getattr(config, "render_server_port", 18081)
+    value = getattr(config, "RENDER_SERVER_PORT", 18081)
     try:
         port = int(value)
     except (TypeError, ValueError):
