@@ -14,7 +14,7 @@ from server.page_store import create_page, get_page
 from server.pages import inventory_page
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-ITEMS_DIR = BASE_DIR / "assets" / "items"
+ITEMS_DIR = BASE_DIR / "server" / "assets" / "items"
 _server_started = False
 _server_lock = threading.Lock()
 
