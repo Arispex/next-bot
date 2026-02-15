@@ -11,7 +11,7 @@ from nonebot import get_driver
 from nonebot.log import logger
 
 from server.page_store import create_page, get_page
-from server.pages import inventory_page
+from server.pages import inventory_page, progress_page
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 ITEMS_DIR = BASE_DIR / "server" / "assets" / "items"
@@ -60,6 +60,21 @@ def create_inventory_page(
     return f"{_build_base_url()}/inventory/{token}"
 
 
+def create_progress_page(
+    *,
+    server_id: int,
+    server_name: str,
+    progress: dict[str, Any],
+) -> str:
+    payload = progress_page.build_payload(
+        server_id=server_id,
+        server_name=server_name,
+        progress=progress,
+    )
+    token = create_page("progress", payload)
+    return f"{_build_base_url()}/progress/{token}"
+
+
 class _RenderRequestHandler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
 
@@ -72,6 +87,10 @@ class _RenderRequestHandler(BaseHTTPRequestHandler):
         if path.startswith("/inventory/"):
             token = path.removeprefix("/inventory/").strip()
             self._handle_page(token, page_type="inventory", renderer=inventory_page.render)
+            return
+        if path.startswith("/progress/"):
+            token = path.removeprefix("/progress/").strip()
+            self._handle_page(token, page_type="progress", renderer=progress_page.render)
             return
         if path.startswith("/assets/items/"):
             self._handle_item_file(path)

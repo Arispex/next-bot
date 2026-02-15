@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>世界进度</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: "#eff6ff",
+              100: "#dbeafe",
+              500: "#3b82f6",
+              600: "#2563eb",
+              700: "#1d4ed8",
+              800: "#1e40af"
+            }
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="min-h-screen bg-[radial-gradient(circle_at_top,#dbeafe_0%,#f8fafc_35%,#e2e8f0_100%)] p-5 text-slate-900">
+  <main class="mx-auto max-w-[1900px] overflow-hidden rounded-3xl border border-slate-200 bg-white/90 shadow-2xl shadow-blue-200/60 backdrop-blur">
+    <header class="relative overflow-hidden bg-gradient-to-r from-brand-700 via-brand-600 to-brand-800 px-6 py-5 text-white">
+      <div class="absolute -left-10 -top-12 h-40 w-40 rounded-full bg-white/15 blur-2xl"></div>
+      <div class="absolute -right-16 top-0 h-44 w-44 rounded-full bg-cyan-200/20 blur-3xl"></div>
+      <div class="relative">
+        <h1 class="text-3xl font-bold tracking-wide">世界进度</h1>
+        <div class="mt-4 grid grid-cols-3 gap-2 text-sm md:grid-cols-5">
+          <div class="rounded-lg bg-white/15 px-3 py-2">
+            <div class="text-[11px] text-blue-100">服务器 ID</div>
+            <div id="meta-server-id" class="truncate font-semibold"></div>
+          </div>
+          <div class="rounded-lg bg-white/15 px-3 py-2 md:col-span-2">
+            <div class="text-[11px] text-blue-100">服务器名称</div>
+            <div id="meta-server-name" class="truncate font-semibold"></div>
+          </div>
+          <div class="rounded-lg bg-white/15 px-3 py-2">
+            <div class="text-[11px] text-blue-100">已击败</div>
+            <div id="meta-defeated" class="truncate font-semibold"></div>
+          </div>
+          <div class="rounded-lg bg-white/15 px-3 py-2">
+            <div class="text-[11px] text-blue-100">生成时间</div>
+            <div id="meta-generated-at" class="truncate font-semibold"></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="p-4">
+      <div
+        id="progress-grid"
+        class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"
+      ></div>
+    </section>
+
+    <div class="px-6 pb-4 text-right text-xs font-medium tracking-wide text-slate-400">
+      Powered by Next Bot
+    </div>
+  </main>
+
+  <script id="progress-data" type="application/json">__PROGRESS_DATA_JSON__</script>
+  <script>
+    const data = JSON.parse(document.getElementById("progress-data").textContent);
+    const progress = Array.isArray(data.progress) ? data.progress : [];
+
+    document.getElementById("meta-server-id").textContent = data.server_id || "";
+    document.getElementById("meta-server-name").textContent = data.server_name || "";
+    document.getElementById("meta-generated-at").textContent = data.generated_at || "";
+    document.getElementById("meta-defeated").textContent =
+      `${Number(data.defeated_count || 0)}/${Number(data.total_count || 0)}`;
+
+    const grid = document.getElementById("progress-grid");
+    progress.forEach((item) => {
+      const defeated = Boolean(item?.defeated);
+      const card = document.createElement("article");
+      card.className =
+        "rounded-2xl border px-4 py-3 shadow-sm transition-colors " +
+        (defeated
+          ? "border-emerald-200 bg-emerald-50"
+          : "border-slate-200 bg-slate-50");
+
+      const head = document.createElement("div");
+      head.className = "flex items-center justify-between gap-2";
+
+      const name = document.createElement("h2");
+      name.className = "text-base font-semibold text-slate-900";
+      name.textContent = String(item?.name || "未知目标");
+
+      const badge = document.createElement("span");
+      badge.className =
+        "rounded-full border px-2.5 py-1 text-xs font-semibold " +
+        (defeated
+          ? "border-emerald-200 bg-white text-emerald-700"
+          : "border-slate-200 bg-white text-slate-600");
+      badge.textContent = defeated ? "已击败" : "未击败";
+
+      head.appendChild(name);
+      head.appendChild(badge);
+      card.appendChild(head);
+      grid.appendChild(card);
+    });
+  </script>
+</body>
+</html>

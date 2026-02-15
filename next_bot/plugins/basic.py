@@ -10,7 +10,7 @@ from nonebot.log import logger
 from nonebot.params import CommandArg
 
 from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
-from server.web_server import create_inventory_page
+from server.web_server import create_inventory_page, create_progress_page
 from next_bot.db import Server, User, get_session
 from next_bot.message_parser import (
     parse_command_args_with_fallback,
@@ -28,14 +28,21 @@ online_matcher = on_command("在线")
 execute_matcher = on_command("执行")
 self_kick_matcher = on_command("自踢")
 inventory_matcher = on_command("用户背包")
+progress_matcher = on_command("进度")
 
 ONLINE_USAGE = "格式错误，正确格式：在线"
 EXECUTE_USAGE = "格式错误，正确格式：执行 <服务器 ID> <命令>"
 SELF_KICK_USAGE = "格式错误，正确格式：自踢"
 INVENTORY_USAGE = "格式错误，正确格式：用户背包 <服务器 ID> <用户 ID/@用户>"
+PROGRESS_USAGE = "格式错误，正确格式：进度 <服务器 ID>"
 INVENTORY_SCREENSHOT_OPTIONS = ScreenshotOptions(
     viewport_width=2000,
     viewport_height=1000,
+    full_page=True,
+)
+PROGRESS_SCREENSHOT_OPTIONS = ScreenshotOptions(
+    viewport_width=1700,
+    viewport_height=700,
     full_page=True,
 )
 def _parse_execute_arg_text(text: str) -> tuple[int, str] | None:
@@ -345,6 +352,99 @@ async def handle_user_inventory(
 
     logger.info(
         f"用户背包截图成功：server_id={server.id} target_user_id={target_user.user_id} file={screenshot_path}"
+    )
+    if bot.adapter.get_name() == "OneBot V11":
+        try:
+            image_uri = _to_base64_image_uri(screenshot_path)
+        except OSError:
+            await bot.send(event, "查询失败，读取截图文件失败")
+            return
+        await bot.send(event, OBV11MessageSegment.image(file=image_uri))
+        return
+    await bot.send(event, f"截图成功，文件：{screenshot_path}")
+
+
+@progress_matcher.handle()
+@require_permission("bf.progress")
+async def handle_world_progress(
+    bot: Bot, event: Event, arg: Message = CommandArg()
+):
+    args = parse_command_args_with_fallback(event, arg, "进度")
+    if len(args) != 1:
+        await bot.send(event, PROGRESS_USAGE)
+        return
+
+    try:
+        server_id = int(args[0])
+    except ValueError:
+        await bot.send(event, PROGRESS_USAGE)
+        return
+
+    session = get_session()
+    try:
+        server = session.query(Server).filter(Server.id == server_id).first()
+    finally:
+        session.close()
+
+    if server is None:
+        await bot.send(event, "查询失败，服务器不存在")
+        return
+
+    try:
+        response = await request_server_api(
+            server,
+            "/v2/world/progress",
+        )
+    except TShockRequestError:
+        await bot.send(event, "查询失败，无法连接服务器")
+        return
+
+    if not is_success(response):
+        await bot.send(event, f"查询失败，{get_error_reason(response)}")
+        return
+
+    progress = response.payload.get("response")
+    if not isinstance(progress, dict):
+        await bot.send(event, "查询失败，返回数据格式错误")
+        return
+
+    normalized_progress: dict[str, object] = {}
+    for key, value in progress.items():
+        name = str(key).strip()
+        if not name:
+            continue
+        normalized_progress[name] = value
+
+    if not normalized_progress:
+        await bot.send(event, "查询失败，返回数据格式错误")
+        return
+
+    page_url = create_progress_page(
+        server_id=server.id,
+        server_name=server.name,
+        progress=normalized_progress,
+    )
+    logger.info(
+        "世界进度渲染地址："
+        f"server_id={server.id} "
+        f"internal_url={page_url}"
+    )
+
+    screenshot_path = Path("/tmp") / (
+        f"progress-{server.id}-{datetime.now().strftime('%Y%m%d%H%M%S')}.png"
+    )
+    try:
+        await screenshot_url(
+            page_url,
+            screenshot_path,
+            options=PROGRESS_SCREENSHOT_OPTIONS,
+        )
+    except RenderScreenshotError as exc:
+        await bot.send(event, f"查询失败，{exc}")
+        return
+
+    logger.info(
+        f"世界进度截图成功：server_id={server.id} file={screenshot_path}"
     )
     if bot.adapter.get_name() == "OneBot V11":
         try:
