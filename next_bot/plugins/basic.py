@@ -97,6 +97,8 @@ def _parse_user_info_texts(response_payload: dict[str, object]) -> dict[str, str
     current_mana = _to_non_negative_int(raw.get("当前魔力值"))
     max_mana = _to_non_negative_int(raw.get("最大魔力值"))
     fishing_tasks = _to_non_negative_int(raw.get("渔夫任务数"))
+    pve_deaths = _to_non_negative_int(raw.get("PVE死亡次数"))
+    pvp_deaths = _to_non_negative_int(raw.get("PVP死亡次数"))
     if (
         current_life is None
         or max_life is None
@@ -110,6 +112,8 @@ def _parse_user_info_texts(response_payload: dict[str, object]) -> dict[str, str
         "life_text": f"{current_life}/{max_life}",
         "mana_text": f"{current_mana}/{max_mana}",
         "fishing_tasks_text": str(fishing_tasks),
+        "pve_deaths_text": str(pve_deaths if pve_deaths is not None else 0),
+        "pvp_deaths_text": str(pvp_deaths if pvp_deaths is not None else 0),
     }
 
 
@@ -387,6 +391,8 @@ async def handle_user_inventory(
         life_text=info_texts["life_text"],
         mana_text=info_texts["mana_text"],
         fishing_tasks_text=info_texts["fishing_tasks_text"],
+        pve_deaths_text=info_texts["pve_deaths_text"],
+        pvp_deaths_text=info_texts["pvp_deaths_text"],
         slots=[item for item in inventory if isinstance(item, dict)],
     )
     public_page_url = _to_public_render_url(page_url)
@@ -500,6 +506,8 @@ async def handle_my_inventory(
         life_text=info_texts["life_text"],
         mana_text=info_texts["mana_text"],
         fishing_tasks_text=info_texts["fishing_tasks_text"],
+        pve_deaths_text=info_texts["pve_deaths_text"],
+        pvp_deaths_text=info_texts["pvp_deaths_text"],
         slots=[item for item in inventory if isinstance(item, dict)],
     )
     public_page_url = _to_public_render_url(page_url)

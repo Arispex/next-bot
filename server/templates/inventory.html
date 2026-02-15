@@ -54,7 +54,7 @@
               <div id="meta-generated-at" class="truncate font-semibold"></div>
             </div>
           </div>
-          <div class="grid grid-cols-1 gap-2 md:grid-cols-3">
+          <div class="grid grid-cols-1 gap-2 md:grid-cols-5">
             <div class="rounded-lg bg-white/15 px-3 py-2">
               <div class="text-[11px] text-blue-100">生命值</div>
               <div id="meta-life" class="truncate font-semibold"></div>
@@ -66,6 +66,14 @@
             <div class="rounded-lg bg-white/15 px-3 py-2">
               <div class="text-[11px] text-blue-100">渔夫任务数</div>
               <div id="meta-fishing-tasks" class="truncate font-semibold"></div>
+            </div>
+            <div class="rounded-lg bg-white/15 px-3 py-2">
+              <div class="text-[11px] text-blue-100">PVE 死亡次数</div>
+              <div id="meta-pve-deaths" class="truncate font-semibold"></div>
+            </div>
+            <div class="rounded-lg bg-white/15 px-3 py-2">
+              <div class="text-[11px] text-blue-100">PVP 死亡次数</div>
+              <div id="meta-pvp-deaths" class="truncate font-semibold"></div>
             </div>
           </div>
         </div>
@@ -97,6 +105,8 @@
     document.getElementById("meta-life").textContent = data.life_text || "";
     document.getElementById("meta-mana").textContent = data.mana_text || "";
     document.getElementById("meta-fishing-tasks").textContent = data.fishing_tasks_text || "";
+    document.getElementById("meta-pve-deaths").textContent = data.pve_deaths_text || "";
+    document.getElementById("meta-pvp-deaths").textContent = data.pvp_deaths_text || "";
 
     const slots = Array.isArray(data.slots) ? data.slots : [];
     const sectionRows = document.getElementById("section-rows");

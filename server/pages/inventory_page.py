@@ -50,6 +50,8 @@ def build_payload(
     life_text: str,
     mana_text: str,
     fishing_tasks_text: str,
+    pve_deaths_text: str,
+    pvp_deaths_text: str,
     slots: list[dict[str, Any]],
 ) -> dict[str, Any]:
     return {
@@ -61,6 +63,8 @@ def build_payload(
         "life_text": str(life_text),
         "mana_text": str(mana_text),
         "fishing_tasks_text": str(fishing_tasks_text),
+        "pve_deaths_text": str(pve_deaths_text),
+        "pvp_deaths_text": str(pvp_deaths_text),
         "slots": _normalize_slots(slots),
     }
 
@@ -76,6 +80,8 @@ def render(payload: dict[str, Any]) -> bytes:
         "life_text": payload.get("life_text", ""),
         "mana_text": payload.get("mana_text", ""),
         "fishing_tasks_text": payload.get("fishing_tasks_text", ""),
+        "pve_deaths_text": payload.get("pve_deaths_text", ""),
+        "pvp_deaths_text": payload.get("pvp_deaths_text", ""),
         "slots": payload.get("slots", []),
     }
     data_json = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")

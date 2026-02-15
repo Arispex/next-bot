@@ -51,6 +51,8 @@ def create_inventory_page(
     life_text: str,
     mana_text: str,
     fishing_tasks_text: str,
+    pve_deaths_text: str,
+    pvp_deaths_text: str,
     slots: list[dict[str, Any]],
 ) -> str:
     payload = inventory_page.build_payload(
@@ -61,6 +63,8 @@ def create_inventory_page(
         life_text=life_text,
         mana_text=mana_text,
         fishing_tasks_text=fishing_tasks_text,
+        pve_deaths_text=pve_deaths_text,
+        pvp_deaths_text=pvp_deaths_text,
         slots=slots,
     )
     token = create_page("inventory", payload)
