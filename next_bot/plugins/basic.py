@@ -15,6 +15,7 @@ from next_bot.db import Server, User, get_session
 from next_bot.message_parser import (
     parse_command_args_with_fallback,
     parse_command_text_with_fallback,
+    resolve_user_id_arg_with_fallback,
 )
 from next_bot.permissions import require_permission
 from next_bot.tshock_api import (
@@ -34,7 +35,7 @@ progress_matcher = on_command("进度")
 ONLINE_USAGE = "格式错误，正确格式：在线"
 EXECUTE_USAGE = "格式错误，正确格式：执行 <服务器 ID> <命令>"
 SELF_KICK_USAGE = "格式错误，正确格式：自踢"
-INVENTORY_USAGE = "格式错误，正确格式：用户背包 <服务器 ID> <用户 ID/@用户>"
+INVENTORY_USAGE = "格式错误，正确格式：用户背包 <服务器 ID> <用户 ID/@用户/用户名称>"
 MY_INVENTORY_USAGE = "格式错误，正确格式：我的背包 <服务器 ID>"
 PROGRESS_USAGE = "格式错误，正确格式：进度 <服务器 ID>"
 INVENTORY_SCREENSHOT_OPTIONS = ScreenshotOptions(
@@ -329,7 +330,24 @@ async def handle_user_inventory(
     except ValueError:
         await bot.send(event, INVENTORY_USAGE)
         return
-    target_user_id = args[1]
+    target_user_id, parse_error = resolve_user_id_arg_with_fallback(
+        event,
+        arg,
+        "用户背包",
+        arg_index=1,
+    )
+    if parse_error == "missing":
+        await bot.send(event, INVENTORY_USAGE)
+        return
+    if parse_error == "name_not_found":
+        await bot.send(event, "查询失败，用户名称不存在")
+        return
+    if parse_error == "name_ambiguous":
+        await bot.send(event, "查询失败，用户名称不唯一，请使用用户 ID 或 @用户")
+        return
+    if target_user_id is None:
+        await bot.send(event, "查询失败，用户参数解析失败")
+        return
 
     session = get_session()
     try:
