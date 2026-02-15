@@ -8,7 +8,7 @@ from nonebot.adapters.onebot.v11 import MessageSegment as OBV11MessageSegment
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
-from server.screenshot import RenderScreenshotError, screenshot_url
+from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
 from server.web_server import create_inventory_page
 from next_bot.db import Server, User, get_session
 from next_bot.message_parser import (
@@ -32,6 +32,11 @@ ONLINE_USAGE = "格式错误，正确格式：在线"
 EXECUTE_USAGE = "格式错误，正确格式：执行 <服务器 ID> <命令>"
 SELF_KICK_USAGE = "格式错误，正确格式：自踢"
 INVENTORY_USAGE = "格式错误，正确格式：用户背包 <服务器 ID> <用户 ID/@用户>"
+INVENTORY_SCREENSHOT_OPTIONS = ScreenshotOptions(
+    viewport_width=2000,
+    viewport_height=1000,
+    full_page=True,
+)
 def _parse_execute_arg_text(text: str) -> tuple[int, str] | None:
     if not text:
         return None
@@ -296,7 +301,11 @@ async def handle_user_inventory(
         f"inventory-{server.id}-{target_user.user_id}-{datetime.now().strftime('%Y%m%d%H%M%S')}.png"
     )
     try:
-        await screenshot_url(page_url, screenshot_path)
+        await screenshot_url(
+            page_url,
+            screenshot_path,
+            options=INVENTORY_SCREENSHOT_OPTIONS,
+        )
     except RenderScreenshotError as exc:
         await bot.send(event, f"查询失败，{exc}")
         return
