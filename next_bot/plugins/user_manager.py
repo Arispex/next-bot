@@ -4,7 +4,10 @@ from nonebot import on_command
 from nonebot.adapters import Bot, Event, Message
 from nonebot.log import logger
 from nonebot.params import CommandArg
-from next_bot.message_parser import parse_command_args_with_fallback
+from next_bot.message_parser import (
+    parse_command_args_with_fallback,
+    resolve_user_id_arg_with_fallback,
+)
 from next_bot.permissions import require_permission
 
 from next_bot.db import Server, User, get_session
@@ -22,7 +25,7 @@ self_info_matcher = on_command("我的信息")
 
 ADD_USAGE = "格式错误，正确格式：注册账号 <用户名称>"
 SYNC_USAGE = "格式错误，正确格式：同步白名单"
-INFO_USAGE = "格式错误，正确格式：用户信息 <用户 ID/@用户>"
+INFO_USAGE = "格式错误，正确格式：用户信息 <用户 ID/@用户/用户名称>"
 SELF_INFO_USAGE = "格式错误，正确格式：我的信息"
 MAX_USER_NAME_LENGTH = 16
 
@@ -170,7 +173,24 @@ async def handle_user_info(
         await bot.send(event, INFO_USAGE)
         return
 
-    target_user_id = args[0]
+    target_user_id, parse_error = resolve_user_id_arg_with_fallback(
+        event,
+        arg,
+        "用户信息",
+    )
+    if parse_error == "missing":
+        await bot.send(event, INFO_USAGE)
+        return
+    if parse_error == "name_not_found":
+        await bot.send(event, "查询失败，用户名称不存在")
+        return
+    if parse_error == "name_ambiguous":
+        await bot.send(event, "查询失败，用户名称不唯一，请使用用户 ID 或 @用户")
+        return
+    if target_user_id is None:
+        await bot.send(event, "查询失败，用户参数解析失败")
+        return
+
     session = get_session()
     try:
         user = session.query(User).filter(User.user_id == target_user_id).first()

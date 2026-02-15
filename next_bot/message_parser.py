@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from next_bot.db import User, get_session
+
 from nonebot.log import logger
 
 
@@ -101,3 +103,52 @@ def parse_command_text_with_fallback(
     if text is not None:
         return text
     return getattr(arg, "extract_plain_text", lambda: "")().strip()
+
+
+def resolve_user_id_arg_with_fallback(
+    event: Any,
+    arg: Any,
+    command_name: str,
+    *,
+    arg_index: int = 0,
+) -> tuple[str | None, str | None]:
+    args = parse_command_args_with_fallback(event, arg, command_name)
+    if len(args) <= arg_index:
+        return None, "missing"
+
+    token = args[arg_index].strip()
+    if not token:
+        return None, "missing"
+
+    # '@用户' 会在消息段解析中转换为纯数字 ID，这里与手输 ID 统一处理。
+    if token.isdigit():
+        return token, None
+
+    session = get_session()
+    try:
+        matched = (
+            session.query(User)
+            .filter(User.name == token)
+            .order_by(User.id.asc())
+            .limit(2)
+            .all()
+        )
+    finally:
+        session.close()
+
+    if not matched:
+        logger.info(
+            f"消息解析器：command={command_name} 用户参数解析失败 reason=name_not_found token={token}"
+        )
+        return None, "name_not_found"
+    if len(matched) > 1:
+        logger.info(
+            f"消息解析器：command={command_name} 用户参数解析失败 reason=name_ambiguous token={token}"
+        )
+        return None, "name_ambiguous"
+
+    resolved = str(matched[0].user_id).strip()
+    logger.info(
+        f"消息解析器：command={command_name} 用户参数解析成功 source=name token={token} user_id={resolved}"
+    )
+    return resolved, None
