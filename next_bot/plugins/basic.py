@@ -28,12 +28,14 @@ online_matcher = on_command("在线")
 execute_matcher = on_command("执行")
 self_kick_matcher = on_command("自踢")
 inventory_matcher = on_command("用户背包")
+my_inventory_matcher = on_command("我的背包")
 progress_matcher = on_command("进度")
 
 ONLINE_USAGE = "格式错误，正确格式：在线"
 EXECUTE_USAGE = "格式错误，正确格式：执行 <服务器 ID> <命令>"
 SELF_KICK_USAGE = "格式错误，正确格式：自踢"
 INVENTORY_USAGE = "格式错误，正确格式：用户背包 <服务器 ID> <用户 ID/@用户>"
+MY_INVENTORY_USAGE = "格式错误，正确格式：我的背包 <服务器 ID>"
 PROGRESS_USAGE = "格式错误，正确格式：进度 <服务器 ID>"
 INVENTORY_SCREENSHOT_OPTIONS = ScreenshotOptions(
     viewport_width=2000,
@@ -352,6 +354,98 @@ async def handle_user_inventory(
 
     logger.info(
         f"用户背包截图成功：server_id={server.id} target_user_id={target_user.user_id} file={screenshot_path}"
+    )
+    if bot.adapter.get_name() == "OneBot V11":
+        try:
+            image_uri = _to_base64_image_uri(screenshot_path)
+        except OSError:
+            await bot.send(event, "查询失败，读取截图文件失败")
+            return
+        await bot.send(event, OBV11MessageSegment.image(file=image_uri))
+        return
+    await bot.send(event, f"截图成功，文件：{screenshot_path}")
+
+
+@my_inventory_matcher.handle()
+@require_permission("bf.myinventory")
+async def handle_my_inventory(
+    bot: Bot, event: Event, arg: Message = CommandArg()
+):
+    args = parse_command_args_with_fallback(event, arg, "我的背包")
+    if len(args) != 1:
+        await bot.send(event, MY_INVENTORY_USAGE)
+        return
+
+    try:
+        server_id = int(args[0])
+    except ValueError:
+        await bot.send(event, MY_INVENTORY_USAGE)
+        return
+
+    user_id = event.get_user_id()
+    session = get_session()
+    try:
+        server = session.query(Server).filter(Server.id == server_id).first()
+        user = session.query(User).filter(User.user_id == user_id).first()
+    finally:
+        session.close()
+
+    if server is None:
+        await bot.send(event, "查询失败，服务器不存在")
+        return
+    if user is None:
+        await bot.send(event, "查询失败，用户不存在")
+        return
+
+    try:
+        response = await request_server_api(
+            server,
+            "/v2/users/inventory",
+            params={"user": user.name},
+        )
+    except TShockRequestError:
+        await bot.send(event, "查询失败，无法连接服务器")
+        return
+
+    if not is_success(response):
+        await bot.send(event, f"查询失败，{get_error_reason(response)}")
+        return
+
+    inventory = response.payload.get("response")
+    if not isinstance(inventory, list):
+        await bot.send(event, "查询失败，返回数据格式错误")
+        return
+
+    page_url = create_inventory_page(
+        user_id=user.user_id,
+        user_name=user.name,
+        server_id=server.id,
+        server_name=server.name,
+        slots=[item for item in inventory if isinstance(item, dict)],
+    )
+    public_page_url = _to_public_render_url(page_url)
+    logger.info(
+        "我的背包渲染地址："
+        f"server_id={server.id} user_id={user.user_id} "
+        f"internal_url={page_url} public_url={public_page_url}"
+    )
+    await bot.send(event, f"我的背包链接：{public_page_url}")
+
+    screenshot_path = Path("/tmp") / (
+        f"inventory-{server.id}-{user.user_id}-{datetime.now().strftime('%Y%m%d%H%M%S')}.png"
+    )
+    try:
+        await screenshot_url(
+            page_url,
+            screenshot_path,
+            options=INVENTORY_SCREENSHOT_OPTIONS,
+        )
+    except RenderScreenshotError as exc:
+        await bot.send(event, f"查询失败，{exc}")
+        return
+
+    logger.info(
+        f"我的背包截图成功：server_id={server.id} user_id={user.user_id} file={screenshot_path}"
     )
     if bot.adapter.get_name() == "OneBot V11":
         try:
