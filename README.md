@@ -36,10 +36,14 @@ GROUP_ID=["123456789"]
 ONEBOT_WS_URLS=["ws://127.0.0.1:3001"]
 ONEBOT_ACCESS_TOKEN=your_token
 
-# 渲染服务（用户背包/世界进度截图）
-RENDER_SERVER_HOST=127.0.0.1
-RENDER_SERVER_PORT=18081
-RENDER_SERVER_PUBLIC_BASE_URL=http://127.0.0.1:18081
+# Web Server（控制台 + 渲染）
+WEB_SERVER_HOST=127.0.0.1
+WEB_SERVER_PORT=18081
+WEB_SERVER_PUBLIC_BASE_URL=http://127.0.0.1:18081
+# 控制台登录 token，不配置则启动时自动生成并打印
+WEBUI_TOKEN=
+# 控制台会话签名密钥，不配置则启动时自动生成
+WEBUI_SESSION_SECRET=
 
 # 代理功能（可选）
 LLM_API_KEY=your_api_key
@@ -51,6 +55,12 @@ LLM_BASE_URL=https://your-api-endpoint/v1/chat/completions
 ```bash
 uv run python bot.py 
 ```
+
+4. 访问控制台
+```text
+http://127.0.0.1:18081/webui
+```
+首次访问会跳转到登录页，输入 `WEBUI_TOKEN` 即可进入控制台。
 
 ## 关于许可证
 本项目基于 AGPL v3.0 许可证授权发行，您可以在遵守许可证的前提下自由使用、复制、修改、发布和分发本项目。
