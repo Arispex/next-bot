@@ -4,107 +4,473 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NextBot WebUI</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: "class",
-      theme: {
-        extend: {
-          colors: {
-            primary: {
-              50: "#eff6ff",
-              100: "#dbeafe",
-              200: "#bfdbfe",
-              500: "#3b82f6",
-              600: "#2563eb",
-              700: "#1d4ed8"
-            }
-          }
-        }
-      }
-    };
-  </script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/antd@5/dist/reset.css" />
   <script src="/webui/static/js/theme-init.js"></script>
+  <style>
+    :root {
+      --bg-layout: #f5f7fa;
+      --surface: #ffffff;
+      --surface-soft: #fafafa;
+      --text: #1f1f1f;
+      --text-muted: #8c8c8c;
+      --line: #f0f0f0;
+      --line-strong: #d9d9d9;
+      --primary: #1677ff;
+      --primary-soft: #e6f4ff;
+      --danger: #ff4d4f;
+      --danger-hover: #ff7875;
+      --shadow: 0 1px 2px rgba(5, 5, 5, 0.06), 0 6px 16px rgba(5, 5, 5, 0.08);
+    }
+
+    html.dark {
+      --bg-layout: #0f1115;
+      --surface: #171a21;
+      --surface-soft: #1c212c;
+      --text: #f0f0f0;
+      --text-muted: #a6a6a6;
+      --line: #2f343f;
+      --line-strong: #3c4452;
+      --primary: #4096ff;
+      --primary-soft: rgba(22, 119, 255, 0.18);
+      --danger: #ff7875;
+      --danger-hover: #ff9c9c;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background: var(--bg-layout);
+    }
+
+    .app-layout {
+      min-height: 100vh;
+      display: flex;
+      background: var(--bg-layout);
+    }
+
+    .app-sider {
+      width: 208px;
+      background: var(--surface);
+      border-right: 1px solid var(--line);
+      transition: width 0.2s ease, opacity 0.2s ease;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      opacity: 1;
+      visibility: visible;
+      box-shadow: inset -1px 0 0 var(--line);
+    }
+
+    .app-sider.is-collapsed {
+      width: 0;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      border-right-color: transparent;
+      box-shadow: none;
+    }
+
+    .sider-head {
+      height: 64px;
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 14px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .brand-name {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .app-sider.is-collapsed .brand-name {
+      display: none;
+    }
+
+    .menu-wrap {
+      padding: 12px 8px;
+      flex: 1;
+      overflow: auto;
+    }
+
+    .sider-footer {
+      border-top: 1px solid var(--line);
+      padding: 12px 10px 14px;
+    }
+
+    .logout-form {
+      margin: 0;
+    }
+
+    .logout-btn {
+      width: 100%;
+      justify-content: center;
+      background: var(--danger);
+      border-color: var(--danger);
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .logout-btn:hover {
+      background: var(--danger-hover);
+      border-color: var(--danger-hover);
+      color: #ffffff;
+    }
+
+    .menu-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 4px;
+    }
+
+    .menu-link {
+      height: 40px;
+      border-radius: 8px;
+      text-decoration: none;
+      color: var(--text);
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      line-height: 1;
+      transition: all 0.2s ease;
+    }
+
+    .menu-link:hover {
+      background: var(--surface-soft);
+    }
+
+    .menu-link.is-active {
+      color: var(--primary);
+      background: var(--primary-soft);
+      font-weight: 500;
+    }
+
+    .menu-icon {
+      width: 16px;
+      text-align: center;
+      flex-shrink: 0;
+      font-size: 14px;
+      opacity: 0.88;
+    }
+
+    .menu-label {
+      white-space: nowrap;
+    }
+
+    .app-main {
+      min-width: 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app-header {
+      height: 64px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .header-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-actions {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      height: 34px;
+      border-radius: 8px;
+      border: 1px solid var(--line-strong);
+      background: var(--surface);
+      color: var(--text);
+      padding: 0 12px;
+      font-size: 13px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-icon {
+      width: 34px;
+      padding: 0;
+    }
+
+    .btn-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .theme-toggle-btn {
+      width: 40px;
+      height: 40px;
+      padding: 0;
+    }
+
+    .theme-toggle-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .theme-icon-sun {
+      display: none;
+    }
+
+    html.dark .theme-icon-sun {
+      display: block;
+    }
+
+    html.dark .theme-icon-moon {
+      display: none;
+    }
+
+    .app-content {
+      padding: 20px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .content-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+
+    .hero-card {
+      grid-column: span 12;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+
+    .hero-title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .hero-text {
+      margin: 10px 0 0;
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .status-row {
+      margin-top: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .status-tag {
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 6px;
+      border: 1px solid var(--line-strong);
+      background: var(--surface-soft);
+      color: var(--text-muted);
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #52c41a;
+      box-shadow: 0 0 0 4px rgba(82, 196, 26, 0.15);
+    }
+
+    .module-card {
+      grid-column: span 4;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      padding: 16px;
+    }
+
+    .module-title {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    .module-desc {
+      margin: 8px 0 0;
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    @media (max-width: 1080px) {
+      .module-card {
+        grid-column: span 6;
+      }
+    }
+
+    @media (max-width: 840px) {
+      .app-header {
+        padding: 0 14px;
+      }
+
+      .app-content {
+        padding: 14px;
+      }
+
+      .module-card {
+        grid-column: span 12;
+      }
+    }
+  </style>
 </head>
-<body class="min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-  <div class="flex min-h-screen">
-    <aside
-      id="webui-sidebar"
-      class="w-72 shrink-0 border-r border-slate-200 bg-white transition-all duration-200 dark:border-slate-800 dark:bg-slate-900"
-    >
-      <div class="flex items-center gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-800">
-        <div class="grid h-9 w-9 place-items-center rounded-lg bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300">
-          NB
-        </div>
-        <div class="min-w-0">
-          <p id="sidebar-brand" class="truncate text-sm font-semibold">NextBot Console</p>
-          <p id="sidebar-subtitle" class="truncate text-xs text-slate-500 dark:text-slate-400">Control Center</p>
-        </div>
+<body>
+  <div class="app-layout">
+    <aside id="webui-sidebar" class="app-sider">
+      <div class="sider-head">
+        <span class="brand-logo">NB</span>
+        <p class="brand-name">NextBot Console</p>
       </div>
-      <nav class="space-y-1 p-3 text-sm">
-        <a href="#" class="flex items-center gap-3 rounded-lg bg-primary-50 px-3 py-2 font-medium text-primary-700 dark:bg-primary-950/50 dark:text-primary-300">
-          <span>🏠</span><span class="menu-label">Dashboard</span>
-        </a>
-        <a href="#" class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
-          <span>🖥️</span><span class="menu-label">Server Management</span>
-        </a>
-        <a href="#" class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
-          <span>👤</span><span class="menu-label">User Management</span>
-        </a>
-        <a href="#" class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
-          <span>🛡️</span><span class="menu-label">Group & Permission</span>
-        </a>
-        <a href="#" class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
-          <span>🤖</span><span class="menu-label">Agent Console</span>
-        </a>
-        <a href="#" class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
-          <span>🖼️</span><span class="menu-label">Render Center</span>
-        </a>
-      </nav>
+
+      <div class="menu-wrap">
+        <ul class="menu-list">
+          <li><a href="#" class="menu-link is-active"><span class="menu-icon">◉</span><span class="menu-label">Dashboard</span></a></li>
+          <li><a href="#" class="menu-link"><span class="menu-icon">▣</span><span class="menu-label">Server Management</span></a></li>
+          <li><a href="#" class="menu-link"><span class="menu-icon">◎</span><span class="menu-label">User Management</span></a></li>
+          <li><a href="#" class="menu-link"><span class="menu-icon">◌</span><span class="menu-label">Group &amp; Permission</span></a></li>
+          <li><a href="#" class="menu-link"><span class="menu-icon">◇</span><span class="menu-label">Agent Console</span></a></li>
+          <li><a href="#" class="menu-link"><span class="menu-icon">▤</span><span class="menu-label">Render Center</span></a></li>
+        </ul>
+      </div>
+
+      <div class="sider-footer">
+        <form method="post" action="/webui/logout" class="logout-form">
+          <button type="submit" class="btn logout-btn">退出登入</button>
+        </form>
+      </div>
     </aside>
 
-    <div class="flex min-w-0 flex-1 flex-col">
-      <header class="sticky top-0 z-20 flex h-14 items-center border-b border-slate-200 bg-white/90 px-4 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
-        <div class="flex items-center gap-3">
-          <button
-            id="sidebar-toggle"
-            type="button"
-            class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-            aria-label="切换侧边栏"
-          >
-            ☰
-          </button>
-          <div>
-            <h1 class="text-sm font-semibold md:text-base">NextBot WebUI</h1>
-          </div>
+    <div class="app-main">
+      <header class="app-header">
+        <div class="header-left">
+          <button id="sidebar-toggle" type="button" class="btn btn-icon" aria-label="隐藏侧边栏">☰</button>
+          <h1 class="header-title">NextBot WebUI</h1>
         </div>
 
-        <div class="ml-auto flex items-center gap-2">
-          <button
-            id="theme-toggle"
-            type="button"
-            class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-          >
-            <span id="theme-toggle-label">Dark</span>
+        <div class="header-actions">
+          <button id="theme-toggle" type="button" class="btn theme-toggle-btn" aria-label="切换到深色主题">
+            <svg class="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="4"></circle>
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
+            </svg>
+            <svg class="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3c0 .38.02.76.07 1.13A7 7 0 0 0 19.87 12c.37.05.75.07 1.13.07z"></path>
+            </svg>
           </button>
-
-          <form method="post" action="/webui/logout">
-            <button
-              type="submit"
-              class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-            >
-              退出
-            </button>
-          </form>
         </div>
       </header>
 
-      <main class="flex-1 p-4 md:p-6">
-        <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <h2 class="text-xl font-semibold">欢迎使用 NextBot 控制台</h2>
-          <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            当前是 App Shell 骨架页面。后续模块会在此内容区域逐步接入。
-          </p>
+      <main class="app-content">
+        <section class="content-grid">
+          <article class="hero-card">
+            <h2 class="hero-title">欢迎使用 NextBot 控制台</h2>
+            <p class="hero-text">
+              当前是 WebUI App Shell 骨架页。后续会在这里接入服务管理、用户管理、群组权限、Agent 管理和渲染中心模块。
+            </p>
+            <div class="status-row">
+              <span class="status-tag"><span class="status-dot"></span>Service Status: running</span>
+              <span class="status-tag">Version: v0.0.0-placeholder</span>
+              <span class="status-tag">Time: --:--:--</span>
+            </div>
+          </article>
+
+          <article class="module-card">
+            <h3 class="module-title">Server Management</h3>
+            <p class="module-desc">服务器配置、重载、状态诊断能力将在此模块接入。</p>
+          </article>
+          <article class="module-card">
+            <h3 class="module-title">User Management</h3>
+            <p class="module-desc">用户绑定、账号状态与行为审计将统一在此管理。</p>
+          </article>
+          <article class="module-card">
+            <h3 class="module-title">Group &amp; Permission</h3>
+            <p class="module-desc">分组权限、命令授权和策略模板将在此提供可视化控制。</p>
+          </article>
+          <article class="module-card">
+            <h3 class="module-title">Agent Console</h3>
+            <p class="module-desc">Agent 运行状态、任务队列和调用日志会在此汇总。</p>
+          </article>
+          <article class="module-card">
+            <h3 class="module-title">Render Center</h3>
+            <p class="module-desc">页面渲染、截图任务与性能统计将在此模块展示。</p>
+          </article>
         </section>
       </main>
     </div>

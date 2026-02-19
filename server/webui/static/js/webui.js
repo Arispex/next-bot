@@ -1,40 +1,31 @@
 (() => {
   const root = document.documentElement;
   const sidebar = document.getElementById("webui-sidebar");
-  const toggleButton = document.getElementById("sidebar-toggle");
-  const menuLabels = Array.from(document.querySelectorAll(".menu-label"));
-  const brand = document.getElementById("sidebar-brand");
-  const subtitle = document.getElementById("sidebar-subtitle");
+  const sidebarToggle = document.getElementById("sidebar-toggle");
   const themeToggle = document.getElementById("theme-toggle");
-  const themeLabel = document.getElementById("theme-toggle-label");
 
   let sidebarCollapsed = false;
 
   const applySidebarState = () => {
-    if (!sidebar) return;
-    if (sidebarCollapsed) {
-      sidebar.classList.remove("w-72");
-      sidebar.classList.add("w-20");
-      menuLabels.forEach((node) => node.classList.add("hidden"));
-      if (brand) brand.classList.add("hidden");
-      if (subtitle) subtitle.classList.add("hidden");
+    if (!sidebar) {
       return;
     }
-
-    sidebar.classList.remove("w-20");
-    sidebar.classList.add("w-72");
-    menuLabels.forEach((node) => node.classList.remove("hidden"));
-    if (brand) brand.classList.remove("hidden");
-    if (subtitle) subtitle.classList.remove("hidden");
+    sidebar.classList.toggle("is-collapsed", sidebarCollapsed);
+    if (sidebarToggle) {
+      sidebarToggle.setAttribute("aria-label", sidebarCollapsed ? "展开侧边栏" : "隐藏侧边栏");
+    }
   };
 
   const syncThemeButton = () => {
-    if (!themeLabel) return;
-    themeLabel.textContent = root.classList.contains("dark") ? "Light" : "Dark";
+    if (!themeToggle) {
+      return;
+    }
+    const dark = root.classList.contains("dark");
+    themeToggle.setAttribute("aria-label", dark ? "切换到浅色主题" : "切换到深色主题");
   };
 
-  if (toggleButton) {
-    toggleButton.addEventListener("click", () => {
+  if (sidebarToggle) {
+    sidebarToggle.addEventListener("click", () => {
       sidebarCollapsed = !sidebarCollapsed;
       applySidebarState();
     });
@@ -42,9 +33,9 @@
 
   if (themeToggle) {
     themeToggle.addEventListener("click", () => {
-      const isDark = root.classList.toggle("dark");
+      const dark = root.classList.toggle("dark");
       try {
-        localStorage.setItem("nextbot-webui-theme", isDark ? "dark" : "light");
+        localStorage.setItem("nextbot-webui-theme", dark ? "dark" : "light");
       } catch (error) {
         // Ignore storage errors.
       }
