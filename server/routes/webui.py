@@ -4,10 +4,12 @@ import base64
 import hashlib
 import hmac
 import time
+from pathlib import Path
 from urllib.parse import parse_qs, urlencode
 
 from fastapi import APIRouter, FastAPI, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi import HTTPException
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 
 from server.pages.console_page import render_console_page, render_login_page
 from server.server_config import WebServerSettings
@@ -15,6 +17,7 @@ from server.server_config import WebServerSettings
 router = APIRouter()
 
 _SESSION_TTL_SECONDS = 7 * 24 * 60 * 60
+WEBUI_STATIC_DIR = Path(__file__).resolve().parent.parent / "webui" / "static"
 
 
 def _sanitize_next_path(value: str | None) -> str:
@@ -87,7 +90,11 @@ def add_webui_auth_middleware(app: FastAPI, settings: WebServerSettings) -> None
     @app.middleware("http")
     async def _webui_auth_middleware(request: Request, call_next):
         path = request.url.path
-        if path.startswith("/webui") and not path.startswith("/webui/login"):
+        is_webui_auth_free_path = (
+            path.startswith("/webui/login")
+            or path.startswith("/webui/static/")
+        )
+        if path.startswith("/webui") and not is_webui_auth_free_path:
             if not _is_authenticated(request, settings):
                 next_path = path
                 if request.url.query:
@@ -97,6 +104,17 @@ def add_webui_auth_middleware(app: FastAPI, settings: WebServerSettings) -> None
         return await call_next(request)
 
 
+def _resolve_webui_static_file(file_path: str) -> Path:
+    resolved_path = (WEBUI_STATIC_DIR / file_path).resolve()
+    try:
+        resolved_path.relative_to(WEBUI_STATIC_DIR.resolve())
+    except ValueError as exc:
+        raise HTTPException(status_code=403, detail="forbidden") from exc
+    if not resolved_path.is_file():
+        raise HTTPException(status_code=404, detail="not found")
+    return resolved_path
+
+
 def _get_settings_from_request(request: Request) -> WebServerSettings:
     return request.app.state.server_settings
 
@@ -104,6 +122,11 @@ def _get_settings_from_request(request: Request) -> WebServerSettings:
 @router.get("/webui", response_class=HTMLResponse)
 async def webui_index(request: Request) -> HTMLResponse:
     return HTMLResponse(content=render_console_page())
+
+
+@router.get("/webui/static/{file_path:path}")
+async def webui_static(file_path: str) -> FileResponse:
+    return FileResponse(path=_resolve_webui_static_file(file_path))
 
 
 @router.get("/webui/login", response_class=HTMLResponse)
