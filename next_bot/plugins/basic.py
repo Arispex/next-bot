@@ -126,7 +126,7 @@ def _to_base64_image_uri(path: Path) -> str:
 
 def _to_public_render_url(url: str) -> str:
     config = get_driver().config
-    base_url = str(getattr(config, "WEB_SERVER_PUBLIC_BASE_URL", "")).strip()
+    base_url = str(getattr(config, "web_server_public_base_url", "")).strip()
     if not base_url:
         return url
 

@@ -43,19 +43,19 @@ def _normalize_public_base_url(value: str, *, host: str, port: int) -> str:
 def _build_settings() -> WebServerSettings:
     config = get_driver().config
 
-    host = str(getattr(config, "WEB_SERVER_HOST", "127.0.0.1")).strip() or "127.0.0.1"
-    port = _parse_port(getattr(config, "WEB_SERVER_PORT", 18081))
+    host = str(getattr(config, "web_server_host", "127.0.0.1")).strip() or "127.0.0.1"
+    port = _parse_port(getattr(config, "web_server_port", 18081))
     public_base_url = _normalize_public_base_url(
-        str(getattr(config, "WEB_SERVER_PUBLIC_BASE_URL", "")),
+        str(getattr(config, "web_server_public_base_url", "")),
         host=host,
         port=port,
     )
 
-    raw_token = str(getattr(config, "WEBUI_TOKEN", "")).strip()
+    raw_token = str(getattr(config, "webui_token", "")).strip()
     webui_token_generated = not raw_token
     webui_token = raw_token or secrets.token_urlsafe(24)
 
-    raw_secret = str(getattr(config, "WEBUI_SESSION_SECRET", "")).strip()
+    raw_secret = str(getattr(config, "webui_session_secret", "")).strip()
     session_secret_generated = not raw_secret
     session_secret = raw_secret or secrets.token_urlsafe(32)
 
