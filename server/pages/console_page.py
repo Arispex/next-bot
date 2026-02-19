@@ -21,7 +21,7 @@ def render_login_page(*, next_path: str, error_message: str = "") -> str:
     error_section = ""
     if escaped_error:
         error_section = (
-            '<div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">'
+            '<div class="login-error">'
             f"{escaped_error}"
             "</div>"
         )
