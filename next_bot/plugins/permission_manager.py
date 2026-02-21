@@ -3,6 +3,7 @@ from nonebot.adapters import Bot, Event, Message
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
+from next_bot.command_config import command_control
 from next_bot.db import Group, User, get_session
 from next_bot.message_parser import (
     parse_command_args_with_fallback,
@@ -22,6 +23,12 @@ ADD_USER_PERM_USAGE = "格式错误，正确格式：添加用户权限 <用户 
 REMOVE_USER_PERM_USAGE = "格式错误，正确格式：删除用户权限 <用户 ID/@用户/用户名称> <权限名称>"
 SET_USER_GROUP_USAGE = "格式错误，正确格式：修改用户身份组 <用户 ID/@用户/用户名称> <身份组名称>"
 @add_user_perm_matcher.handle()
+@command_control(
+    command_key="permission.add_user",
+    display_name="添加用户权限",
+    permission="pm.user.add_perm",
+    description="为用户增加单独权限",
+)
 @require_permission("pm.user.add_perm")
 async def handle_add_user_perm(
     bot: Bot, event: Event, arg: Message = CommandArg()
@@ -67,6 +74,12 @@ async def handle_add_user_perm(
 
 
 @remove_user_perm_matcher.handle()
+@command_control(
+    command_key="permission.remove_user",
+    display_name="删除用户权限",
+    permission="pm.user.remove_perm",
+    description="从用户移除单独权限",
+)
 @require_permission("pm.user.remove_perm")
 async def handle_remove_user_perm(
     bot: Bot, event: Event, arg: Message = CommandArg()
@@ -112,6 +125,12 @@ async def handle_remove_user_perm(
 
 
 @set_user_group_matcher.handle()
+@command_control(
+    command_key="permission.set_user_group",
+    display_name="修改用户身份组",
+    permission="pm.user.group",
+    description="调整用户所属身份组",
+)
 @require_permission("pm.user.group")
 async def handle_set_user_group(
     bot: Bot, event: Event, arg: Message = CommandArg()

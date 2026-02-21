@@ -4,6 +4,7 @@ from nonebot import on_command
 from nonebot.adapters import Bot, Event, Message
 from nonebot.log import logger
 from nonebot.params import CommandArg
+from next_bot.command_config import command_control
 from next_bot.message_parser import (
     parse_command_args_with_fallback,
     resolve_user_id_arg_with_fallback,
@@ -82,6 +83,12 @@ async def _sync_whitelist_to_all_servers(
 
 
 @add_matcher.handle()
+@command_control(
+    command_key="user.register",
+    display_name="注册账号",
+    permission="um.add",
+    description="注册当前 QQ 对应的游戏账号",
+)
 @require_permission("um.add")
 async def handle_add_whitelist(
     bot: Bot, event: Event, arg: Message = CommandArg()
@@ -125,6 +132,12 @@ async def handle_add_whitelist(
 
 
 @sync_matcher.handle()
+@command_control(
+    command_key="user.sync_whitelist",
+    display_name="同步白名单",
+    permission="um.sync",
+    description="将当前用户同步到所有服务器白名单",
+)
 @require_permission("um.sync")
 async def handle_sync_whitelist(
     bot: Bot, event: Event, arg: Message = CommandArg()
@@ -164,6 +177,12 @@ async def handle_sync_whitelist(
 
 
 @info_matcher.handle()
+@command_control(
+    command_key="user.info",
+    display_name="用户信息",
+    permission="um.info",
+    description="查询指定用户信息",
+)
 @require_permission("um.info")
 async def handle_user_info(
     bot: Bot, event: Event, arg: Message = CommandArg()
@@ -215,6 +234,12 @@ async def handle_user_info(
 
 
 @self_info_matcher.handle()
+@command_control(
+    command_key="user.self_info",
+    display_name="我的信息",
+    permission="um.info.self",
+    description="查询当前用户信息",
+)
 @require_permission("um.info.self")
 async def handle_self_info(
     bot: Bot, event: Event, arg: Message = CommandArg()

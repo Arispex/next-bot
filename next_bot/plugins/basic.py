@@ -11,6 +11,7 @@ from nonebot.params import CommandArg
 
 from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
 from server.web_server import create_inventory_page, create_progress_page
+from next_bot.command_config import command_control, get_current_param
 from next_bot.db import Server, User, get_session
 from next_bot.message_parser import (
     parse_command_args_with_fallback,
@@ -152,6 +153,21 @@ def _to_public_render_url(url: str) -> str:
 
 
 @online_matcher.handle()
+@command_control(
+    command_key="basic.online",
+    display_name="在线",
+    permission="bf.online",
+    description="查询服务器在线状态与玩家列表",
+    params={
+        "max_servers": {
+            "type": "int",
+            "label": "最多展示服务器数",
+            "description": "0 表示不限制",
+            "default": 0,
+            "min": 0,
+        }
+    },
+)
 @require_permission("bf.online")
 async def handle_online(
     bot: Bot, event: Event, arg: Message = CommandArg()
@@ -166,6 +182,10 @@ async def handle_online(
         servers = session.query(Server).order_by(Server.id.asc()).all()
     finally:
         session.close()
+
+    max_servers = get_current_param("max_servers", 0)
+    if isinstance(max_servers, int) and max_servers > 0:
+        servers = servers[:max_servers]
 
     if not servers:
         await bot.send(event, "查询失败，暂无服务器")
@@ -221,6 +241,12 @@ async def handle_online(
 
 
 @execute_matcher.handle()
+@command_control(
+    command_key="basic.execute",
+    display_name="执行",
+    permission="bf.exec",
+    description="在指定服务器执行原始命令",
+)
 @require_permission("bf.exec")
 async def handle_execute(
     bot: Bot, event: Event, arg: Message = CommandArg()
@@ -265,6 +291,12 @@ async def handle_execute(
 
 
 @self_kick_matcher.handle()
+@command_control(
+    command_key="basic.self_kick",
+    display_name="自踢",
+    permission="bf.selfkick",
+    description="对所有服务器执行当前用户踢出命令",
+)
 @require_permission("bf.selfkick")
 async def handle_self_kick(
     bot: Bot, event: Event, arg: Message = CommandArg()
@@ -316,6 +348,12 @@ async def handle_self_kick(
 
 
 @inventory_matcher.handle()
+@command_control(
+    command_key="basic.inventory",
+    display_name="用户背包",
+    permission="bf.inventory",
+    description="查询指定用户背包并生成截图",
+)
 @require_permission("bf.inventory")
 async def handle_user_inventory(
     bot: Bot, event: Event, arg: Message = CommandArg()
@@ -448,6 +486,12 @@ async def handle_user_inventory(
 
 
 @my_inventory_matcher.handle()
+@command_control(
+    command_key="basic.my_inventory",
+    display_name="我的背包",
+    permission="bf.myinventory",
+    description="查询当前用户背包并生成截图",
+)
 @require_permission("bf.myinventory")
 async def handle_my_inventory(
     bot: Bot, event: Event, arg: Message = CommandArg()
@@ -564,6 +608,12 @@ async def handle_my_inventory(
 
 
 @progress_matcher.handle()
+@command_control(
+    command_key="basic.progress",
+    display_name="进度",
+    permission="bf.progress",
+    description="查询世界进度并生成截图",
+)
 @require_permission("bf.progress")
 async def handle_world_progress(
     bot: Bot, event: Event, arg: Message = CommandArg()

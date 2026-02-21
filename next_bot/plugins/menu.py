@@ -1,6 +1,7 @@
 from nonebot import on_command
 from nonebot.adapters import Bot, Event, Message
 from nonebot.params import CommandArg
+from next_bot.command_config import command_control
 from next_bot.message_parser import parse_command_args_with_fallback
 from next_bot.permissions import require_permission
 
@@ -61,6 +62,12 @@ SERVER_TEXT = "\n".join(
 USER_TEXT = "\n".join(["注册账号", "同步白名单"])
 AGENT_TEXT = "\n".join(["代理", "允许执行命令", "拒绝执行命令"])
 @menu_matcher.handle()
+@command_control(
+    command_key="menu.root",
+    display_name="菜单",
+    permission="mn.menu",
+    description="显示总菜单",
+)
 @require_permission("mn.menu")
 async def handle_menu(bot: Bot, event: Event, arg: Message = CommandArg()):
     args = parse_command_args_with_fallback(event, arg, "菜单")
@@ -71,6 +78,12 @@ async def handle_menu(bot: Bot, event: Event, arg: Message = CommandArg()):
 
 
 @basic_matcher.handle()
+@command_control(
+    command_key="menu.basic",
+    display_name="基础功能",
+    permission="mn.basic",
+    description="显示基础功能菜单",
+)
 @require_permission("mn.basic")
 async def handle_basic_menu(
     bot: Bot, event: Event, arg: Message = CommandArg()
@@ -83,6 +96,12 @@ async def handle_basic_menu(
 
 
 @group_matcher.handle()
+@command_control(
+    command_key="menu.group",
+    display_name="身份组管理",
+    permission="mn.group",
+    description="显示身份组管理菜单",
+)
 @require_permission("mn.group")
 async def handle_group_menu(
     bot: Bot, event: Event, arg: Message = CommandArg()
@@ -95,6 +114,12 @@ async def handle_group_menu(
 
 
 @permission_matcher.handle()
+@command_control(
+    command_key="menu.permission",
+    display_name="权限管理",
+    permission="mn.permission",
+    description="显示权限管理菜单",
+)
 @require_permission("mn.permission")
 async def handle_permission_menu(
     bot: Bot, event: Event, arg: Message = CommandArg()
@@ -107,6 +132,12 @@ async def handle_permission_menu(
 
 
 @server_matcher.handle()
+@command_control(
+    command_key="menu.server",
+    display_name="服务器管理",
+    permission="mn.server",
+    description="显示服务器管理菜单",
+)
 @require_permission("mn.server")
 async def handle_server_menu(
     bot: Bot, event: Event, arg: Message = CommandArg()
@@ -119,6 +150,12 @@ async def handle_server_menu(
 
 
 @user_matcher.handle()
+@command_control(
+    command_key="menu.user",
+    display_name="用户管理",
+    permission="mn.user",
+    description="显示用户管理菜单",
+)
 @require_permission("mn.user")
 async def handle_user_menu(bot: Bot, event: Event, arg: Message = CommandArg()):
     args = parse_command_args_with_fallback(event, arg, "用户管理")
@@ -129,6 +166,12 @@ async def handle_user_menu(bot: Bot, event: Event, arg: Message = CommandArg()):
 
 
 @agent_matcher.handle()
+@command_control(
+    command_key="menu.agent",
+    display_name="代理功能",
+    permission="mn.agent",
+    description="显示代理功能菜单",
+)
 @require_permission("mn.agent")
 async def handle_agent_menu(bot: Bot, event: Event, arg: Message = CommandArg()):
     args = parse_command_args_with_fallback(event, arg, "代理功能")

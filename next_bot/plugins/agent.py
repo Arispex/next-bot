@@ -10,6 +10,7 @@ from nonebot.adapters import Bot, Event, Message
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
+from next_bot.command_config import command_control
 from next_bot.db import Server, get_session
 from next_bot.message_parser import parse_command_args_with_fallback
 from next_bot.permissions import require_permission
@@ -290,6 +291,12 @@ def _finalize_session_if_needed(user_id: str, session: AgentSession) -> str | No
 
 
 @agent_matcher.handle()
+@command_control(
+    command_key="agent.ask",
+    display_name="代理",
+    permission="ag.ask",
+    description="与代理助手对话并生成命令提议",
+)
 @require_permission("ag.ask")
 async def handle_agent(
     bot: Bot, event: Event, arg: Message = CommandArg()
@@ -336,6 +343,12 @@ async def handle_agent(
 
 
 @approve_matcher.handle()
+@command_control(
+    command_key="agent.approve",
+    display_name="允许执行命令",
+    permission="ag.approve",
+    description="确认并执行代理提议的命令",
+)
 @require_permission("ag.approve")
 async def handle_approve(
     bot: Bot, event: Event, arg: Message = CommandArg()
@@ -400,6 +413,12 @@ async def handle_approve(
 
 
 @reject_matcher.handle()
+@command_control(
+    command_key="agent.reject",
+    display_name="拒绝执行命令",
+    permission="ag.reject",
+    description="拒绝代理提议的命令",
+)
 @require_permission("ag.reject")
 async def handle_reject(
     bot: Bot, event: Event, arg: Message = CommandArg()

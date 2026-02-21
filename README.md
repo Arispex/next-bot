@@ -44,6 +44,10 @@ WEB_SERVER_PUBLIC_BASE_URL=http://127.0.0.1:18081
 WEBUI_TOKEN=
 # 控制台会话签名密钥，不配置则启动时自动生成
 WEBUI_SESSION_SECRET=
+# 命令关闭策略：reply(拦截并提示) / silent(静默忽略)
+COMMAND_DISABLED_MODE=reply
+# 命令关闭提示词（仅 COMMAND_DISABLED_MODE=reply 时生效）
+COMMAND_DISABLED_MESSAGE=该命令暂时关闭
 
 # 代理功能（可选）
 LLM_API_KEY=your_api_key
@@ -61,6 +65,12 @@ uv run python bot.py
 http://127.0.0.1:18081/webui
 ```
 首次访问会跳转到登录页，输入 `WEBUI_TOKEN` 即可进入控制台。
+
+5. 命令配置中心
+```text
+http://127.0.0.1:18081/webui/commands
+```
+可在页面中统一开关命令、修改参数并保存，保存后即时生效，无需重启。
 
 ## 关于许可证
 本项目基于 AGPL v3.0 许可证授权发行，您可以在遵守许可证的前提下自由使用、复制、修改、发布和分发本项目。

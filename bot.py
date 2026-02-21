@@ -6,6 +6,7 @@ from nonebot.exception import IgnoredException
 from nonebot.log import logger
 from nonebot.message import event_preprocessor
 
+from next_bot.command_config import sync_registered_commands_to_db
 from server.web_server import start_web_server
 from next_bot.access_control import get_group_ids, get_owner_ids
 from next_bot.db import DB_PATH, init_db, ensure_default_groups, get_engine, Base
@@ -55,7 +56,6 @@ async def _filter_allowed_messages(event: Event) -> None:
 
 @driver.on_startup
 async def _init_database() -> None:
-    start_web_server()
     if not DB_PATH.exists():
         logger.info("app.db 不存在，开始初始化数据库")
         init_db()
@@ -65,6 +65,10 @@ async def _init_database() -> None:
         Base.metadata.create_all(get_engine())
         ensure_default_groups()
         logger.info("表结构检查完成")
+
+    sync_registered_commands_to_db()
+    logger.info("命令配置同步完成")
+    start_web_server()
 
 nonebot.load_plugins("next_bot/plugins")
 

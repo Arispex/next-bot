@@ -35,3 +35,7 @@ def render_login_page(*, next_path: str, error_message: str = "") -> str:
 
 def render_console_page() -> str:
     return _load_template("app_shell.html")
+
+
+def render_commands_page() -> str:
+    return _load_template("commands.html")

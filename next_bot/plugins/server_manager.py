@@ -3,6 +3,7 @@ from nonebot.adapters import Bot, Event, Message
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
+from next_bot.command_config import command_control
 from next_bot.db import Server, get_session
 from next_bot.message_parser import parse_command_args_with_fallback
 from next_bot.permissions import require_permission
@@ -23,6 +24,12 @@ DELETE_USAGE = "格式错误，正确格式：删除服务器 <服务器 ID>"
 LIST_USAGE = "格式错误，正确格式：服务器列表"
 TEST_USAGE = "格式错误，正确格式：测试连通性 <服务器 ID>"
 @add_matcher.handle()
+@command_control(
+    command_key="server.add",
+    display_name="添加服务器",
+    permission="sm.add",
+    description="新增服务器配置",
+)
 @require_permission("sm.add")
 async def handle_add_server(
     bot: Bot, event: Event, arg: Message = CommandArg()
@@ -56,6 +63,12 @@ async def handle_add_server(
 
 
 @delete_matcher.handle()
+@command_control(
+    command_key="server.delete",
+    display_name="删除服务器",
+    permission="sm.delete",
+    description="删除服务器并重排 ID",
+)
 @require_permission("sm.delete")
 async def handle_delete_server(
     bot: Bot, event: Event, arg: Message = CommandArg()
@@ -94,6 +107,12 @@ async def handle_delete_server(
 
 
 @list_matcher.handle()
+@command_control(
+    command_key="server.list",
+    display_name="服务器列表",
+    permission="sm.list",
+    description="输出服务器列表",
+)
 @require_permission("sm.list")
 async def handle_list_servers(
     bot: Bot, event: Event, arg: Message = CommandArg()
@@ -126,6 +145,12 @@ async def handle_list_servers(
 
 
 @test_matcher.handle()
+@command_control(
+    command_key="server.test",
+    display_name="测试连通性",
+    permission="sm.test",
+    description="测试服务器 RestAPI 连通性",
+)
 @require_permission("sm.test")
 async def handle_test_server(
     bot: Bot, event: Event, arg: Message = CommandArg()

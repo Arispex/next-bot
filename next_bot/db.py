@@ -4,7 +4,7 @@ from pathlib import Path
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, String
+from sqlalchemy import Boolean, DateTime, Integer, String, Text
 from sqlalchemy.engine import Engine, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
@@ -48,6 +48,28 @@ class Group(Base):
     name: Mapped[str] = mapped_column(String, primary_key=True)
     permissions: Mapped[str] = mapped_column(String, nullable=False, default="")
     inherits: Mapped[str] = mapped_column(String, nullable=False, default="")
+
+
+class CommandConfig(Base):
+    __tablename__ = "command_config"
+
+    command_key: Mapped[str] = mapped_column(String, primary_key=True)
+    display_name: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[str] = mapped_column(String, nullable=False, default="")
+    module_path: Mapped[str] = mapped_column(String, nullable=False, default="")
+    handler_name: Mapped[str] = mapped_column(String, nullable=False, default="")
+    permission: Mapped[str] = mapped_column(String, nullable=False, default="")
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    param_schema_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    param_values_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    is_registered: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    meta_hash: Mapped[str] = mapped_column(String, nullable=False, default="")
+    last_synced_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=datetime.utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=datetime.utcnow
+    )
 
 
 def get_engine() -> Engine:
