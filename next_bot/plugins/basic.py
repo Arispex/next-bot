@@ -174,7 +174,7 @@ def _to_public_render_url(url: str) -> str:
     command_key="basic.online",
     display_name="在线",
     permission="basic.online",
-    description="查询服务器在线状态与玩家列表",
+    description="查询服务器在线状态与在线玩家列表",
     params={
         "max_servers": {
             "type": "int",
@@ -262,7 +262,7 @@ async def handle_online(
     command_key="basic.execute",
     display_name="执行",
     permission="basic.execute",
-    description="在指定服务器执行原始命令",
+    description="在指定服务器执行指令",
 )
 @require_permission("basic.execute")
 async def handle_execute(
@@ -312,7 +312,7 @@ async def handle_execute(
     command_key="basic.kick.self",
     display_name="自踢",
     permission="basic.kick.self",
-    description="对所有服务器执行当前用户踢出命令",
+    description="对所有服务器执行当前用户的踢出命令",
 )
 @require_permission("basic.kick.self")
 async def handle_self_kick(

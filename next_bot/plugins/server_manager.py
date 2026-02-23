@@ -28,7 +28,7 @@ TEST_USAGE = "格式错误，正确格式：测试连通性 <服务器 ID>"
     command_key="server.add",
     display_name="添加服务器",
     permission="server.add",
-    description="新增服务器配置",
+    description="新增服务器",
 )
 @require_permission("server.add")
 async def handle_add_server(
@@ -67,7 +67,7 @@ async def handle_add_server(
     command_key="server.delete",
     display_name="删除服务器",
     permission="server.delete",
-    description="删除服务器并重排 ID",
+    description="删除服务器",
 )
 @require_permission("server.delete")
 async def handle_delete_server(
@@ -149,7 +149,7 @@ async def handle_list_servers(
     command_key="server.test",
     display_name="测试连通性",
     permission="server.test",
-    description="测试服务器 RestAPI 连通性",
+    description="测试服务器 REST API 连通性",
 )
 @require_permission("server.test")
 async def handle_test_server(

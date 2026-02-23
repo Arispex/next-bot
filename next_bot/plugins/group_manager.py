@@ -105,7 +105,7 @@ async def handle_add_group(
     command_key="group.delete",
     display_name="删除身份组",
     permission="group.delete",
-    description="删除身份组并清理引用",
+    description="删除身份组",
 )
 @require_permission("group.delete")
 async def handle_delete_group(

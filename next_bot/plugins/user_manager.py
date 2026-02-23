@@ -87,7 +87,7 @@ async def _sync_whitelist_to_all_servers(
     command_key="user.register",
     display_name="注册账号",
     permission="user.register",
-    description="注册当前 QQ 对应的游戏账号",
+    description="注册当前 QQ 对应的账号",
 )
 @require_permission("user.register")
 async def handle_add_whitelist(
