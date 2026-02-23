@@ -1,0 +1,26 @@
+<section class="command-panel">
+  <div class="panel-head">
+    <div class="panel-head-main">
+      <p class="panel-title">Command List</p>
+      <span id="panel-meta" class="panel-meta">按模块分组管理命令与参数</span>
+    </div>
+    <div class="panel-head-side">
+      <div class="panel-summary">
+        <span class="summary-chip">Total <strong id="stat-total">0</strong></span>
+        <span class="summary-chip">Enabled <strong id="stat-enabled" class="success">0</strong></span>
+        <span class="summary-chip">Disabled <strong id="stat-disabled" class="danger">0</strong></span>
+        <span class="summary-chip">Modules <strong id="stat-modules">0</strong></span>
+      </div>
+      <div class="panel-head-actions">
+        <button id="reload-btn" type="button" class="btn">刷新</button>
+        <button id="save-all-btn" type="button" class="btn btn-primary">保存全部</button>
+      </div>
+    </div>
+  </div>
+  <div class="panel-body">
+    <div id="status" class="status"></div>
+    <div id="loading" class="empty">加载中...</div>
+    <div id="empty" class="empty hidden">暂无可配置命令。</div>
+    <div id="groups" class="groups-stack"></div>
+  </div>
+</section>
