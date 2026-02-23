@@ -11,6 +11,7 @@ from server.page_store import create_page
 from server.pages import inventory_page, progress_page
 from server.routes.render import router as render_router
 from server.routes.webui_commands import router as webui_commands_router
+from server.routes.webui_dashboard import router as webui_dashboard_router
 from server.routes.webui import add_webui_auth_middleware, router as webui_router
 from server.server_config import WebServerSettings, get_server_settings
 
@@ -83,6 +84,7 @@ def create_app(settings: WebServerSettings | None = None) -> FastAPI:
     app.include_router(render_router)
     app.include_router(webui_router)
     app.include_router(webui_commands_router)
+    app.include_router(webui_dashboard_router)
 
     @app.get("/health")
     async def health() -> dict[str, str]:

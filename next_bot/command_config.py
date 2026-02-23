@@ -12,8 +12,10 @@ from functools import wraps
 from typing import Any
 
 from nonebot import get_driver
+from nonebot.log import logger
 
 from next_bot.db import CommandConfig, get_session
+from next_bot.stats import increment_command_execute_total
 
 _ALLOWED_PARAM_TYPES = {"bool", "int", "float", "string"}
 _DEFAULT_DISABLED_MODE = "reply"
@@ -738,6 +740,10 @@ def command_control(
             state = _get_runtime_state(normalized_key)
             context_token = _current_command_context.set(state)
             try:
+                try:
+                    increment_command_execute_total()
+                except Exception:
+                    logger.exception(f"命令计数写入失败：command_key={normalized_key}")
                 if not state.enabled:
                     try:
                         bound = resolved_signature.bind_partial(*args, **kwargs)

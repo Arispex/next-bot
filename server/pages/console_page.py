@@ -86,6 +86,9 @@ def render_console_page() -> str:
             _asset_url("css/app-shell.css"),
             _asset_url("css/dashboard.css"),
         ),
+        page_script_urls=(
+            _asset_url("js/dashboard.js"),
+        ),
     )
 
 

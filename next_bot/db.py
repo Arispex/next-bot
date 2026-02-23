@@ -72,6 +72,16 @@ class CommandConfig(Base):
     )
 
 
+class SystemStat(Base):
+    __tablename__ = "system_stat"
+
+    stat_key: Mapped[str] = mapped_column(String, primary_key=True)
+    stat_value: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=datetime.utcnow
+    )
+
+
 def get_engine() -> Engine:
     return create_engine(
         DATABASE_URL,
@@ -85,6 +95,7 @@ def init_db() -> None:
     engine = get_engine()
     Base.metadata.create_all(engine)
     ensure_default_groups()
+    ensure_default_stats()
 
 
 def get_session() -> Session:
@@ -107,6 +118,26 @@ def ensure_default_groups() -> None:
                     name="default",
                     permissions="sm.*,gm.*,pm.*",
                     inherits="guest",
+                )
+            )
+        session.commit()
+    finally:
+        session.close()
+
+
+def ensure_default_stats() -> None:
+    session = get_session()
+    try:
+        command_total = (
+            session.query(SystemStat)
+            .filter(SystemStat.stat_key == "command.execute.total")
+            .first()
+        )
+        if command_total is None:
+            session.add(
+                SystemStat(
+                    stat_key="command.execute.total",
+                    stat_value=0,
                 )
             )
         session.commit()

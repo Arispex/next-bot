@@ -3,31 +3,31 @@
     <div class="welcome-main">
       <h2 class="welcome-title">欢迎回来</h2>
       <p class="welcome-desc">
-        这里是 NextBot 控制台仪表盘，下面展示的是演示用假数据，用于预览页面布局与信息层级。
+        这里是 NextBot 控制台仪表盘，展示当前实例的实时统计信息与运行状态。
       </p>
     </div>
     <div class="welcome-meta">
-      <span class="meta-tag"><span class="status-dot"></span>运行状态：正常</span>
-      <span class="meta-tag">最近刷新：今天 23:17</span>
+      <span class="meta-tag"><span class="status-dot"></span>运行状态：<span id="running_status">Running</span></span>
+      <span id="dashboard-refresh-text" class="meta-tag">最近刷新：加载中</span>
     </div>
   </article>
 
   <section class="stats-grid" aria-label="关键指标">
     <article class="stat-card">
       <p class="stat-label">运行状态</p>
-      <p class="stat-value">Running</p>
+      <p id="running_status_value" class="stat-value">Running</p>
     </article>
     <article class="stat-card">
       <p class="stat-label">服务器数量</p>
-      <p class="stat-value">3</p>
+      <p id="server_count" class="stat-value">--</p>
     </article>
     <article class="stat-card">
       <p class="stat-label">用户数量</p>
-      <p class="stat-value">128</p>
+      <p id="user_count" class="stat-value">--</p>
     </article>
     <article class="stat-card">
       <p class="stat-label">命令执行次数</p>
-      <p class="stat-value">2,394</p>
+      <p id="command_execute_count" class="stat-value">--</p>
     </article>
   </section>
 </section>
