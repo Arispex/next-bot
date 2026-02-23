@@ -86,10 +86,10 @@ async def _sync_whitelist_to_all_servers(
 @command_control(
     command_key="user.register",
     display_name="注册账号",
-    permission="um.add",
+    permission="user.register",
     description="注册当前 QQ 对应的游戏账号",
 )
-@require_permission("um.add")
+@require_permission("user.register")
 async def handle_add_whitelist(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -133,12 +133,12 @@ async def handle_add_whitelist(
 
 @sync_matcher.handle()
 @command_control(
-    command_key="user.sync_whitelist",
+    command_key="user.whitelist.sync",
     display_name="同步白名单",
-    permission="um.sync",
+    permission="user.whitelist.sync",
     description="将当前用户同步到所有服务器白名单",
 )
-@require_permission("um.sync")
+@require_permission("user.whitelist.sync")
 async def handle_sync_whitelist(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -180,10 +180,10 @@ async def handle_sync_whitelist(
 @command_control(
     command_key="user.info",
     display_name="用户信息",
-    permission="um.info",
+    permission="user.info",
     description="查询指定用户信息",
 )
-@require_permission("um.info")
+@require_permission("user.info")
 async def handle_user_info(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -235,12 +235,12 @@ async def handle_user_info(
 
 @self_info_matcher.handle()
 @command_control(
-    command_key="user.self_info",
+    command_key="user.info.self",
     display_name="我的信息",
-    permission="um.info.self",
+    permission="user.info.self",
     description="查询当前用户信息",
 )
-@require_permission("um.info.self")
+@require_permission("user.info.self")
 async def handle_self_info(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):

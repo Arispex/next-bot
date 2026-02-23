@@ -61,10 +61,10 @@ USER_TEXT = "\n".join(["注册账号", "同步白名单"])
 @command_control(
     command_key="menu.root",
     display_name="菜单",
-    permission="mn.menu",
+    permission="menu.root",
     description="显示总菜单",
 )
-@require_permission("mn.menu")
+@require_permission("menu.root")
 async def handle_menu(bot: Bot, event: Event, arg: Message = CommandArg()):
     args = parse_command_args_with_fallback(event, arg, "菜单")
     if args:
@@ -77,10 +77,10 @@ async def handle_menu(bot: Bot, event: Event, arg: Message = CommandArg()):
 @command_control(
     command_key="menu.basic",
     display_name="基础功能",
-    permission="mn.basic",
+    permission="menu.basic",
     description="显示基础功能菜单",
 )
-@require_permission("mn.basic")
+@require_permission("menu.basic")
 async def handle_basic_menu(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -95,10 +95,10 @@ async def handle_basic_menu(
 @command_control(
     command_key="menu.group",
     display_name="身份组管理",
-    permission="mn.group",
+    permission="menu.group",
     description="显示身份组管理菜单",
 )
-@require_permission("mn.group")
+@require_permission("menu.group")
 async def handle_group_menu(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -113,10 +113,10 @@ async def handle_group_menu(
 @command_control(
     command_key="menu.permission",
     display_name="权限管理",
-    permission="mn.permission",
+    permission="menu.permission",
     description="显示权限管理菜单",
 )
-@require_permission("mn.permission")
+@require_permission("menu.permission")
 async def handle_permission_menu(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -131,10 +131,10 @@ async def handle_permission_menu(
 @command_control(
     command_key="menu.server",
     display_name="服务器管理",
-    permission="mn.server",
+    permission="menu.server",
     description="显示服务器管理菜单",
 )
-@require_permission("mn.server")
+@require_permission("menu.server")
 async def handle_server_menu(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -149,10 +149,10 @@ async def handle_server_menu(
 @command_control(
     command_key="menu.user",
     display_name="用户管理",
-    permission="mn.user",
+    permission="menu.user",
     description="显示用户管理菜单",
 )
-@require_permission("mn.user")
+@require_permission("menu.user")
 async def handle_user_menu(bot: Bot, event: Event, arg: Message = CommandArg()):
     args = parse_command_args_with_fallback(event, arg, "用户管理")
     if args:

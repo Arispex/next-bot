@@ -27,10 +27,10 @@ TEST_USAGE = "格式错误，正确格式：测试连通性 <服务器 ID>"
 @command_control(
     command_key="server.add",
     display_name="添加服务器",
-    permission="sm.add",
+    permission="server.add",
     description="新增服务器配置",
 )
-@require_permission("sm.add")
+@require_permission("server.add")
 async def handle_add_server(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -66,10 +66,10 @@ async def handle_add_server(
 @command_control(
     command_key="server.delete",
     display_name="删除服务器",
-    permission="sm.delete",
+    permission="server.delete",
     description="删除服务器并重排 ID",
 )
-@require_permission("sm.delete")
+@require_permission("server.delete")
 async def handle_delete_server(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -110,10 +110,10 @@ async def handle_delete_server(
 @command_control(
     command_key="server.list",
     display_name="服务器列表",
-    permission="sm.list",
+    permission="server.list",
     description="输出服务器列表",
 )
-@require_permission("sm.list")
+@require_permission("server.list")
 async def handle_list_servers(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -148,10 +148,10 @@ async def handle_list_servers(
 @command_control(
     command_key="server.test",
     display_name="测试连通性",
-    permission="sm.test",
+    permission="server.test",
     description="测试服务器 RestAPI 连通性",
 )
-@require_permission("sm.test")
+@require_permission("server.test")
 async def handle_test_server(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):

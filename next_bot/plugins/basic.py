@@ -173,7 +173,7 @@ def _to_public_render_url(url: str) -> str:
 @command_control(
     command_key="basic.online",
     display_name="在线",
-    permission="bf.online",
+    permission="basic.online",
     description="查询服务器在线状态与玩家列表",
     params={
         "max_servers": {
@@ -185,7 +185,7 @@ def _to_public_render_url(url: str) -> str:
         }
     },
 )
-@require_permission("bf.online")
+@require_permission("basic.online")
 async def handle_online(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -261,10 +261,10 @@ async def handle_online(
 @command_control(
     command_key="basic.execute",
     display_name="执行",
-    permission="bf.exec",
+    permission="basic.execute",
     description="在指定服务器执行原始命令",
 )
-@require_permission("bf.exec")
+@require_permission("basic.execute")
 async def handle_execute(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -309,12 +309,12 @@ async def handle_execute(
 
 @self_kick_matcher.handle()
 @command_control(
-    command_key="basic.self_kick",
+    command_key="basic.kick.self",
     display_name="自踢",
-    permission="bf.selfkick",
+    permission="basic.kick.self",
     description="对所有服务器执行当前用户踢出命令",
 )
-@require_permission("bf.selfkick")
+@require_permission("basic.kick.self")
 async def handle_self_kick(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -366,12 +366,12 @@ async def handle_self_kick(
 
 @inventory_matcher.handle()
 @command_control(
-    command_key="basic.inventory",
+    command_key="basic.inventory.user",
     display_name="用户背包",
-    permission="bf.inventory",
+    permission="basic.inventory.user",
     description="查询指定用户背包并生成截图",
 )
-@require_permission("bf.inventory")
+@require_permission("basic.inventory.user")
 async def handle_user_inventory(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -504,12 +504,12 @@ async def handle_user_inventory(
 
 @my_inventory_matcher.handle()
 @command_control(
-    command_key="basic.my_inventory",
+    command_key="basic.inventory.self",
     display_name="我的背包",
-    permission="bf.myinventory",
+    permission="basic.inventory.self",
     description="查询当前用户背包并生成截图",
 )
-@require_permission("bf.myinventory")
+@require_permission("basic.inventory.self")
 async def handle_my_inventory(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -628,10 +628,10 @@ async def handle_my_inventory(
 @command_control(
     command_key="basic.progress",
     display_name="进度",
-    permission="bf.progress",
+    permission="basic.progress",
     description="查询世界进度并生成截图",
 )
-@require_permission("bf.progress")
+@require_permission("basic.progress")
 async def handle_world_progress(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):

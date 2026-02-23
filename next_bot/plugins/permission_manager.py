@@ -24,12 +24,12 @@ REMOVE_USER_PERM_USAGE = "格式错误，正确格式：删除用户权限 <用�
 SET_USER_GROUP_USAGE = "格式错误，正确格式：修改用户身份组 <用户 ID/@用户/用户名称> <身份组名称>"
 @add_user_perm_matcher.handle()
 @command_control(
-    command_key="permission.add_user",
+    command_key="permission.user.add",
     display_name="添加用户权限",
-    permission="pm.user.add_perm",
+    permission="permission.user.add",
     description="为用户增加单独权限",
 )
-@require_permission("pm.user.add_perm")
+@require_permission("permission.user.add")
 async def handle_add_user_perm(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -75,12 +75,12 @@ async def handle_add_user_perm(
 
 @remove_user_perm_matcher.handle()
 @command_control(
-    command_key="permission.remove_user",
+    command_key="permission.user.remove",
     display_name="删除用户权限",
-    permission="pm.user.remove_perm",
+    permission="permission.user.remove",
     description="从用户移除单独权限",
 )
-@require_permission("pm.user.remove_perm")
+@require_permission("permission.user.remove")
 async def handle_remove_user_perm(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -126,12 +126,12 @@ async def handle_remove_user_perm(
 
 @set_user_group_matcher.handle()
 @command_control(
-    command_key="permission.set_user_group",
+    command_key="permission.user.group.set",
     display_name="修改用户身份组",
-    permission="pm.user.group",
+    permission="permission.user.group.set",
     description="调整用户所属身份组",
 )
-@require_permission("pm.user.group")
+@require_permission("permission.user.group.set")
 async def handle_set_user_group(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):

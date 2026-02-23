@@ -33,10 +33,10 @@ LIST_USAGE = "格式错误，正确格式：身份组列表"
 @command_control(
     command_key="group.list",
     display_name="身份组列表",
-    permission="gm.list",
+    permission="group.list",
     description="显示所有身份组",
 )
-@require_permission("gm.list")
+@require_permission("group.list")
 async def handle_list_groups(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -71,10 +71,10 @@ async def handle_list_groups(
 @command_control(
     command_key="group.add",
     display_name="添加身份组",
-    permission="gm.add",
+    permission="group.add",
     description="新增身份组",
 )
-@require_permission("gm.add")
+@require_permission("group.add")
 async def handle_add_group(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -104,10 +104,10 @@ async def handle_add_group(
 @command_control(
     command_key="group.delete",
     display_name="删除身份组",
-    permission="gm.delete",
+    permission="group.delete",
     description="删除身份组并清理引用",
 )
-@require_permission("gm.delete")
+@require_permission("group.delete")
 async def handle_delete_group(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -149,12 +149,12 @@ async def handle_delete_group(
 
 @inherit_matcher.handle()
 @command_control(
-    command_key="group.inherit",
+    command_key="group.inherit.add",
     display_name="继承身份组",
-    permission="gm.inherit",
+    permission="group.inherit.add",
     description="设置身份组继承关系",
 )
-@require_permission("gm.inherit")
+@require_permission("group.inherit.add")
 async def handle_inherit_group(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -187,12 +187,12 @@ async def handle_inherit_group(
 
 @clear_inherit_matcher.handle()
 @command_control(
-    command_key="group.clear_inherit",
+    command_key="group.inherit.clear",
     display_name="取消继承身份组",
-    permission="gm.inherit.clear",
+    permission="group.inherit.clear",
     description="清空身份组继承关系",
 )
-@require_permission("gm.inherit.clear")
+@require_permission("group.inherit.clear")
 async def handle_clear_inherit_group(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -220,12 +220,12 @@ async def handle_clear_inherit_group(
 
 @add_perm_matcher.handle()
 @command_control(
-    command_key="group.add_permission",
+    command_key="group.permission.add",
     display_name="添加身份组权限",
-    permission="gm.perm.add",
+    permission="group.permission.add",
     description="为身份组添加权限",
 )
-@require_permission("gm.perm.add")
+@require_permission("group.permission.add")
 async def handle_add_group_perm(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -253,12 +253,12 @@ async def handle_add_group_perm(
 
 @remove_perm_matcher.handle()
 @command_control(
-    command_key="group.remove_permission",
+    command_key="group.permission.remove",
     display_name="删除身份组权限",
-    permission="gm.perm.delete",
+    permission="group.permission.remove",
     description="从身份组移除权限",
 )
-@require_permission("gm.perm.delete")
+@require_permission("group.permission.remove")
 async def handle_remove_group_perm(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
