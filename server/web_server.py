@@ -95,7 +95,7 @@ def _run_server() -> None:
     settings = get_server_settings()
     app = create_app(settings)
 
-    logger.info(f"Web Server 已启动：http://{settings.host}:{settings.port}")
+    logger.info(f"Web UI 已启动：http://{settings.host}:{settings.port}/webui")
     if settings.webui_token_generated:
         logger.warning("未配置 WEBUI_TOKEN，已自动生成临时 token：")
         logger.warning(settings.webui_token)
