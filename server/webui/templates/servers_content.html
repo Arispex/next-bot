@@ -1,0 +1,88 @@
+<section class="server-panel">
+  <div class="panel-toolbar">
+    <div class="panel-summary">
+      <span class="summary-chip">服务器总数 <strong id="stat-total">0</strong></span>
+      <span class="summary-chip">连通成功 <strong id="stat-success" class="success">0</strong></span>
+      <span class="summary-chip">连通失败 <strong id="stat-failed" class="danger">0</strong></span>
+    </div>
+    <div class="panel-filter">
+      <input id="server-search" class="input search-input" type="text" placeholder="搜索服务器名称 / 地址 / 端口" />
+    </div>
+    <div class="panel-head-actions">
+      <button id="reload-btn" type="button" class="btn">刷新</button>
+      <button id="add-server-btn" type="button" class="btn btn-primary">新增服务器</button>
+    </div>
+  </div>
+
+  <div class="panel-body">
+    <div id="status" class="status"></div>
+    <div id="loading" class="empty">加载中...</div>
+    <div id="empty" class="empty hidden">暂无服务器配置。</div>
+
+    <div id="table-wrap" class="table-wrap hidden">
+      <table class="server-table" aria-label="服务器管理表格">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>名称</th>
+            <th>地址</th>
+            <th>游戏端口</th>
+            <th>RestAPI端口</th>
+            <th>Token</th>
+            <th>连通性</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="server-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<div id="server-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="server-modal-title">
+  <div class="modal-mask" data-modal-close="1"></div>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="server-modal-title" class="modal-title">新增服务器</h3>
+      <button id="modal-close-btn" type="button" class="btn btn-icon modal-close-btn" aria-label="关闭">✕</button>
+    </div>
+    <div id="modal-status" class="modal-status"></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <label class="form-item">
+          <span class="form-label">服务器名称</span>
+          <input id="field-name" class="input" type="text" maxlength="32" placeholder="例如：主服" />
+        </label>
+        <label class="form-item">
+          <span class="form-label">服务器地址</span>
+          <input id="field-ip" class="input" type="text" placeholder="例如：127.0.0.1 / server.example.com" />
+        </label>
+        <label class="form-item">
+          <span class="form-label">游戏端口</span>
+          <input id="field-game-port" class="input" type="number" min="1" max="65535" placeholder="7777" />
+        </label>
+        <label class="form-item">
+          <span class="form-label">RestAPI端口</span>
+          <input id="field-restapi-port" class="input" type="number" min="1" max="65535" placeholder="7878" />
+        </label>
+      </div>
+
+      <label class="form-item">
+        <span class="form-label">RestAPI Token</span>
+        <div class="token-input-wrap">
+          <input id="field-token" class="input token-input" type="password" minlength="6" maxlength="128" placeholder="请输入 Token" />
+          <button id="modal-token-toggle" type="button" class="btn token-toggle-btn" aria-label="显示 Token" title="显示 Token">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
+        </div>
+      </label>
+    </div>
+    <div class="modal-foot">
+      <button id="modal-cancel-btn" type="button" class="btn">取消</button>
+      <button id="modal-save-btn" type="button" class="btn btn-primary">保存</button>
+    </div>
+  </div>
+</div>
