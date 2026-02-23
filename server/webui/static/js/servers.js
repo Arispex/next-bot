@@ -4,6 +4,7 @@
   const searchInput = document.getElementById("server-search");
 
   const statusNode = document.getElementById("status");
+  const statusMessageNode = document.getElementById("status-message");
   const loadingNode = document.getElementById("loading");
   const emptyNode = document.getElementById("empty");
   const tableWrapNode = document.getElementById("table-wrap");
@@ -15,7 +16,8 @@
 
   const modalNode = document.getElementById("server-modal");
   const modalTitleNode = document.getElementById("server-modal-title");
-  const modalStatusNode = document.getElementById("modal-status");
+  const modalAlertNode = document.getElementById("modal-alert");
+  const modalAlertMessageNode = document.getElementById("modal-alert-message");
   const modalCloseButton = document.getElementById("modal-close-btn");
   const modalCancelButton = document.getElementById("modal-cancel-btn");
   const modalSaveButton = document.getElementById("modal-save-btn");
@@ -29,6 +31,7 @@
 
   const requiredNodesReady = Boolean(
     statusNode &&
+    statusMessageNode &&
     loadingNode &&
     emptyNode &&
     tableWrapNode &&
@@ -38,7 +41,8 @@
     statFailedNode &&
     modalNode &&
     modalTitleNode &&
-    modalStatusNode &&
+    modalAlertNode &&
+    modalAlertMessageNode &&
     modalCloseButton &&
     modalCancelButton &&
     modalSaveButton &&
@@ -79,13 +83,31 @@
   const testResultMap = new Map();
 
   const setStatus = (message, type = "") => {
-    statusNode.textContent = message || "";
-    statusNode.className = `status${type ? ` ${type}` : ""}`;
+    const text = String(message || "").trim();
+    if (!text) {
+      statusNode.className = "alert hidden";
+      statusMessageNode.textContent = "";
+      return;
+    }
+    const normalizedType = ["success", "error", "warning", "info"].includes(type)
+      ? type
+      : "info";
+    statusNode.className = `alert ${normalizedType}`;
+    statusMessageNode.textContent = text;
   };
 
-  const setModalStatus = (message, type = "") => {
-    modalStatusNode.textContent = message || "";
-    modalStatusNode.className = `modal-status${type ? ` ${type}` : ""}`;
+  const setModalAlert = (message = "", type = "info") => {
+    const text = String(message || "").trim();
+    if (!text) {
+      modalAlertNode.className = "alert hidden modal-alert";
+      modalAlertMessageNode.textContent = "";
+      return;
+    }
+    const normalizedType = ["success", "error", "warning", "info"].includes(type)
+      ? type
+      : "info";
+    modalAlertNode.className = `alert ${normalizedType} modal-alert`;
+    modalAlertMessageNode.textContent = text;
   };
 
   const parseJsonSafe = async (response) => {
@@ -378,7 +400,7 @@
     modalTokenVisible = false;
     tokenInput.type = "password";
     setTokenButtonIcon(modalTokenToggleButton, false);
-    setModalStatus("");
+    setModalAlert("");
 
     if (mode === "edit" && server) {
       modalTitleNode.textContent = `编辑服务器 #${server.id}`;
@@ -438,7 +460,7 @@
       throw new Error("服务器名称格式错误，仅允许中英文、数字、空格和 -_.，长度 1-32");
     }
     if (!ip) {
-      throw new Error("服务器地址不能为空");
+      throw new Error("地址不能为空");
     }
     if (!token) {
       throw new Error("Token 不能为空");
@@ -466,13 +488,13 @@
       payload = buildPayloadFromModal();
     } catch (error) {
       const message = error instanceof Error ? error.message : "表单校验失败";
-      setModalStatus(message);
+      setModalAlert(message, "error");
       return;
     }
 
     modalSaving = true;
     modalSaveButton.disabled = true;
-    setModalStatus("正在保存...", "success");
+    setModalAlert("正在保存...", "info");
 
     try {
       const isEdit = modalMode === "edit" && typeof editingServerId === "number";
@@ -499,7 +521,7 @@
       await loadServers();
     } catch (error) {
       const message = error instanceof Error ? error.message : "保存失败";
-      setModalStatus(message);
+      setModalAlert(message, "error");
     } finally {
       modalSaving = false;
       modalSaveButton.disabled = false;

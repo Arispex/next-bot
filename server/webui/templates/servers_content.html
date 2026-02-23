@@ -15,7 +15,9 @@
   </div>
 
   <div class="panel-body">
-    <div id="status" class="status"></div>
+    <div id="status" class="alert hidden" role="status" aria-live="polite">
+      <span id="status-message" class="alert-message"></span>
+    </div>
     <div id="loading" class="empty">加载中...</div>
     <div id="empty" class="empty hidden">暂无服务器配置。</div>
 
@@ -24,7 +26,7 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>名称</th>
+            <th>服务器名称</th>
             <th>地址</th>
             <th>游戏端口</th>
             <th>REST API 端口</th>
@@ -46,7 +48,9 @@
       <h3 id="server-modal-title" class="modal-title">新增服务器</h3>
       <button id="modal-close-btn" type="button" class="btn btn-icon modal-close-btn" aria-label="关闭">✕</button>
     </div>
-    <div id="modal-status" class="modal-status"></div>
+    <div id="modal-alert" class="alert hidden modal-alert" role="status" aria-live="polite">
+      <span id="modal-alert-message" class="alert-message"></span>
+    </div>
     <div class="modal-body">
       <div class="form-grid">
         <label class="form-item">
@@ -54,7 +58,7 @@
           <input id="field-name" class="input" type="text" maxlength="32" placeholder="例如：主服" />
         </label>
         <label class="form-item">
-          <span class="form-label">服务器地址</span>
+          <span class="form-label">地址</span>
           <input id="field-ip" class="input" type="text" placeholder="例如：127.0.0.1 / server.example.com" />
         </label>
         <label class="form-item">
@@ -68,10 +72,10 @@
       </div>
 
       <label class="form-item">
-        <span class="form-label">REST API Token</span>
+        <span class="form-label">Token</span>
         <div class="token-input-wrap">
           <input id="field-token" class="input token-input" type="password" minlength="6" maxlength="128" placeholder="请输入 Token" />
-          <button id="modal-token-toggle" type="button" class="btn token-toggle-btn" aria-label="显示 Token" title="显示 Token">
+          <button id="modal-token-toggle" type="button" class="token-input-toggle" aria-label="显示 Token" title="显示 Token">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
               <circle cx="12" cy="12" r="3"></circle>

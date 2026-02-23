@@ -90,23 +90,45 @@ html.dark {
   padding: 16px;
 }
 
-.status {
-  font-size: 13px;
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface-soft);
   color: var(--text-muted);
-  min-height: 18px;
-  padding: 0 2px 8px;
 }
 
-.status.error {
-  color: var(--danger);
+.alert.info {
+  border-color: color-mix(in srgb, var(--primary) 32%, var(--line-strong));
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface-soft));
+  color: color-mix(in srgb, var(--primary) 78%, var(--text));
 }
 
-.status.success {
-  color: var(--success);
+.alert.success {
+  border-color: color-mix(in srgb, var(--success) 38%, var(--line-strong));
+  background: color-mix(in srgb, var(--success) 12%, var(--surface-soft));
+  color: color-mix(in srgb, var(--success) 78%, var(--text));
 }
 
-.status.warning {
-  color: var(--warning);
+.alert.error {
+  border-color: color-mix(in srgb, var(--danger) 36%, var(--line-strong));
+  background: color-mix(in srgb, var(--danger) 12%, var(--surface-soft));
+  color: color-mix(in srgb, var(--danger) 80%, var(--text));
+}
+
+.alert.warning {
+  border-color: color-mix(in srgb, var(--warning) 40%, var(--line-strong));
+  background: color-mix(in srgb, var(--warning) 14%, var(--surface-soft));
+  color: color-mix(in srgb, var(--warning) 80%, var(--text));
+}
+
+.alert-message {
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 .empty {
@@ -346,15 +368,12 @@ html.dark {
   height: 30px;
 }
 
-.modal-status {
-  padding: 10px 14px 0;
-  min-height: 18px;
-  font-size: 12px;
-  color: var(--danger);
+.modal-alert {
+  margin: 10px 14px 0;
 }
 
-.modal-status.success {
-  color: var(--success);
+.modal-alert .alert-message {
+  font-size: 12px;
 }
 
 .modal-body {
@@ -383,13 +402,43 @@ html.dark {
 }
 
 .token-input-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  position: relative;
+  width: 100%;
 }
 
 .token-input {
   min-width: 0;
+  width: 100%;
+  padding-right: 40px;
+}
+
+.token-input-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.token-input-toggle:hover {
+  color: var(--text);
+  background: var(--surface-soft);
+}
+
+.token-input-toggle svg {
+  width: 14px;
+  height: 14px;
 }
 
 .modal-foot {
