@@ -161,6 +161,7 @@ def _validate_by_schema(schema: dict[str, Any], value: Any, *, param_name: str) 
     if param_type not in _ALLOWED_PARAM_TYPES:
         raise CommandConfigValidationError(f"参数 {param_name} 的类型不支持：{param_type}")
 
+    normalized: bool | int | float | str
     if param_type == "bool":
         normalized = _coerce_bool(value)
     elif param_type == "int":
@@ -184,8 +185,10 @@ def _validate_by_schema(schema: dict[str, Any], value: Any, *, param_name: str) 
 
     if param_type == "string":
         required = bool(schema.get("required", False))
-        if required and not normalized.strip():
+        normalized_text = normalized if isinstance(normalized, str) else str(normalized)
+        if required and not normalized_text.strip():
             raise CommandConfigValidationError(f"参数 {param_name} 不能为空")
+        normalized = normalized_text
 
     return normalized
 
