@@ -1,40 +1,48 @@
-.content-grid {
+.dashboard-layout {
   display: grid;
   gap: 16px;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
-.hero-card {
-  grid-column: span 12;
+.welcome-card,
+.stat-card {
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--surface);
   box-shadow: var(--shadow);
-  padding: 24px;
 }
 
-.hero-title {
+.welcome-card {
+  padding: 22px 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.welcome-title {
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 1.35;
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0.01em;
 }
 
-.hero-text {
+.welcome-desc {
   margin: 10px 0 0;
   color: var(--text-muted);
   font-size: 14px;
   line-height: 1.7;
+  max-width: 760px;
 }
 
-.status-row {
-  margin-top: 18px;
-  display: flex;
+.welcome-meta {
+  display: inline-flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
-.status-tag {
+.meta-tag {
   height: 28px;
   padding: 0 10px;
   border-radius: 6px;
@@ -48,43 +56,68 @@
 }
 
 .status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
   background: #52c41a;
   box-shadow: 0 0 0 4px rgba(82, 196, 26, 0.15);
 }
 
-.module-card {
-  grid-column: span 4;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--surface);
-  padding: 16px;
+.stats-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.module-title {
+.stat-card {
+  padding: 16px 18px;
+}
+
+.stat-label {
   margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.4;
-}
-
-.module-desc {
-  margin: 8px 0 0;
-  font-size: 13px;
   color: var(--text-muted);
-  line-height: 1.6;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
-@media (max-width: 1080px) {
-  .module-card {
-    grid-column: span 6;
+.stat-value {
+  margin: 8px 0 0;
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+@media (max-width: 1120px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 840px) {
-  .module-card {
-    grid-column: span 12;
+@media (max-width: 920px) {
+  .welcome-card {
+    flex-direction: column;
+  }
+
+  .welcome-meta {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .welcome-card {
+    padding: 18px;
+  }
+
+  .welcome-title {
+    font-size: 24px;
+  }
+
+  .stat-value {
+    font-size: 24px;
+  }
+
+  .stats-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
