@@ -353,21 +353,12 @@ html.dark {
   height: 30px;
 }
 
-.modal-subtitle {
-  padding: 10px 14px 0;
-  font-size: 12px;
-  color: var(--text-muted);
+.modal-alert {
+  margin: 10px 14px 0;
 }
 
-.modal-status {
-  padding: 8px 14px 0;
-  min-height: 18px;
+.modal-alert .alert-message {
   font-size: 12px;
-  color: var(--danger);
-}
-
-.modal-status.success {
-  color: var(--success);
 }
 
 .modal-body {

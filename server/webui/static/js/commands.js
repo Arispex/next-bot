@@ -17,8 +17,8 @@
   const modalNode = document.getElementById("param-modal");
   const modalBodyNode = document.getElementById("param-modal-body");
   const modalTitleNode = document.getElementById("param-modal-title");
-  const modalSubtitleNode = document.getElementById("param-modal-subtitle");
-  const modalStatusNode = document.getElementById("param-modal-status");
+  const modalAlertNode = document.getElementById("param-modal-alert");
+  const modalAlertMessageNode = document.getElementById("param-modal-alert-message");
   const modalCloseButton = document.getElementById("modal-close-btn");
   const modalCancelButton = document.getElementById("modal-cancel-btn");
   const modalSaveButton = document.getElementById("modal-save-btn");
@@ -52,10 +52,19 @@
     statusNode.className = `alert ${normalizedType}`;
   };
 
-  const setModalStatus = (message, type = "") => {
-    if (!modalStatusNode) return;
-    modalStatusNode.textContent = message || "";
-    modalStatusNode.className = `modal-status${type ? ` ${type}` : ""}`;
+  const setModalAlert = (message = "", type = "info") => {
+    if (!modalAlertNode || !modalAlertMessageNode) return;
+    const text = String(message || "").trim();
+    if (!text) {
+      modalAlertNode.className = "alert info modal-alert hidden";
+      modalAlertMessageNode.textContent = "";
+      return;
+    }
+    const normalizedType = ["success", "error", "warning", "info"].includes(type)
+      ? type
+      : "info";
+    modalAlertMessageNode.textContent = text;
+    modalAlertNode.className = `alert ${normalizedType} modal-alert`;
   };
 
   const cloneValue = (value) => JSON.parse(JSON.stringify(value));
@@ -318,21 +327,23 @@
   };
 
   const openParamModal = (commandKey) => {
-    if (!modalNode || !modalBodyNode || !modalTitleNode || !modalSubtitleNode) return;
+    if (!modalNode || !modalBodyNode || !modalTitleNode) return;
 
     const command = getCommandByKey(commandKey);
     if (!command) return;
 
     activeModalCommandKey = commandKey;
-    setModalStatus("");
+    setModalAlert(
+      "提示：参数修改后需点击页面上方“保存全部”才能生效。",
+      "info",
+    );
 
     const schema = command.param_schema && typeof command.param_schema === "object"
       ? command.param_schema
       : {};
     const paramNames = Object.keys(schema);
 
-    modalTitleNode.textContent = command.display_name || "参数配置";
-    modalSubtitleNode.textContent = "修改参数后点击保存全部即可生效。";
+    modalTitleNode.textContent = `编辑参数 #${command.command_key || command.display_name || "unknown"}`;
     modalBodyNode.innerHTML = "";
 
     if (!paramNames.length) {
@@ -340,6 +351,7 @@
       empty.className = "empty";
       empty.textContent = "当前命令没有可配置参数。";
       modalBodyNode.appendChild(empty);
+      setModalAlert("当前命令没有可配置参数。", "warning");
       modalNode.classList.remove("hidden");
       return;
     }
@@ -432,7 +444,7 @@
     modalNode.classList.add("hidden");
     modalBodyNode.innerHTML = "";
     activeModalCommandKey = "";
-    setModalStatus("");
+    setModalAlert("");
   };
 
   const saveModalParams = () => {
@@ -459,7 +471,7 @@
       try {
         schema = JSON.parse(schemaRaw);
       } catch (_error) {
-        setModalStatus(`${paramLabel}: 参数定义无效`);
+        setModalAlert(`${paramLabel}: 参数定义无效`, "error");
         return;
       }
 
@@ -469,7 +481,7 @@
       } else if (inputNode.dataset.enumSelect === "1" && Array.isArray(schema.enum)) {
         const enumIndex = Number.parseInt(String(inputNode.value), 10);
         if (!Number.isInteger(enumIndex) || enumIndex < 0 || enumIndex >= schema.enum.length) {
-          setModalStatus(`${paramLabel}: 选项无效`);
+          setModalAlert(`${paramLabel}: 选项无效`, "error");
           return;
         }
         rawValue = schema.enum[enumIndex];
@@ -481,7 +493,7 @@
         nextValues[paramName] = normalizeWithSchema(schema, rawValue, true);
       } catch (error) {
         const message = error instanceof Error ? error.message : "参数格式错误";
-        setModalStatus(`${paramLabel}: ${message}`);
+        setModalAlert(`${paramLabel}: ${message}`, "error");
         if (typeof inputNode.focus === "function") {
           inputNode.focus();
         }
