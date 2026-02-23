@@ -96,12 +96,9 @@ def _run_server() -> None:
     app = create_app(settings)
 
     logger.info(f"Web UI 已启动：http://{settings.host}:{settings.port}/webui")
-    if settings.webui_token_generated:
-        logger.warning("未配置 WEBUI_TOKEN，已自动生成临时 token：")
-        logger.warning(settings.webui_token)
-        logger.warning("可在 .env 中设置 WEBUI_TOKEN 以固定 token。")
-    if settings.session_secret_generated:
-        logger.info("未配置 WEBUI_SESSION_SECRET，已自动生成临时会话签名密钥。")
+    if settings.auth_file_created:
+        logger.info(f"已初始化 Web UI 认证文件：{settings.auth_file_path}")
+    logger.warning(f"Web UI Token：{settings.webui_token}")
 
     uvicorn.run(
         app,

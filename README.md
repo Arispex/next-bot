@@ -40,10 +40,6 @@ ONEBOT_ACCESS_TOKEN=your_token
 WEB_SERVER_HOST=127.0.0.1
 WEB_SERVER_PORT=18081
 WEB_SERVER_PUBLIC_BASE_URL=http://127.0.0.1:18081
-# 控制台登录 token，不配置则启动时自动生成并打印
-WEBUI_TOKEN=
-# 控制台会话签名密钥，不配置则启动时自动生成
-WEBUI_SESSION_SECRET=
 # 命令关闭策略：reply(拦截并提示) / silent(静默忽略)
 COMMAND_DISABLED_MODE=reply
 # 命令关闭提示词（仅 COMMAND_DISABLED_MODE=reply 时生效）
@@ -60,7 +56,8 @@ uv run python bot.py
 ```text
 http://127.0.0.1:18081/webui
 ```
-首次访问会跳转到登录页，输入 `WEBUI_TOKEN` 即可进入控制台。
+首次运行会自动生成并持久化 Web UI Token（项目根目录 `.webui_auth.json`），后续重启会复用同一个 Token。  
+启动日志会打印当前 Token，首次访问登录页输入该 Token 即可进入控制台。
 
 5. 命令配置中心
 ```text

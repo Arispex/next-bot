@@ -145,4 +145,5 @@ dmypy.json
 
 # Project local
 app.db
+.webui_auth.json
 .vscode/
