@@ -80,10 +80,27 @@ def _extract_response_text(payload: dict[str, object]) -> str:
 
 
 def _to_non_negative_int(value: object) -> int | None:
-    try:
-        parsed = int(value)
-    except (TypeError, ValueError):
+    if isinstance(value, bool):
         return None
+
+    parsed: int
+    if isinstance(value, int):
+        parsed = value
+    elif isinstance(value, float):
+        if not value.is_integer():
+            return None
+        parsed = int(value)
+    elif isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return None
+        try:
+            parsed = int(text)
+        except ValueError:
+            return None
+    else:
+        return None
+
     if parsed < 0:
         return None
     return parsed
