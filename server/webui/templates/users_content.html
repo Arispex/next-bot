@@ -6,7 +6,7 @@
       <span class="summary-chip">同步失败 <strong id="stat-failed" class="danger">0</strong></span>
     </div>
     <div class="panel-filter">
-      <input id="user-search" class="input search-input" type="text" placeholder="搜索用户ID / 名称 / 身份组 / 权限" />
+      <input id="user-search" class="input search-input" type="text" placeholder="搜索用户 ID / 用户名称 / 身份组 / 权限" />
     </div>
     <div class="panel-head-actions">
       <button id="reload-btn" type="button" class="btn">刷新</button>
@@ -15,7 +15,9 @@
   </div>
 
   <div class="panel-body">
-    <div id="status" class="status"></div>
+    <div id="status" class="alert hidden" role="status" aria-live="polite">
+      <span id="status-message" class="alert-message"></span>
+    </div>
     <div id="loading" class="empty">加载中...</div>
     <div id="empty" class="empty hidden">暂无用户数据。</div>
 
@@ -24,8 +26,8 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>用户ID</th>
-            <th>名称</th>
+            <th>用户 ID</th>
+            <th>用户名称</th>
             <th>金币</th>
             <th>身份组</th>
             <th>权限</th>
@@ -46,11 +48,13 @@
       <h3 id="user-modal-title" class="modal-title">新增用户</h3>
       <button id="modal-close-btn" type="button" class="btn btn-icon modal-close-btn" aria-label="关闭">✕</button>
     </div>
-    <div id="modal-status" class="modal-status"></div>
+    <div id="modal-alert" class="alert hidden modal-alert" role="status" aria-live="polite">
+      <span id="modal-alert-message" class="alert-message"></span>
+    </div>
     <div class="modal-body">
       <div class="form-grid">
         <label class="form-item">
-          <span class="form-label">用户ID</span>
+          <span class="form-label">用户 ID</span>
           <input id="field-user-id" class="input" type="text" placeholder="请输入 QQ 号（5-20 位数字）" />
         </label>
         <label class="form-item">

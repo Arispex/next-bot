@@ -4,6 +4,7 @@
   const searchInput = document.getElementById("user-search");
 
   const statusNode = document.getElementById("status");
+  const statusMessageNode = document.getElementById("status-message");
   const loadingNode = document.getElementById("loading");
   const emptyNode = document.getElementById("empty");
   const tableWrapNode = document.getElementById("table-wrap");
@@ -15,7 +16,8 @@
 
   const modalNode = document.getElementById("user-modal");
   const modalTitleNode = document.getElementById("user-modal-title");
-  const modalStatusNode = document.getElementById("modal-status");
+  const modalAlertNode = document.getElementById("modal-alert");
+  const modalAlertMessageNode = document.getElementById("modal-alert-message");
   const modalCloseButton = document.getElementById("modal-close-btn");
   const modalCancelButton = document.getElementById("modal-cancel-btn");
   const modalSaveButton = document.getElementById("modal-save-btn");
@@ -32,6 +34,7 @@
     addUserButton &&
     searchInput &&
     statusNode &&
+    statusMessageNode &&
     loadingNode &&
     emptyNode &&
     tableWrapNode &&
@@ -41,7 +44,8 @@
     statFailedNode &&
     modalNode &&
     modalTitleNode &&
-    modalStatusNode &&
+    modalAlertNode &&
+    modalAlertMessageNode &&
     modalCloseButton &&
     modalCancelButton &&
     modalSaveButton &&
@@ -69,13 +73,31 @@
   const syncResultMap = new Map();
 
   const setStatus = (message, type = "") => {
-    statusNode.textContent = message || "";
-    statusNode.className = `status${type ? ` ${type}` : ""}`;
+    const text = String(message || "").trim();
+    if (!text) {
+      statusNode.className = "alert hidden";
+      statusMessageNode.textContent = "";
+      return;
+    }
+    const normalizedType = ["success", "error", "warning", "info"].includes(type)
+      ? type
+      : "info";
+    statusNode.className = `alert ${normalizedType}`;
+    statusMessageNode.textContent = text;
   };
 
-  const setModalStatus = (message, type = "") => {
-    modalStatusNode.textContent = message || "";
-    modalStatusNode.className = `modal-status${type ? ` ${type}` : ""}`;
+  const setModalAlert = (message = "", type = "info") => {
+    const text = String(message || "").trim();
+    if (!text) {
+      modalAlertNode.className = "alert hidden modal-alert";
+      modalAlertMessageNode.textContent = "";
+      return;
+    }
+    const normalizedType = ["success", "error", "warning", "info"].includes(type)
+      ? type
+      : "info";
+    modalAlertNode.className = `alert ${normalizedType} modal-alert`;
+    modalAlertMessageNode.textContent = text;
   };
 
   const parseJsonSafe = async (response) => {
@@ -375,7 +397,7 @@
     modalMode = mode;
     editingUserDbId = mode === "edit" && user ? user.id : null;
     modalSaving = false;
-    setModalStatus("");
+    setModalAlert("");
 
     if (mode === "edit" && user) {
       modalTitleNode.textContent = `编辑用户 #${user.id}`;
@@ -408,10 +430,10 @@
     const permissions = normalizePermissionsText(fieldPermissions.value || "");
 
     if (!userId) {
-      throw new Error("用户ID不能为空");
+      throw new Error("用户 ID 不能为空");
     }
     if (!USER_ID_PATTERN.test(userId)) {
-      throw new Error("用户ID必须是 5-20 位数字");
+      throw new Error("用户 ID 必须是 5-20 位数字");
     }
     if (!name) {
       throw new Error("用户名称不能为空");
@@ -460,13 +482,13 @@
       payload = buildPayloadFromModal();
     } catch (error) {
       const message = error instanceof Error ? error.message : "表单校验失败";
-      setModalStatus(message);
+      setModalAlert(message, "error");
       return;
     }
 
     modalSaving = true;
     modalSaveButton.disabled = true;
-    setModalStatus("正在保存...", "success");
+    setModalAlert("正在保存...", "info");
 
     try {
       const isEdit = modalMode === "edit" && typeof editingUserDbId === "number";
@@ -491,7 +513,7 @@
       await loadUsers();
     } catch (error) {
       const message = error instanceof Error ? error.message : "保存失败";
-      setModalStatus(message);
+      setModalAlert(message, "error");
     } finally {
       modalSaving = false;
       modalSaveButton.disabled = false;
