@@ -1,0 +1,79 @@
+<section class="group-panel">
+  <div class="panel-toolbar">
+    <div class="panel-summary">
+      <span class="summary-chip">身份组总数 <strong id="stat-total">0</strong></span>
+      <span class="summary-chip">内置组 <strong id="stat-builtin" class="success">0</strong></span>
+      <span class="summary-chip">普通组 <strong id="stat-normal" class="danger">0</strong></span>
+    </div>
+    <div class="panel-filter">
+      <input id="group-search" class="input search-input" type="text" placeholder="搜索组名 / 权限 / 继承" />
+    </div>
+    <div class="panel-head-actions">
+      <button id="reload-btn" type="button" class="btn">刷新</button>
+      <button id="add-group-btn" type="button" class="btn btn-primary">新增身份组</button>
+    </div>
+  </div>
+
+  <div class="panel-body">
+    <div id="status" class="status"></div>
+    <div id="loading" class="empty">加载中...</div>
+    <div id="empty" class="empty hidden">暂无身份组数据。</div>
+
+    <div id="table-wrap" class="table-wrap hidden">
+      <table class="group-table" aria-label="身份组管理表格">
+        <thead>
+          <tr>
+            <th>名称</th>
+            <th>权限</th>
+            <th>继承</th>
+            <th>用户数</th>
+            <th>类型</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="group-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<div id="group-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="group-modal-title">
+  <div class="modal-mask" data-modal-close="1"></div>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="group-modal-title" class="modal-title">新增身份组</h3>
+      <button id="modal-close-btn" type="button" class="btn btn-icon modal-close-btn" aria-label="关闭">✕</button>
+    </div>
+    <div id="modal-status" class="modal-status"></div>
+    <div class="modal-body">
+      <label class="form-item">
+        <span class="form-label">身份组名称</span>
+        <input id="field-name" class="input" type="text" maxlength="32" placeholder="例如：moderator" />
+      </label>
+
+      <label class="form-item">
+        <span class="form-label">权限（逗号分隔）</span>
+        <input id="field-permissions" class="input" type="text" placeholder="例如：server.list,user.info.user" />
+      </label>
+
+      <div class="form-preview">
+        <span class="form-label">权限预览</span>
+        <div id="permission-preview-list" class="tag-list"></div>
+      </div>
+
+      <label class="form-item">
+        <span class="form-label">继承（逗号分隔）</span>
+        <input id="field-inherits" class="input" type="text" placeholder="例如：guest,default" />
+      </label>
+
+      <div class="form-preview">
+        <span class="form-label">继承预览</span>
+        <div id="inherit-preview-list" class="tag-list"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button id="modal-cancel-btn" type="button" class="btn">取消</button>
+      <button id="modal-save-btn" type="button" class="btn btn-primary">保存</button>
+    </div>
+  </div>
+</div>

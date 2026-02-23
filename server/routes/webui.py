@@ -13,6 +13,7 @@ from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Resp
 
 from server.pages.console_page import (
     render_console_page,
+    render_groups_page,
     render_login_page,
     render_servers_page,
     render_users_page,
@@ -137,6 +138,11 @@ async def webui_servers_page(request: Request) -> HTMLResponse:
 @router.get("/webui/users", response_class=HTMLResponse)
 async def webui_users_page(request: Request) -> HTMLResponse:
     return HTMLResponse(content=render_users_page())
+
+
+@router.get("/webui/groups", response_class=HTMLResponse)
+async def webui_groups_page(request: Request) -> HTMLResponse:
+    return HTMLResponse(content=render_groups_page())
 
 
 @router.get("/webui/static/{file_path:path}")
