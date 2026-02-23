@@ -1,0 +1,85 @@
+<section class="user-panel">
+  <div class="panel-toolbar">
+    <div class="panel-summary">
+      <span class="summary-chip">用户总数 <strong id="stat-total">0</strong></span>
+      <span class="summary-chip">同步成功 <strong id="stat-success" class="success">0</strong></span>
+      <span class="summary-chip">同步失败 <strong id="stat-failed" class="danger">0</strong></span>
+    </div>
+    <div class="panel-filter">
+      <input id="user-search" class="input search-input" type="text" placeholder="搜索用户ID / 名称 / 身份组 / 权限" />
+    </div>
+    <div class="panel-head-actions">
+      <button id="reload-btn" type="button" class="btn">刷新</button>
+      <button id="add-user-btn" type="button" class="btn btn-primary">新增用户</button>
+    </div>
+  </div>
+
+  <div class="panel-body">
+    <div id="status" class="status"></div>
+    <div id="loading" class="empty">加载中...</div>
+    <div id="empty" class="empty hidden">暂无用户数据。</div>
+
+    <div id="table-wrap" class="table-wrap hidden">
+      <table class="user-table" aria-label="用户管理表格">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>用户ID</th>
+            <th>名称</th>
+            <th>金币</th>
+            <th>身份组</th>
+            <th>权限</th>
+            <th>创建时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="user-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<div id="user-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="user-modal-title">
+  <div class="modal-mask" data-modal-close="1"></div>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="user-modal-title" class="modal-title">新增用户</h3>
+      <button id="modal-close-btn" type="button" class="btn btn-icon modal-close-btn" aria-label="关闭">✕</button>
+    </div>
+    <div id="modal-status" class="modal-status"></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <label class="form-item">
+          <span class="form-label">用户ID</span>
+          <input id="field-user-id" class="input" type="text" placeholder="请输入 QQ 号（5-20 位数字）" />
+        </label>
+        <label class="form-item">
+          <span class="form-label">用户名称</span>
+          <input id="field-name" class="input" type="text" maxlength="16" placeholder="请输入用户名称" />
+        </label>
+        <label class="form-item">
+          <span class="form-label">金币</span>
+          <input id="field-coins" class="input" type="number" min="0" placeholder="0" />
+        </label>
+        <label class="form-item">
+          <span class="form-label">身份组</span>
+          <select id="field-group" class="input select"></select>
+        </label>
+      </div>
+
+      <label class="form-item">
+        <span class="form-label">权限（逗号分隔）</span>
+        <input id="field-permissions" class="input" type="text" placeholder="例如：server.list,permission.user.add" />
+      </label>
+
+      <div class="permission-preview">
+        <span class="form-label">权限预览</span>
+        <div id="permission-preview-list" class="permission-list"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button id="modal-cancel-btn" type="button" class="btn">取消</button>
+      <button id="modal-save-btn" type="button" class="btn btn-primary">保存</button>
+    </div>
+  </div>
+</div>

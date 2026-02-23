@@ -15,6 +15,7 @@ from server.pages.console_page import (
     render_console_page,
     render_login_page,
     render_servers_page,
+    render_users_page,
 )
 from server.server_config import WebServerSettings
 
@@ -131,6 +132,11 @@ async def webui_index(request: Request) -> HTMLResponse:
 @router.get("/webui/servers", response_class=HTMLResponse)
 async def webui_servers_page(request: Request) -> HTMLResponse:
     return HTMLResponse(content=render_servers_page())
+
+
+@router.get("/webui/users", response_class=HTMLResponse)
+async def webui_users_page(request: Request) -> HTMLResponse:
+    return HTMLResponse(content=render_users_page())
 
 
 @router.get("/webui/static/{file_path:path}")

@@ -27,7 +27,7 @@ def _asset_url(path: str) -> str:
 def _render_app_shell_page(
     *,
     page_title: str,
-    active_menu: Literal["dashboard", "commands", "servers"],
+    active_menu: Literal["dashboard", "commands", "servers", "users"],
     content_template: str,
     page_style_urls: tuple[str, ...] = (),
     page_script_urls: tuple[str, ...] = (),
@@ -45,6 +45,7 @@ def _render_app_shell_page(
     dashboard_active = "is-active" if active_menu == "dashboard" else ""
     commands_active = "is-active" if active_menu == "commands" else ""
     servers_active = "is-active" if active_menu == "servers" else ""
+    users_active = "is-active" if active_menu == "users" else ""
 
     return (
         base_template.replace("__PAGE_TITLE__", html.escape(page_title))
@@ -52,6 +53,7 @@ def _render_app_shell_page(
         .replace("__NAV_DASHBOARD_ACTIVE__", dashboard_active)
         .replace("__NAV_COMMANDS_ACTIVE__", commands_active)
         .replace("__NAV_SERVERS_ACTIVE__", servers_active)
+        .replace("__NAV_USERS_ACTIVE__", users_active)
         .replace("__MAIN_CONTENT__", content_html)
         .replace(
             "__WEBUI_SCRIPT_URL__",
@@ -120,5 +122,20 @@ def render_servers_page() -> str:
         ),
         page_script_urls=(
             _asset_url("js/servers.js"),
+        ),
+    )
+
+
+def render_users_page() -> str:
+    return _render_app_shell_page(
+        page_title="NextBot User Management",
+        active_menu="users",
+        content_template="users_content.html",
+        page_style_urls=(
+            _asset_url("css/app-shell.css"),
+            _asset_url("css/users.css"),
+        ),
+        page_script_urls=(
+            _asset_url("js/users.js"),
         ),
     )
