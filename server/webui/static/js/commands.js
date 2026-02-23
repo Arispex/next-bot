@@ -12,8 +12,6 @@
   const statTotalNode = document.getElementById("stat-total");
   const statEnabledNode = document.getElementById("stat-enabled");
   const statDisabledNode = document.getElementById("stat-disabled");
-  const statModulesNode = document.getElementById("stat-modules");
-  const panelMetaNode = document.getElementById("panel-meta");
 
   const modalNode = document.getElementById("param-modal");
   const modalBodyNode = document.getElementById("param-modal-body");
@@ -48,14 +46,6 @@
   };
 
   const cloneValue = (value) => JSON.parse(JSON.stringify(value));
-
-  const formatModuleName = (modulePath) => {
-    const raw = String(modulePath || "").trim();
-    if (!raw) return "未知";
-    const prefix = "next_bot.plugins.";
-    const normalized = raw.startsWith(prefix) ? raw.slice(prefix.length) : raw;
-    return normalized.replaceAll("_", " ");
-  };
 
   const coerceByType = (type, raw, fromInput = false) => {
     if (type === "bool") {
@@ -175,37 +165,23 @@
     if (!keyword) return [...commandStates];
 
     return commandStates.filter((item) => {
-      const moduleName = formatModuleName(item.module_path).toLowerCase();
       const text = [
         String(item.display_name || "").toLowerCase(),
-        String(item.command_key || "").toLowerCase(),
+        String(item.description || "").toLowerCase(),
         String(item.permission || "").toLowerCase(),
-        moduleName,
       ].join(" ");
       return text.includes(keyword);
     });
   };
 
-  const updateStats = (visibleCount) => {
+  const updateStats = () => {
     const total = commandStates.length;
     const enabled = commandStates.filter((item) => Boolean(item.enabled)).length;
     const disabled = total - enabled;
-    const moduleCount = new Set(
-      commandStates.map((item) => formatModuleName(item.module_path))
-    ).size;
 
     if (statTotalNode) statTotalNode.textContent = String(total);
     if (statEnabledNode) statEnabledNode.textContent = String(enabled);
     if (statDisabledNode) statDisabledNode.textContent = String(disabled);
-    if (statModulesNode) statModulesNode.textContent = String(moduleCount);
-
-    if (panelMetaNode) {
-      const visibleText =
-        typeof visibleCount === "number" && visibleCount !== total
-          ? ` · 当前显示 ${visibleCount} 条`
-          : "";
-      panelMetaNode.textContent = `${moduleCount} 个模块 · ${total} 条命令${visibleText}`;
-    }
   };
 
   const buildPermissionNode = (permission) => {
@@ -227,7 +203,7 @@
     loadingNode.classList.add("hidden");
 
     const filteredCommands = getFilteredCommands();
-    updateStats(filteredCommands.length);
+    updateStats();
 
     if (!commandStates.length) {
       emptyNode.textContent = "暂无可配置命令。";
@@ -246,11 +222,9 @@
     emptyNode.classList.add("hidden");
     tableWrapNode.classList.remove("hidden");
 
-    filteredCommands.sort((a, b) => {
-      const moduleCompare = formatModuleName(a.module_path).localeCompare(formatModuleName(b.module_path));
-      if (moduleCompare !== 0) return moduleCompare;
-      return String(a.display_name || "").localeCompare(String(b.display_name || ""));
-    });
+    filteredCommands.sort((a, b) =>
+      String(a.display_name || "").localeCompare(String(b.display_name || ""))
+    );
 
     for (const command of filteredCommands) {
       const row = document.createElement("tr");
@@ -264,25 +238,15 @@
       nameNode.className = "command-name";
       nameNode.textContent = command.display_name || command.command_key;
 
-      const keyNode = document.createElement("div");
-      keyNode.className = "command-key";
-      keyNode.textContent = command.command_key;
-
       commandMain.appendChild(nameNode);
-      commandMain.appendChild(keyNode);
-
-      if (command.description) {
-        const descNode = document.createElement("div");
-        descNode.className = "command-desc";
-        descNode.textContent = command.description;
-        commandMain.appendChild(descNode);
-      }
-
       commandCell.appendChild(commandMain);
 
-      const moduleCell = document.createElement("td");
-      moduleCell.className = "module-cell";
-      moduleCell.textContent = formatModuleName(command.module_path);
+      const descriptionCell = document.createElement("td");
+      descriptionCell.className = "description-cell";
+      const descriptionNode = document.createElement("div");
+      descriptionNode.className = "command-desc";
+      descriptionNode.textContent = command.description || "暂无介绍";
+      descriptionCell.appendChild(descriptionNode);
 
       const permissionCell = document.createElement("td");
       permissionCell.appendChild(buildPermissionNode(command.permission));
@@ -297,7 +261,7 @@
       enabledInput.addEventListener("change", () => {
         command.enabled = Boolean(enabledInput.checked);
         setStatus("开关已更新，点击“保存全部”后生效", "success");
-        updateStats(getFilteredCommands().length);
+        updateStats();
       });
 
       const switchTrack = document.createElement("span");
@@ -319,28 +283,22 @@
         : {};
       const paramNames = Object.keys(schema);
 
-      const paramCell = document.createElement("td");
-      const countNode = document.createElement("span");
-      countNode.className = "params-count";
-      countNode.textContent = `${paramNames.length} 个参数`;
-      paramCell.appendChild(countNode);
-
       const actionCell = document.createElement("td");
-      const actionButton = document.createElement("button");
-      actionButton.type = "button";
-      actionButton.className = "btn action-btn";
-      actionButton.textContent = paramNames.length ? "编辑参数" : "无参数";
-      actionButton.disabled = !paramNames.length;
-      actionButton.addEventListener("click", () => {
-        openParamModal(command.command_key);
-      });
-      actionCell.appendChild(actionButton);
+      if (paramNames.length) {
+        const actionButton = document.createElement("button");
+        actionButton.type = "button";
+        actionButton.className = "btn action-btn";
+        actionButton.textContent = "编辑参数";
+        actionButton.addEventListener("click", () => {
+          openParamModal(command.command_key);
+        });
+        actionCell.appendChild(actionButton);
+      }
 
       row.appendChild(commandCell);
-      row.appendChild(moduleCell);
+      row.appendChild(descriptionCell);
       row.appendChild(permissionCell);
       row.appendChild(statusCell);
-      row.appendChild(paramCell);
       row.appendChild(actionCell);
       tableBodyNode.appendChild(row);
     }
@@ -360,8 +318,8 @@
       : {};
     const paramNames = Object.keys(schema);
 
-    modalTitleNode.textContent = command.display_name || command.command_key;
-    modalSubtitleNode.textContent = `命令键：${command.command_key}`;
+    modalTitleNode.textContent = command.display_name || "参数配置";
+    modalSubtitleNode.textContent = "修改参数后点击保存全部即可生效。";
     modalBodyNode.innerHTML = "";
 
     if (!paramNames.length) {

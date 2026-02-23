@@ -152,7 +152,7 @@ html.dark {
 .command-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 960px;
+  min-width: 820px;
   background: var(--surface);
 }
 
@@ -168,12 +168,13 @@ html.dark {
   padding: 12px;
   border-bottom: 1px solid var(--line);
   white-space: nowrap;
+  vertical-align: middle;
 }
 
 .command-table tbody td {
   padding: 12px;
   border-bottom: 1px solid var(--line);
-  vertical-align: top;
+  vertical-align: middle;
   font-size: 13px;
   color: var(--text);
 }
@@ -187,7 +188,7 @@ html.dark {
 }
 
 .command-main {
-  min-width: 220px;
+  min-width: 180px;
 }
 
 .command-name {
@@ -197,22 +198,16 @@ html.dark {
   color: var(--text);
 }
 
-.command-key {
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
 .command-desc {
-  margin-top: 6px;
+  margin: 0;
   font-size: 12px;
   color: var(--text-muted);
   line-height: 1.5;
 }
 
-.module-cell {
-  min-width: 140px;
-  color: var(--text-muted);
+.description-cell {
+  min-width: 260px;
+  max-width: 420px;
 }
 
 .badge {
@@ -277,11 +272,6 @@ html.dark {
 
 .switch input:checked + .switch-track::after {
   transform: translateX(14px);
-}
-
-.params-count {
-  color: var(--text-muted);
-  font-size: 12px;
 }
 
 .action-btn {
