@@ -153,10 +153,20 @@ html.dark .brand-logo-image-dark {
 
 .menu-icon {
   width: 16px;
-  text-align: center;
+  height: 16px;
   flex-shrink: 0;
-  font-size: 14px;
   opacity: 0.88;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-icon svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .menu-label {
