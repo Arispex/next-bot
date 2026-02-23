@@ -49,10 +49,6 @@ COMMAND_DISABLED_MODE=reply
 # 命令关闭提示词（仅 COMMAND_DISABLED_MODE=reply 时生效）
 COMMAND_DISABLED_MESSAGE=该命令暂时关闭
 
-# 代理功能（可选）
-LLM_API_KEY=your_api_key
-LLM_MODEL=your_model
-LLM_BASE_URL=https://your-api-endpoint/v1/chat/completions
 ```
 
 3. 启动机器人

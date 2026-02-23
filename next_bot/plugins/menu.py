@@ -11,7 +11,6 @@ group_matcher = on_command("身份组管理")
 permission_matcher = on_command("权限管理")
 server_matcher = on_command("服务器管理")
 user_matcher = on_command("用户管理")
-agent_matcher = on_command("代理功能")
 
 MENU_USAGE = "格式错误，正确格式：菜单"
 BASIC_USAGE = "格式错误，正确格式：基础功能"
@@ -19,7 +18,6 @@ GROUP_USAGE = "格式错误，正确格式：身份组管理"
 PERMISSION_USAGE = "格式错误，正确格式：权限管理"
 SERVER_USAGE = "格式错误，正确格式：服务器管理"
 USER_USAGE = "格式错误，正确格式：用户管理"
-AGENT_USAGE = "格式错误，正确格式：代理功能"
 
 MENU_TEXT = "\n".join(
     [
@@ -28,7 +26,6 @@ MENU_TEXT = "\n".join(
         "权限管理",
         "服务器管理",
         "用户管理",
-        "代理功能",
     ]
 )
 
@@ -60,7 +57,6 @@ SERVER_TEXT = "\n".join(
     ]
 )
 USER_TEXT = "\n".join(["注册账号", "同步白名单"])
-AGENT_TEXT = "\n".join(["代理", "允许执行命令", "拒绝执行命令"])
 @menu_matcher.handle()
 @command_control(
     command_key="menu.root",
@@ -163,19 +159,3 @@ async def handle_user_menu(bot: Bot, event: Event, arg: Message = CommandArg()):
         await bot.send(event, USER_USAGE)
         return
     await bot.send(event, USER_TEXT)
-
-
-@agent_matcher.handle()
-@command_control(
-    command_key="menu.agent",
-    display_name="代理功能",
-    permission="mn.agent",
-    description="显示代理功能菜单",
-)
-@require_permission("mn.agent")
-async def handle_agent_menu(bot: Bot, event: Event, arg: Message = CommandArg()):
-    args = parse_command_args_with_fallback(event, arg, "代理功能")
-    if args:
-        await bot.send(event, AGENT_USAGE)
-        return
-    await bot.send(event, AGENT_TEXT)
