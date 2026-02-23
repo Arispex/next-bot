@@ -1,9 +1,5 @@
 <section class="command-panel">
   <div class="panel-head">
-    <div class="panel-head-main">
-      <p class="panel-title">Command Config</p>
-      <span id="panel-meta" class="panel-meta">集中管理命令开关与运行参数</span>
-    </div>
     <div class="panel-head-actions">
       <button id="reload-btn" type="button" class="btn">刷新</button>
       <button id="save-all-btn" type="button" class="btn btn-primary">保存全部</button>
@@ -12,13 +8,13 @@
 
   <div class="panel-toolbar">
     <div class="panel-summary">
-      <span class="summary-chip">Total <strong id="stat-total">0</strong></span>
-      <span class="summary-chip">Enabled <strong id="stat-enabled" class="success">0</strong></span>
-      <span class="summary-chip">Disabled <strong id="stat-disabled" class="danger">0</strong></span>
-      <span class="summary-chip">Modules <strong id="stat-modules">0</strong></span>
+      <span class="summary-chip">命令总数 <strong id="stat-total">0</strong></span>
+      <span class="summary-chip">启用中 <strong id="stat-enabled" class="success">0</strong></span>
+      <span class="summary-chip">已关闭 <strong id="stat-disabled" class="danger">0</strong></span>
+      <span class="summary-chip">模块数 <strong id="stat-modules">0</strong></span>
     </div>
     <div class="panel-filter">
-      <input id="command-search" class="input search-input" type="text" placeholder="搜索命令名 / key / 模块" />
+      <input id="command-search" class="input search-input" type="text" placeholder="搜索命令名 / 命令键 / 模块" />
     </div>
   </div>
 
@@ -28,15 +24,15 @@
     <div id="empty" class="empty hidden">暂无可配置命令。</div>
 
     <div id="table-wrap" class="table-wrap hidden">
-      <table class="command-table" aria-label="Command Config Table">
+      <table class="command-table" aria-label="命令配置表格">
         <thead>
           <tr>
-            <th>Command</th>
-            <th>Module</th>
-            <th>Permission</th>
-            <th>Status</th>
-            <th>Params</th>
-            <th>Action</th>
+            <th>命令</th>
+            <th>模块</th>
+            <th>权限</th>
+            <th>状态</th>
+            <th>参数</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody id="command-table-body"></tbody>

@@ -51,7 +51,7 @@
 
   const formatModuleName = (modulePath) => {
     const raw = String(modulePath || "").trim();
-    if (!raw) return "unknown";
+    if (!raw) return "未知";
     const prefix = "next_bot.plugins.";
     const normalized = raw.startsWith(prefix) ? raw.slice(prefix.length) : raw;
     return normalized.replaceAll("_", " ");
@@ -361,7 +361,7 @@
     const paramNames = Object.keys(schema);
 
     modalTitleNode.textContent = command.display_name || command.command_key;
-    modalSubtitleNode.textContent = `Command Key: ${command.command_key}`;
+    modalSubtitleNode.textContent = `命令键：${command.command_key}`;
     modalBodyNode.innerHTML = "";
 
     if (!paramNames.length) {
