@@ -24,10 +24,27 @@ _cached_settings: WebServerSettings | None = None
 
 
 def _parse_port(raw_value: object, default: int = 18081) -> int:
-    try:
-        port = int(raw_value)
-    except (TypeError, ValueError):
+    if isinstance(raw_value, bool):
         return default
+
+    port: int
+    if isinstance(raw_value, int):
+        port = raw_value
+    elif isinstance(raw_value, float):
+        if not raw_value.is_integer():
+            return default
+        port = int(raw_value)
+    elif isinstance(raw_value, str):
+        text = raw_value.strip()
+        if not text:
+            return default
+        try:
+            port = int(text)
+        except ValueError:
+            return default
+    else:
+        return default
+
     if 1 <= port <= 65535:
         return port
     return default
