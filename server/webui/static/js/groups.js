@@ -4,6 +4,7 @@
   const searchInput = document.getElementById("group-search");
 
   const statusNode = document.getElementById("status");
+  const statusMessageNode = document.getElementById("status-message");
   const loadingNode = document.getElementById("loading");
   const emptyNode = document.getElementById("empty");
   const tableWrapNode = document.getElementById("table-wrap");
@@ -15,7 +16,8 @@
 
   const modalNode = document.getElementById("group-modal");
   const modalTitleNode = document.getElementById("group-modal-title");
-  const modalStatusNode = document.getElementById("modal-status");
+  const modalAlertNode = document.getElementById("modal-alert");
+  const modalAlertMessageNode = document.getElementById("modal-alert-message");
   const modalCloseButton = document.getElementById("modal-close-btn");
   const modalCancelButton = document.getElementById("modal-cancel-btn");
   const modalSaveButton = document.getElementById("modal-save-btn");
@@ -31,6 +33,7 @@
     addGroupButton &&
     searchInput &&
     statusNode &&
+    statusMessageNode &&
     loadingNode &&
     emptyNode &&
     tableWrapNode &&
@@ -40,7 +43,8 @@
     statNormalNode &&
     modalNode &&
     modalTitleNode &&
-    modalStatusNode &&
+    modalAlertNode &&
+    modalAlertMessageNode &&
     modalCloseButton &&
     modalCancelButton &&
     modalSaveButton &&
@@ -66,13 +70,31 @@
   let modalSaving = false;
 
   const setStatus = (message, type = "") => {
-    statusNode.textContent = message || "";
-    statusNode.className = `status${type ? ` ${type}` : ""}`;
+    const text = String(message || "").trim();
+    if (!text) {
+      statusNode.className = "alert hidden";
+      statusMessageNode.textContent = "";
+      return;
+    }
+    const normalizedType = ["success", "error", "warning", "info"].includes(type)
+      ? type
+      : "info";
+    statusNode.className = `alert ${normalizedType}`;
+    statusMessageNode.textContent = text;
   };
 
-  const setModalStatus = (message, type = "") => {
-    modalStatusNode.textContent = message || "";
-    modalStatusNode.className = `modal-status${type ? ` ${type}` : ""}`;
+  const setModalAlert = (message = "", type = "info") => {
+    const text = String(message || "").trim();
+    if (!text) {
+      modalAlertNode.className = "alert hidden modal-alert";
+      modalAlertMessageNode.textContent = "";
+      return;
+    }
+    const normalizedType = ["success", "error", "warning", "info"].includes(type)
+      ? type
+      : "info";
+    modalAlertNode.className = `alert ${normalizedType} modal-alert`;
+    modalAlertMessageNode.textContent = text;
   };
 
   const parseJsonSafe = async (response) => {
@@ -330,7 +352,7 @@
     modalMode = mode;
     modalSaving = false;
     editingGroupName = mode === "edit" && group ? group.name : "";
-    setModalStatus("");
+    setModalAlert("");
 
     if (mode === "edit" && group) {
       modalTitleNode.textContent = `编辑身份组：${group.name}`;
@@ -395,13 +417,13 @@
       payload = buildPayloadFromModal();
     } catch (error) {
       const message = error instanceof Error ? error.message : "表单校验失败";
-      setModalStatus(message);
+      setModalAlert(message, "error");
       return;
     }
 
     modalSaving = true;
     modalSaveButton.disabled = true;
-    setModalStatus("正在保存...", "success");
+    setModalAlert("正在保存...", "info");
 
     try {
       const isEdit = modalMode === "edit" && editingGroupName;
@@ -438,7 +460,7 @@
       await loadGroups();
     } catch (error) {
       const message = error instanceof Error ? error.message : "保存失败";
-      setModalStatus(message);
+      setModalAlert(message, "error");
     } finally {
       modalSaving = false;
       modalSaveButton.disabled = false;
