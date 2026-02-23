@@ -178,12 +178,12 @@ async def handle_sync_whitelist(
 
 @info_matcher.handle()
 @command_control(
-    command_key="user.info",
+    command_key="user.info.user",
     display_name="用户信息",
-    permission="user.info",
+    permission="user.info.user",
     description="查询指定用户信息",
 )
-@require_permission("user.info")
+@require_permission("user.info.user")
 async def handle_user_info(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
