@@ -74,34 +74,43 @@ body {
   padding: 0 18px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
   border-bottom: 1px solid var(--line);
   flex-shrink: 0;
 }
 
-.brand-logo {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: var(--primary-soft);
-  color: var(--primary);
-  font-size: 14px;
-  font-weight: 700;
+.brand-logo-link {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  text-decoration: none;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  transition: border-color 0.2s ease;
 }
 
-.brand-name {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-  white-space: nowrap;
+.brand-logo-link:hover {
+  border-color: var(--primary);
 }
 
-.app-sider.is-collapsed .brand-name {
+.brand-logo-image {
+  display: block;
+  height: 34px;
+  max-width: 156px;
+  width: auto;
+}
+
+.brand-logo-image-dark {
   display: none;
+}
+
+html.dark .brand-logo-image-light {
+  display: none;
+}
+
+html.dark .brand-logo-image-dark {
+  display: block;
 }
 
 .menu-wrap {
