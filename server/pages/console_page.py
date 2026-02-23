@@ -1,19 +1,27 @@
 from __future__ import annotations
 
 import html
-from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 WEBUI_TEMPLATE_DIR = BASE_DIR / "webui" / "templates"
+WEBUI_STATIC_DIR = BASE_DIR / "webui" / "static"
 
 
-@lru_cache(maxsize=8)
 def _load_template(name: str) -> str:
     path = WEBUI_TEMPLATE_DIR / name
     return path.read_text(encoding="utf-8")
+
+
+def _asset_url(path: str) -> str:
+    normalized = path.lstrip("/")
+    file_path = WEBUI_STATIC_DIR / normalized
+    if file_path.is_file():
+        version = str(int(file_path.stat().st_mtime))
+        return f"/webui/static/{normalized}?v={version}"
+    return f"/webui/static/{normalized}"
 
 
 def _render_app_shell_page(
@@ -21,13 +29,19 @@ def _render_app_shell_page(
     page_title: str,
     active_menu: Literal["dashboard", "commands"],
     content_template: str,
-    page_style_links: tuple[str, ...] = (),
-    page_script_tags: tuple[str, ...] = (),
+    page_style_urls: tuple[str, ...] = (),
+    page_script_urls: tuple[str, ...] = (),
 ) -> str:
     base_template = _load_template("app_shell_base.html")
     content_html = _load_template(content_template)
-    style_links_html = "\n  ".join(page_style_links)
-    script_tags_html = "\n  ".join(page_script_tags)
+    style_links_html = "\n  ".join(
+        f'<link rel="stylesheet" href="{html.escape(url, quote=True)}" />'
+        for url in page_style_urls
+    )
+    script_tags_html = "\n  ".join(
+        f'<script src="{html.escape(url, quote=True)}"></script>'
+        for url in page_script_urls
+    )
     dashboard_active = "is-active" if active_menu == "dashboard" else ""
     commands_active = "is-active" if active_menu == "commands" else ""
 
@@ -37,6 +51,10 @@ def _render_app_shell_page(
         .replace("__NAV_DASHBOARD_ACTIVE__", dashboard_active)
         .replace("__NAV_COMMANDS_ACTIVE__", commands_active)
         .replace("__MAIN_CONTENT__", content_html)
+        .replace(
+            "__WEBUI_SCRIPT_URL__",
+            html.escape(_asset_url("js/webui.js"), quote=True),
+        )
         .replace("__PAGE_SCRIPT_TAGS__", script_tags_html)
     )
 
@@ -64,8 +82,9 @@ def render_console_page() -> str:
         page_title="NextBot WebUI",
         active_menu="dashboard",
         content_template="dashboard_content.html",
-        page_style_links=(
-            '<link rel="stylesheet" href="/webui/static/css/dashboard.css" />',
+        page_style_urls=(
+            _asset_url("css/app-shell.css"),
+            _asset_url("css/dashboard.css"),
         ),
     )
 
@@ -75,10 +94,11 @@ def render_commands_page() -> str:
         page_title="NextBot Command Config",
         active_menu="commands",
         content_template="commands_content.html",
-        page_style_links=(
-            '<link rel="stylesheet" href="/webui/static/css/commands.css" />',
+        page_style_urls=(
+            _asset_url("css/app-shell.css"),
+            _asset_url("css/commands.css"),
         ),
-        page_script_tags=(
-            '<script src="/webui/static/js/commands.js"></script>',
+        page_script_urls=(
+            _asset_url("js/commands.js"),
         ),
     )

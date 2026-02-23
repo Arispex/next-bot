@@ -1,12 +1,39 @@
 (() => {
   const reloadButton = document.getElementById("reload-btn");
   const saveButton = document.getElementById("save-all-btn");
+  const searchInput = document.getElementById("command-search");
+
   const statusNode = document.getElementById("status");
   const loadingNode = document.getElementById("loading");
   const emptyNode = document.getElementById("empty");
-  const groupsNode = document.getElementById("groups");
+  const tableWrapNode = document.getElementById("table-wrap");
+  const tableBodyNode = document.getElementById("command-table-body");
+
+  const statTotalNode = document.getElementById("stat-total");
+  const statEnabledNode = document.getElementById("stat-enabled");
+  const statDisabledNode = document.getElementById("stat-disabled");
+  const statModulesNode = document.getElementById("stat-modules");
+  const panelMetaNode = document.getElementById("panel-meta");
+
+  const modalNode = document.getElementById("param-modal");
+  const modalBodyNode = document.getElementById("param-modal-body");
+  const modalTitleNode = document.getElementById("param-modal-title");
+  const modalSubtitleNode = document.getElementById("param-modal-subtitle");
+  const modalStatusNode = document.getElementById("param-modal-status");
+  const modalCloseButton = document.getElementById("modal-close-btn");
+  const modalCancelButton = document.getElementById("modal-cancel-btn");
+  const modalSaveButton = document.getElementById("modal-save-btn");
 
   let commandStates = [];
+  let activeModalCommandKey = "";
+
+  const requiredNodesReady = Boolean(
+    statusNode &&
+    loadingNode &&
+    emptyNode &&
+    tableWrapNode &&
+    tableBodyNode
+  );
 
   const setStatus = (message, type = "") => {
     if (!statusNode) return;
@@ -14,252 +41,515 @@
     statusNode.className = `status${type ? ` ${type}` : ""}`;
   };
 
-  const cloneValue = (value) => JSON.parse(JSON.stringify(value));
-
-  const parseFormValue = (schema, inputNode) => {
-    const valueType = schema.type;
-
-    if (valueType === "bool") {
-      return Boolean(inputNode.checked);
-    }
-    if (valueType === "int") {
-      const text = String(inputNode.value || "").trim();
-      if (!text) {
-        throw new Error("需要整数");
-      }
-      const parsed = Number.parseInt(text, 10);
-      if (!Number.isFinite(parsed)) {
-        throw new Error("需要整数");
-      }
-      return parsed;
-    }
-    if (valueType === "float") {
-      const text = String(inputNode.value || "").trim();
-      if (!text) {
-        throw new Error("需要数字");
-      }
-      const parsed = Number.parseFloat(text);
-      if (!Number.isFinite(parsed)) {
-        throw new Error("需要数字");
-      }
-      return parsed;
-    }
-    return String(inputNode.value || "");
+  const setModalStatus = (message, type = "") => {
+    if (!modalStatusNode) return;
+    modalStatusNode.textContent = message || "";
+    modalStatusNode.className = `modal-status${type ? ` ${type}` : ""}`;
   };
 
-  const renderCommands = () => {
-    if (!groupsNode || !loadingNode || !emptyNode) return;
+  const cloneValue = (value) => JSON.parse(JSON.stringify(value));
 
-    groupsNode.innerHTML = "";
+  const formatModuleName = (modulePath) => {
+    const raw = String(modulePath || "").trim();
+    if (!raw) return "unknown";
+    const prefix = "next_bot.plugins.";
+    const normalized = raw.startsWith(prefix) ? raw.slice(prefix.length) : raw;
+    return normalized.replaceAll("_", " ");
+  };
+
+  const coerceByType = (type, raw, fromInput = false) => {
+    if (type === "bool") {
+      if (typeof raw === "boolean") return raw;
+      if (typeof raw === "string") {
+        const text = raw.trim().toLowerCase();
+        if (["true", "1", "yes", "on"].includes(text)) return true;
+        if (["false", "0", "no", "off", ""].includes(text)) return false;
+      }
+      return Boolean(raw);
+    }
+
+    if (type === "int") {
+      const text = String(raw ?? "").trim();
+      if (!text) {
+        throw new Error("需要整数");
+      }
+      const parsed = Number(text);
+      if (!Number.isInteger(parsed)) {
+        throw new Error("需要整数");
+      }
+      return parsed;
+    }
+
+    if (type === "float") {
+      const text = String(raw ?? "").trim();
+      if (!text) {
+        throw new Error("需要数字");
+      }
+      const parsed = Number(text);
+      if (!Number.isFinite(parsed)) {
+        throw new Error("需要数字");
+      }
+      return parsed;
+    }
+
+    const text = String(raw ?? "");
+    if (!fromInput) return text;
+    return text;
+  };
+
+  const normalizeWithSchema = (schema, raw, fromInput = false) => {
+    const type = String(schema?.type || "string");
+    const value = coerceByType(type, raw, fromInput);
+
+    if (schema?.required && type === "string" && !String(value).trim()) {
+      throw new Error("不能为空");
+    }
+
+    if ((type === "int" || type === "float") && value !== null && value !== undefined) {
+      if (schema?.min !== undefined && Number(value) < Number(schema.min)) {
+        throw new Error(`不能小于 ${schema.min}`);
+      }
+      if (schema?.max !== undefined && Number(value) > Number(schema.max)) {
+        throw new Error(`不能大于 ${schema.max}`);
+      }
+    }
+
+    if (Array.isArray(schema?.enum) && schema.enum.length > 0) {
+      let matched = false;
+      for (const enumValue of schema.enum) {
+        try {
+          const normalizedEnum = coerceByType(type, enumValue, false);
+          if (Object.is(normalizedEnum, value)) {
+            matched = true;
+            break;
+          }
+        } catch (_error) {
+          // Ignore invalid enum item.
+        }
+      }
+      if (!matched) {
+        throw new Error("不在可选范围内");
+      }
+    }
+
+    return value;
+  };
+
+  const ensureCommandParamValues = (command) => {
+    const schema = command?.param_schema && typeof command.param_schema === "object"
+      ? command.param_schema
+      : {};
+
+    const rawValues = command?.param_values && typeof command.param_values === "object"
+      ? command.param_values
+      : {};
+
+    const normalized = {};
+    for (const paramName of Object.keys(schema)) {
+      const definition = schema[paramName] || {};
+      const fallback = definition.default;
+      const rawValue = Object.prototype.hasOwnProperty.call(rawValues, paramName)
+        ? rawValues[paramName]
+        : fallback;
+
+      try {
+        normalized[paramName] = normalizeWithSchema(definition, rawValue, false);
+      } catch (_error) {
+        try {
+          normalized[paramName] = normalizeWithSchema(definition, fallback, false);
+        } catch (_error2) {
+          normalized[paramName] = fallback;
+        }
+      }
+    }
+
+    command.param_values = normalized;
+  };
+
+  const getCommandByKey = (commandKey) => {
+    return commandStates.find((item) => item.command_key === commandKey) || null;
+  };
+
+  const getFilteredCommands = () => {
+    const keyword = String(searchInput?.value || "").trim().toLowerCase();
+    if (!keyword) return [...commandStates];
+
+    return commandStates.filter((item) => {
+      const moduleName = formatModuleName(item.module_path).toLowerCase();
+      const text = [
+        String(item.display_name || "").toLowerCase(),
+        String(item.command_key || "").toLowerCase(),
+        String(item.permission || "").toLowerCase(),
+        moduleName,
+      ].join(" ");
+      return text.includes(keyword);
+    });
+  };
+
+  const updateStats = (visibleCount) => {
+    const total = commandStates.length;
+    const enabled = commandStates.filter((item) => Boolean(item.enabled)).length;
+    const disabled = total - enabled;
+    const moduleCount = new Set(
+      commandStates.map((item) => formatModuleName(item.module_path))
+    ).size;
+
+    if (statTotalNode) statTotalNode.textContent = String(total);
+    if (statEnabledNode) statEnabledNode.textContent = String(enabled);
+    if (statDisabledNode) statDisabledNode.textContent = String(disabled);
+    if (statModulesNode) statModulesNode.textContent = String(moduleCount);
+
+    if (panelMetaNode) {
+      const visibleText =
+        typeof visibleCount === "number" && visibleCount !== total
+          ? ` · 当前显示 ${visibleCount} 条`
+          : "";
+      panelMetaNode.textContent = `${moduleCount} 个模块 · ${total} 条命令${visibleText}`;
+    }
+  };
+
+  const buildPermissionNode = (permission) => {
+    const badge = document.createElement("span");
+    badge.className = "badge";
+    if (!permission) {
+      badge.classList.add("none");
+      badge.textContent = "无";
+      return badge;
+    }
+    badge.textContent = permission;
+    return badge;
+  };
+
+  const renderTable = () => {
+    if (!tableBodyNode || !loadingNode || !emptyNode || !tableWrapNode) return;
+
+    tableBodyNode.innerHTML = "";
     loadingNode.classList.add("hidden");
 
+    const filteredCommands = getFilteredCommands();
+    updateStats(filteredCommands.length);
+
     if (!commandStates.length) {
+      emptyNode.textContent = "暂无可配置命令。";
       emptyNode.classList.remove("hidden");
+      tableWrapNode.classList.add("hidden");
+      return;
+    }
+
+    if (!filteredCommands.length) {
+      emptyNode.textContent = "没有匹配的命令。";
+      emptyNode.classList.remove("hidden");
+      tableWrapNode.classList.add("hidden");
       return;
     }
 
     emptyNode.classList.add("hidden");
+    tableWrapNode.classList.remove("hidden");
 
-    const groupMap = new Map();
-    for (const item of commandStates) {
-      const groupName = item.module_path || "unknown";
-      if (!groupMap.has(groupName)) {
-        groupMap.set(groupName, []);
-      }
-      groupMap.get(groupName).push(item);
-    }
+    filteredCommands.sort((a, b) => {
+      const moduleCompare = formatModuleName(a.module_path).localeCompare(formatModuleName(b.module_path));
+      if (moduleCompare !== 0) return moduleCompare;
+      return String(a.display_name || "").localeCompare(String(b.display_name || ""));
+    });
 
-    const sortedGroups = Array.from(groupMap.keys()).sort((a, b) => a.localeCompare(b));
-    for (const groupName of sortedGroups) {
-      const container = document.createElement("section");
-      container.className = "group";
+    for (const command of filteredCommands) {
+      const row = document.createElement("tr");
+      row.dataset.commandKey = command.command_key;
 
-      const head = document.createElement("div");
-      head.className = "group-head";
-      head.textContent = groupName;
-      container.appendChild(head);
+      const commandCell = document.createElement("td");
+      const commandMain = document.createElement("div");
+      commandMain.className = "command-main";
 
-      const items = groupMap.get(groupName) || [];
-      items.sort((a, b) => a.display_name.localeCompare(b.display_name));
+      const nameNode = document.createElement("p");
+      nameNode.className = "command-name";
+      nameNode.textContent = command.display_name || command.command_key;
 
-      for (const command of items) {
-        const itemNode = document.createElement("article");
-        itemNode.className = "command-item";
-        itemNode.dataset.commandKey = command.command_key;
+      const keyNode = document.createElement("div");
+      keyNode.className = "command-key";
+      keyNode.textContent = command.command_key;
 
-        const headNode = document.createElement("div");
-        headNode.className = "command-head";
+      commandMain.appendChild(nameNode);
+      commandMain.appendChild(keyNode);
 
-        const nameNode = document.createElement("span");
-        nameNode.className = "command-name";
-        nameNode.textContent = command.display_name;
-
-        const keyNode = document.createElement("span");
-        keyNode.className = "command-key";
-        keyNode.textContent = command.command_key;
-
-        const switchNode = document.createElement("label");
-        switchNode.className = "switch";
-
-        const enabledInput = document.createElement("input");
-        enabledInput.type = "checkbox";
-        enabledInput.checked = Boolean(command.enabled);
-        enabledInput.dataset.role = "enabled";
-
-        const switchText = document.createElement("span");
-        switchText.textContent = "启用";
-
-        switchNode.appendChild(enabledInput);
-        switchNode.appendChild(switchText);
-
-        headNode.appendChild(nameNode);
-        headNode.appendChild(keyNode);
-        headNode.appendChild(switchNode);
-        itemNode.appendChild(headNode);
-
-        if (command.permission) {
-          const permNode = document.createElement("div");
-          permNode.className = "command-perm";
-          permNode.textContent = `权限: ${command.permission}`;
-          itemNode.appendChild(permNode);
-        }
-
-        const schema = command.param_schema || {};
-        const paramNames = Object.keys(schema);
-        if (paramNames.length) {
-          const paramsNode = document.createElement("div");
-          paramsNode.className = "params";
-
-          for (const paramName of paramNames) {
-            const definition = schema[paramName] || {};
-            const paramNode = document.createElement("section");
-            paramNode.className = "param";
-
-            const labelNode = document.createElement("p");
-            labelNode.className = "param-label";
-            labelNode.textContent = definition.label || paramName;
-            paramNode.appendChild(labelNode);
-
-            if (definition.description) {
-              const descNode = document.createElement("p");
-              descNode.className = "param-desc";
-              descNode.textContent = definition.description;
-              paramNode.appendChild(descNode);
-            }
-
-            let inputNode;
-            const currentValue = command.param_values?.[paramName];
-
-            if (definition.type === "bool") {
-              inputNode = document.createElement("input");
-              inputNode.type = "checkbox";
-              inputNode.checked = Boolean(currentValue);
-            } else if (Array.isArray(definition.enum) && definition.enum.length) {
-              inputNode = document.createElement("select");
-              inputNode.className = "select";
-              for (const enumValue of definition.enum) {
-                const option = document.createElement("option");
-                option.value = String(enumValue);
-                option.textContent = String(enumValue);
-                inputNode.appendChild(option);
-              }
-              inputNode.value = String(currentValue ?? "");
-            } else {
-              inputNode = document.createElement("input");
-              inputNode.className = "input";
-              if (definition.type === "int" || definition.type === "float") {
-                inputNode.type = "number";
-                if (definition.type === "float") {
-                  inputNode.step = "any";
-                } else {
-                  inputNode.step = "1";
-                }
-                if (definition.min !== undefined) {
-                  inputNode.min = String(definition.min);
-                }
-                if (definition.max !== undefined) {
-                  inputNode.max = String(definition.max);
-                }
-                inputNode.value = String(currentValue ?? "");
-              } else {
-                inputNode.type = "text";
-                inputNode.value = String(currentValue ?? "");
-              }
-            }
-
-            inputNode.dataset.role = "param";
-            inputNode.dataset.paramName = paramName;
-            inputNode.dataset.paramSchema = JSON.stringify(definition);
-            paramNode.appendChild(inputNode);
-            paramsNode.appendChild(paramNode);
-          }
-
-          itemNode.appendChild(paramsNode);
-        }
-
-        container.appendChild(itemNode);
+      if (command.description) {
+        const descNode = document.createElement("div");
+        descNode.className = "command-desc";
+        descNode.textContent = command.description;
+        commandMain.appendChild(descNode);
       }
 
-      groupsNode.appendChild(container);
+      commandCell.appendChild(commandMain);
+
+      const moduleCell = document.createElement("td");
+      moduleCell.className = "module-cell";
+      moduleCell.textContent = formatModuleName(command.module_path);
+
+      const permissionCell = document.createElement("td");
+      permissionCell.appendChild(buildPermissionNode(command.permission));
+
+      const statusCell = document.createElement("td");
+      const switchNode = document.createElement("label");
+      switchNode.className = "switch";
+
+      const enabledInput = document.createElement("input");
+      enabledInput.type = "checkbox";
+      enabledInput.checked = Boolean(command.enabled);
+      enabledInput.addEventListener("change", () => {
+        command.enabled = Boolean(enabledInput.checked);
+        setStatus("开关已更新，点击“保存全部”后生效", "success");
+        updateStats(getFilteredCommands().length);
+      });
+
+      const switchTrack = document.createElement("span");
+      switchTrack.className = "switch-track";
+
+      const switchText = document.createElement("span");
+      switchText.textContent = enabledInput.checked ? "启用" : "关闭";
+      enabledInput.addEventListener("change", () => {
+        switchText.textContent = enabledInput.checked ? "启用" : "关闭";
+      });
+
+      switchNode.appendChild(enabledInput);
+      switchNode.appendChild(switchTrack);
+      switchNode.appendChild(switchText);
+      statusCell.appendChild(switchNode);
+
+      const schema = command.param_schema && typeof command.param_schema === "object"
+        ? command.param_schema
+        : {};
+      const paramNames = Object.keys(schema);
+
+      const paramCell = document.createElement("td");
+      const countNode = document.createElement("span");
+      countNode.className = "params-count";
+      countNode.textContent = `${paramNames.length} 个参数`;
+      paramCell.appendChild(countNode);
+
+      const actionCell = document.createElement("td");
+      const actionButton = document.createElement("button");
+      actionButton.type = "button";
+      actionButton.className = "btn action-btn";
+      actionButton.textContent = paramNames.length ? "编辑参数" : "无参数";
+      actionButton.disabled = !paramNames.length;
+      actionButton.addEventListener("click", () => {
+        openParamModal(command.command_key);
+      });
+      actionCell.appendChild(actionButton);
+
+      row.appendChild(commandCell);
+      row.appendChild(moduleCell);
+      row.appendChild(permissionCell);
+      row.appendChild(statusCell);
+      row.appendChild(paramCell);
+      row.appendChild(actionCell);
+      tableBodyNode.appendChild(row);
     }
   };
 
-  const collectCommandPayload = () => {
-    if (!groupsNode) {
-      return [];
+  const openParamModal = (commandKey) => {
+    if (!modalNode || !modalBodyNode || !modalTitleNode || !modalSubtitleNode) return;
+
+    const command = getCommandByKey(commandKey);
+    if (!command) return;
+
+    activeModalCommandKey = commandKey;
+    setModalStatus("");
+
+    const schema = command.param_schema && typeof command.param_schema === "object"
+      ? command.param_schema
+      : {};
+    const paramNames = Object.keys(schema);
+
+    modalTitleNode.textContent = command.display_name || command.command_key;
+    modalSubtitleNode.textContent = `Command Key: ${command.command_key}`;
+    modalBodyNode.innerHTML = "";
+
+    if (!paramNames.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = "当前命令没有可配置参数。";
+      modalBodyNode.appendChild(empty);
+      modalNode.classList.remove("hidden");
+      return;
     }
 
-    const entries = [];
-    const commandNodes = groupsNode.querySelectorAll(".command-item");
-    for (const node of commandNodes) {
-      const commandKey = node.dataset.commandKey;
-      if (!commandKey) {
+    paramNames.sort((a, b) => a.localeCompare(b));
+
+    for (const paramName of paramNames) {
+      const definition = schema[paramName] || {};
+      const currentValue = command.param_values?.[paramName];
+
+      const item = document.createElement("section");
+      item.className = "param-item";
+
+      const head = document.createElement("div");
+      head.className = "param-head";
+
+      const label = document.createElement("p");
+      label.className = "param-label";
+      label.textContent = definition.label || paramName;
+      head.appendChild(label);
+
+      if (definition.description) {
+        const desc = document.createElement("p");
+        desc.className = "param-desc";
+        desc.textContent = definition.description;
+        head.appendChild(desc);
+      }
+
+      item.appendChild(head);
+
+      let inputNode;
+      if (definition.type === "bool") {
+        inputNode = document.createElement("input");
+        inputNode.type = "checkbox";
+        inputNode.className = "bool-input";
+        inputNode.checked = Boolean(currentValue);
+      } else if (Array.isArray(definition.enum) && definition.enum.length) {
+        inputNode = document.createElement("select");
+        inputNode.className = "select";
+
+        let selectedIndex = 0;
+        for (let i = 0; i < definition.enum.length; i += 1) {
+          const enumValue = definition.enum[i];
+          const option = document.createElement("option");
+          option.value = String(i);
+          option.textContent = String(enumValue);
+          inputNode.appendChild(option);
+
+          if (Object.is(enumValue, currentValue) || String(enumValue) === String(currentValue)) {
+            selectedIndex = i;
+          }
+        }
+
+        inputNode.value = String(selectedIndex);
+        inputNode.dataset.enumSelect = "1";
+      } else {
+        inputNode = document.createElement("input");
+        inputNode.className = "input";
+
+        if (definition.type === "int" || definition.type === "float") {
+          inputNode.type = "number";
+          inputNode.step = definition.type === "float" ? "any" : "1";
+          if (definition.min !== undefined) {
+            inputNode.min = String(definition.min);
+          }
+          if (definition.max !== undefined) {
+            inputNode.max = String(definition.max);
+          }
+        } else {
+          inputNode.type = "text";
+        }
+
+        inputNode.value = String(currentValue ?? "");
+      }
+
+      inputNode.dataset.role = "param-input";
+      inputNode.dataset.paramName = paramName;
+      inputNode.dataset.paramLabel = definition.label || paramName;
+      inputNode.dataset.paramSchema = JSON.stringify(definition);
+
+      item.appendChild(inputNode);
+      modalBodyNode.appendChild(item);
+    }
+
+    modalNode.classList.remove("hidden");
+  };
+
+  const closeParamModal = () => {
+    if (!modalNode || !modalBodyNode) return;
+    modalNode.classList.add("hidden");
+    modalBodyNode.innerHTML = "";
+    activeModalCommandKey = "";
+    setModalStatus("");
+  };
+
+  const saveModalParams = () => {
+    if (!modalBodyNode || !activeModalCommandKey) return;
+
+    const command = getCommandByKey(activeModalCommandKey);
+    if (!command) {
+      closeParamModal();
+      return;
+    }
+
+    const nextValues = {};
+    const inputNodes = modalBodyNode.querySelectorAll("[data-role='param-input']");
+
+    for (const inputNode of inputNodes) {
+      const paramName = inputNode.dataset.paramName;
+      const schemaRaw = inputNode.dataset.paramSchema;
+      const paramLabel = inputNode.dataset.paramLabel || paramName || "参数";
+      if (!paramName || !schemaRaw) {
         continue;
       }
 
-      const enabledInput = node.querySelector("input[data-role='enabled']");
-      const params = {};
-      const paramNodes = node.querySelectorAll("[data-role='param']");
-
-      for (const inputNode of paramNodes) {
-        const paramName = inputNode.dataset.paramName;
-        const schemaRaw = inputNode.dataset.paramSchema;
-        if (!paramName || !schemaRaw) {
-          continue;
-        }
-
-        let schema;
-        try {
-          schema = JSON.parse(schemaRaw);
-        } catch (error) {
-          throw new Error(`参数 schema 无效: ${paramName}`);
-        }
-
-        try {
-          const value = parseFormValue(schema, inputNode);
-          if (schema.required && schema.type === "string" && !String(value).trim()) {
-            throw new Error("不能为空");
-          }
-          params[paramName] = value;
-        } catch (error) {
-          const message = error instanceof Error ? error.message : "参数格式错误";
-          throw new Error(`${commandKey}.${paramName}: ${message}`);
-        }
+      let schema;
+      try {
+        schema = JSON.parse(schemaRaw);
+      } catch (_error) {
+        setModalStatus(`${paramLabel}: 参数定义无效`);
+        return;
       }
 
-      entries.push({
-        command_key: commandKey,
-        enabled: Boolean(enabledInput?.checked),
-        params,
-      });
+      let rawValue;
+      if (schema.type === "bool") {
+        rawValue = Boolean(inputNode.checked);
+      } else if (inputNode.dataset.enumSelect === "1" && Array.isArray(schema.enum)) {
+        const enumIndex = Number.parseInt(String(inputNode.value), 10);
+        if (!Number.isInteger(enumIndex) || enumIndex < 0 || enumIndex >= schema.enum.length) {
+          setModalStatus(`${paramLabel}: 选项无效`);
+          return;
+        }
+        rawValue = schema.enum[enumIndex];
+      } else {
+        rawValue = inputNode.value;
+      }
+
+      try {
+        nextValues[paramName] = normalizeWithSchema(schema, rawValue, true);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "参数格式错误";
+        setModalStatus(`${paramLabel}: ${message}`);
+        if (typeof inputNode.focus === "function") {
+          inputNode.focus();
+        }
+        return;
+      }
     }
 
-    return entries;
+    command.param_values = nextValues;
+    setStatus("参数已更新，点击“保存全部”后生效", "success");
+    closeParamModal();
+  };
+
+  const collectCommandPayload = () => {
+    return commandStates.map((command) => {
+      ensureCommandParamValues(command);
+      return {
+        command_key: command.command_key,
+        enabled: Boolean(command.enabled),
+        params: cloneValue(command.param_values || {}),
+      };
+    });
   };
 
   const loadCommands = async () => {
+    if (!requiredNodesReady) {
+      if (loadingNode) {
+        loadingNode.classList.add("hidden");
+      }
+      if (statusNode) {
+        setStatus("页面资源版本不一致，请刷新页面或重启机器人", "error");
+      }
+      return;
+    }
+
     if (loadingNode) {
       loadingNode.classList.remove("hidden");
+    }
+    if (tableWrapNode) {
+      tableWrapNode.classList.add("hidden");
     }
     setStatus("");
 
@@ -270,6 +560,7 @@
           Accept: "application/json",
         },
       });
+
       if (!response.ok) {
         throw new Error(`加载失败 (${response.status})`);
       }
@@ -277,19 +568,21 @@
       const data = await response.json();
       const commands = Array.isArray(data.commands) ? data.commands : [];
       commandStates = cloneValue(commands);
-      renderCommands();
+      for (const command of commandStates) {
+        ensureCommandParamValues(command);
+      }
+
+      renderTable();
       setStatus(`已加载 ${commandStates.length} 条命令`, "success");
     } catch (error) {
-      renderCommands();
+      renderTable();
       const message = error instanceof Error ? error.message : "加载失败";
       setStatus(message, "error");
     }
   };
 
   const saveCommands = async () => {
-    if (!saveButton) {
-      return;
-    }
+    if (!saveButton) return;
 
     let payload;
     try {
@@ -312,8 +605,8 @@
         },
         body: JSON.stringify({ commands: payload }),
       });
-      const data = await response.json();
 
+      const data = await response.json();
       if (!response.ok || !data.ok) {
         let message = data.message || `保存失败 (${response.status})`;
         if (Array.isArray(data.errors) && data.errors.length) {
@@ -335,17 +628,42 @@
     }
   };
 
-  if (reloadButton) {
-    reloadButton.addEventListener("click", () => {
-      loadCommands();
-    });
-  }
+  reloadButton?.addEventListener("click", () => {
+    loadCommands();
+  });
 
-  if (saveButton) {
-    saveButton.addEventListener("click", () => {
-      saveCommands();
-    });
-  }
+  saveButton?.addEventListener("click", () => {
+    saveCommands();
+  });
+
+  searchInput?.addEventListener("input", () => {
+    renderTable();
+  });
+
+  modalSaveButton?.addEventListener("click", () => {
+    saveModalParams();
+  });
+
+  modalCancelButton?.addEventListener("click", () => {
+    closeParamModal();
+  });
+
+  modalCloseButton?.addEventListener("click", () => {
+    closeParamModal();
+  });
+
+  modalNode?.addEventListener("click", (event) => {
+    const target = event.target;
+    if (target instanceof HTMLElement && target.dataset.modalClose === "1") {
+      closeParamModal();
+    }
+  });
+
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && modalNode && !modalNode.classList.contains("hidden")) {
+      closeParamModal();
+    }
+  });
 
   loadCommands();
 })();

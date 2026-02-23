@@ -1,26 +1,63 @@
 <section class="command-panel">
   <div class="panel-head">
     <div class="panel-head-main">
-      <p class="panel-title">Command List</p>
-      <span id="panel-meta" class="panel-meta">按模块分组管理命令与参数</span>
+      <p class="panel-title">Command Config</p>
+      <span id="panel-meta" class="panel-meta">集中管理命令开关与运行参数</span>
     </div>
-    <div class="panel-head-side">
-      <div class="panel-summary">
-        <span class="summary-chip">Total <strong id="stat-total">0</strong></span>
-        <span class="summary-chip">Enabled <strong id="stat-enabled" class="success">0</strong></span>
-        <span class="summary-chip">Disabled <strong id="stat-disabled" class="danger">0</strong></span>
-        <span class="summary-chip">Modules <strong id="stat-modules">0</strong></span>
-      </div>
-      <div class="panel-head-actions">
-        <button id="reload-btn" type="button" class="btn">刷新</button>
-        <button id="save-all-btn" type="button" class="btn btn-primary">保存全部</button>
-      </div>
+    <div class="panel-head-actions">
+      <button id="reload-btn" type="button" class="btn">刷新</button>
+      <button id="save-all-btn" type="button" class="btn btn-primary">保存全部</button>
     </div>
   </div>
+
+  <div class="panel-toolbar">
+    <div class="panel-summary">
+      <span class="summary-chip">Total <strong id="stat-total">0</strong></span>
+      <span class="summary-chip">Enabled <strong id="stat-enabled" class="success">0</strong></span>
+      <span class="summary-chip">Disabled <strong id="stat-disabled" class="danger">0</strong></span>
+      <span class="summary-chip">Modules <strong id="stat-modules">0</strong></span>
+    </div>
+    <div class="panel-filter">
+      <input id="command-search" class="input search-input" type="text" placeholder="搜索命令名 / key / 模块" />
+    </div>
+  </div>
+
   <div class="panel-body">
     <div id="status" class="status"></div>
     <div id="loading" class="empty">加载中...</div>
     <div id="empty" class="empty hidden">暂无可配置命令。</div>
-    <div id="groups" class="groups-stack"></div>
+
+    <div id="table-wrap" class="table-wrap hidden">
+      <table class="command-table" aria-label="Command Config Table">
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>Module</th>
+            <th>Permission</th>
+            <th>Status</th>
+            <th>Params</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="command-table-body"></tbody>
+      </table>
+    </div>
   </div>
 </section>
+
+<div id="param-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="param-modal-title">
+  <div class="modal-mask" data-modal-close="1"></div>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="param-modal-title" class="modal-title">编辑参数</h3>
+      <button id="modal-close-btn" type="button" class="btn btn-icon modal-close-btn" aria-label="关闭">✕</button>
+    </div>
+    <div id="param-modal-subtitle" class="modal-subtitle"></div>
+    <div id="param-modal-status" class="modal-status"></div>
+    <div id="param-modal-body" class="modal-body"></div>
+    <div class="modal-foot">
+      <button id="modal-cancel-btn" type="button" class="btn">取消</button>
+      <button id="modal-save-btn" type="button" class="btn btn-primary">保存参数</button>
+    </div>
+  </div>
+</div>
