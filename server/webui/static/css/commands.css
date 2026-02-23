@@ -91,19 +91,45 @@ html.dark {
   padding: 16px;
 }
 
-.status {
-  font-size: 13px;
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface-soft);
   color: var(--text-muted);
-  min-height: 18px;
-  padding: 0 2px 8px;
 }
 
-.status.error {
-  color: var(--danger);
+.alert.info {
+  border-color: color-mix(in srgb, var(--primary) 32%, var(--line-strong));
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface-soft));
+  color: color-mix(in srgb, var(--primary) 78%, var(--text));
 }
 
-.status.success {
-  color: var(--success);
+.alert.success {
+  border-color: color-mix(in srgb, var(--success) 38%, var(--line-strong));
+  background: color-mix(in srgb, var(--success) 12%, var(--surface-soft));
+  color: color-mix(in srgb, var(--success) 78%, var(--text));
+}
+
+.alert.error {
+  border-color: color-mix(in srgb, var(--danger) 36%, var(--line-strong));
+  background: color-mix(in srgb, var(--danger) 12%, var(--surface-soft));
+  color: color-mix(in srgb, var(--danger) 80%, var(--text));
+}
+
+.alert.warning {
+  border-color: color-mix(in srgb, var(--warning) 40%, var(--line-strong));
+  background: color-mix(in srgb, var(--warning) 14%, var(--surface-soft));
+  color: color-mix(in srgb, var(--warning) 80%, var(--text));
+}
+
+.alert-message {
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 .empty {

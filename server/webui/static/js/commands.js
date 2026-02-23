@@ -4,6 +4,7 @@
   const searchInput = document.getElementById("command-search");
 
   const statusNode = document.getElementById("status");
+  const statusMessageNode = document.getElementById("status-message");
   const loadingNode = document.getElementById("loading");
   const emptyNode = document.getElementById("empty");
   const tableWrapNode = document.getElementById("table-wrap");
@@ -27,6 +28,7 @@
 
   const requiredNodesReady = Boolean(
     statusNode &&
+    statusMessageNode &&
     loadingNode &&
     emptyNode &&
     tableWrapNode &&
@@ -34,9 +36,20 @@
   );
 
   const setStatus = (message, type = "") => {
-    if (!statusNode) return;
-    statusNode.textContent = message || "";
-    statusNode.className = `status${type ? ` ${type}` : ""}`;
+    if (!statusNode || !statusMessageNode) return;
+    const text = String(message || "").trim();
+    if (!text) {
+      statusMessageNode.textContent = "";
+      statusNode.className = "alert hidden";
+      return;
+    }
+
+    const normalizedType = ["success", "error", "warning", "info"].includes(type)
+      ? type
+      : "info";
+
+    statusMessageNode.textContent = text;
+    statusNode.className = `alert ${normalizedType}`;
   };
 
   const setModalStatus = (message, type = "") => {
