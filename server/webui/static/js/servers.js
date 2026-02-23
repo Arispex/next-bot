@@ -429,7 +429,7 @@
     const ip = String(ipInput.value || "").trim();
     const token = String(tokenInput.value || "").trim();
     const gamePort = parsePort("游戏端口", gamePortInput.value);
-    const restapiPort = parsePort("RestAPI端口", restapiPortInput.value);
+    const restapiPort = parsePort("REST API 端口", restapiPortInput.value);
 
     if (!name) {
       throw new Error("服务器名称不能为空");

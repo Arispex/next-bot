@@ -194,7 +194,7 @@ def _validate_restapi_endpoint_uniqueness(
         query = query.filter(Server.id != exclude_id)
     if query.first() is not None:
         raise ServerPayloadValidationError(
-            "同一地址和 RestAPI 端口已存在服务器配置",
+            "同一地址和 REST API 端口已存在服务器配置",
             field="restapi_port",
         )
 
