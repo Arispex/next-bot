@@ -3,6 +3,7 @@
   const sidebar = document.getElementById("webui-sidebar");
   const sidebarToggle = document.getElementById("sidebar-toggle");
   const themeToggle = document.getElementById("theme-toggle");
+  const sidebarStateKey = "nextbot-webui-sidebar-collapsed";
 
   let sidebarCollapsed = false;
 
@@ -28,6 +29,11 @@
     sidebarToggle.addEventListener("click", () => {
       sidebarCollapsed = !sidebarCollapsed;
       applySidebarState();
+      try {
+        localStorage.setItem(sidebarStateKey, sidebarCollapsed ? "1" : "0");
+      } catch (error) {
+        // Ignore storage errors.
+      }
     });
   }
 
@@ -41,6 +47,12 @@
       }
       syncThemeButton();
     });
+  }
+
+  try {
+    sidebarCollapsed = localStorage.getItem(sidebarStateKey) === "1";
+  } catch (error) {
+    sidebarCollapsed = false;
   }
 
   applySidebarState();

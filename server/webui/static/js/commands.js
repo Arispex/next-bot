@@ -1,6 +1,4 @@
 (() => {
-  const root = document.documentElement;
-  const themeToggle = document.getElementById("theme-toggle");
   const reloadButton = document.getElementById("reload-btn");
   const saveButton = document.getElementById("save-all-btn");
   const statusNode = document.getElementById("status");
@@ -14,12 +12,6 @@
     if (!statusNode) return;
     statusNode.textContent = message || "";
     statusNode.className = `status${type ? ` ${type}` : ""}`;
-  };
-
-  const syncThemeButton = () => {
-    if (!themeToggle) return;
-    const dark = root.classList.contains("dark");
-    themeToggle.setAttribute("aria-label", dark ? "切换到浅色主题" : "切换到深色主题");
   };
 
   const cloneValue = (value) => JSON.parse(JSON.stringify(value));
@@ -355,18 +347,5 @@
     });
   }
 
-  if (themeToggle) {
-    themeToggle.addEventListener("click", () => {
-      const dark = root.classList.toggle("dark");
-      try {
-        localStorage.setItem("nextbot-webui-theme", dark ? "dark" : "light");
-      } catch (error) {
-        // Ignore storage errors.
-      }
-      syncThemeButton();
-    });
-  }
-
-  syncThemeButton();
   loadCommands();
 })();
