@@ -10,7 +10,7 @@
 </head>
 <body>
   <div class="app-layout">
-    <aside id="webui-sidebar" class="app-sider">
+    <aside id="webui-sidebar" class="app-sider" aria-label="主导航">
       <div class="sider-head">
         <a href="/webui" class="brand-logo-link" aria-label="NextBot WebUI 首页">
           <img
@@ -102,11 +102,21 @@
         </ul>
       </div>
     </aside>
+    <div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true"></div>
 
     <div class="app-main">
       <header class="app-header">
         <div class="header-left">
-          <button id="sidebar-toggle" type="button" class="btn btn-icon" aria-label="隐藏侧边栏">☰</button>
+          <button
+            id="sidebar-toggle"
+            type="button"
+            class="btn btn-icon"
+            aria-label="隐藏侧边栏"
+            aria-controls="webui-sidebar"
+            aria-expanded="false"
+          >
+            ☰
+          </button>
           <h1 class="header-title">NextBot WebUI</h1>
         </div>
 
