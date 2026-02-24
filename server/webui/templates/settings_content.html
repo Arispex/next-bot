@@ -18,8 +18,18 @@
       <section class="form-section">
         <h3 class="section-title">OneBot</h3>
         <label class="form-item">
-          <span class="form-label">ONEBOT_WS_URLS（JSON 数组）</span>
-          <textarea id="field-onebot-ws-urls" class="input textarea" rows="4" spellcheck="false"></textarea>
+          <span class="form-label">ONEBOT_WS_URLS（逗号分隔）</span>
+          <input
+            id="field-onebot-ws-urls"
+            class="input"
+            type="text"
+            placeholder="ws://127.0.0.1:3001, wss://example.com/ws"
+            spellcheck="false"
+          />
+          <div class="form-preview">
+            <span class="form-label">预览</span>
+            <div id="preview-onebot-ws-urls" class="tag-list"></div>
+          </div>
         </label>
         <label class="form-item">
           <span class="form-label">ONEBOT_ACCESS_TOKEN</span>
@@ -39,12 +49,32 @@
         <h3 class="section-title">访问控制</h3>
         <div class="form-grid">
           <label class="form-item">
-            <span class="form-label">OWNER_ID（JSON 数组）</span>
-            <textarea id="field-owner-id" class="input textarea" rows="4" spellcheck="false"></textarea>
+            <span class="form-label">OWNER_ID（逗号分隔）</span>
+            <input
+              id="field-owner-id"
+              class="input"
+              type="text"
+              placeholder="1291525582, 10001"
+              spellcheck="false"
+            />
+            <div class="form-preview">
+              <span class="form-label">预览</span>
+              <div id="preview-owner-id" class="tag-list"></div>
+            </div>
           </label>
           <label class="form-item">
-            <span class="form-label">GROUP_ID（JSON 数组）</span>
-            <textarea id="field-group-id" class="input textarea" rows="4" spellcheck="false"></textarea>
+            <span class="form-label">GROUP_ID（逗号分隔）</span>
+            <input
+              id="field-group-id"
+              class="input"
+              type="text"
+              placeholder="1064760652, 10086"
+              spellcheck="false"
+            />
+            <div class="form-preview">
+              <span class="form-label">预览</span>
+              <div id="preview-group-id" class="tag-list"></div>
+            </div>
           </label>
         </div>
       </section>

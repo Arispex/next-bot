@@ -6,9 +6,12 @@
   const statManagedNode = document.getElementById("stat-managed");
 
   const onebotWsUrlsInput = document.getElementById("field-onebot-ws-urls");
+  const onebotWsUrlsPreview = document.getElementById("preview-onebot-ws-urls");
   const onebotAccessTokenInput = document.getElementById("field-onebot-access-token");
   const ownerIdInput = document.getElementById("field-owner-id");
+  const ownerIdPreview = document.getElementById("preview-owner-id");
   const groupIdInput = document.getElementById("field-group-id");
+  const groupIdPreview = document.getElementById("preview-group-id");
   const webServerHostInput = document.getElementById("field-web-server-host");
   const webServerPortInput = document.getElementById("field-web-server-port");
   const webServerPublicBaseUrlInput = document.getElementById("field-web-server-public-base-url");
@@ -23,9 +26,12 @@
     statusMessageNode &&
     statManagedNode &&
     onebotWsUrlsInput &&
+    onebotWsUrlsPreview &&
     onebotAccessTokenInput &&
     ownerIdInput &&
+    ownerIdPreview &&
     groupIdInput &&
+    groupIdPreview &&
     webServerHostInput &&
     webServerPortInput &&
     webServerPublicBaseUrlInput &&
@@ -91,21 +97,57 @@
     onebotAccessTokenInput.type = visible ? "text" : "password";
   };
 
-  const parseJsonArrayField = (fieldLabel, rawText) => {
+  const parseCommaListField = (fieldLabel, rawText) => {
     const text = String(rawText || "").trim();
     if (!text) {
       throw new Error(`${fieldLabel} 不能为空`);
     }
-    let parsed;
-    try {
-      parsed = JSON.parse(text);
-    } catch (_error) {
-      throw new Error(`${fieldLabel} 必须是 JSON 数组`);
+    const values = text
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+    if (!values.length) {
+      throw new Error(`${fieldLabel} 不能为空`);
     }
-    if (!Array.isArray(parsed)) {
-      throw new Error(`${fieldLabel} 必须是 JSON 数组`);
+    return [...new Set(values)];
+  };
+
+  const parseCommaListLoose = (rawText) => {
+    const text = String(rawText || "").trim();
+    if (!text) {
+      return [];
     }
-    return parsed.map((item) => String(item).trim());
+    return [...new Set(
+      text
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean)
+    )];
+  };
+
+  const renderTagPreview = (container, values) => {
+    container.innerHTML = "";
+    if (!Array.isArray(values) || values.length === 0) {
+      const badge = document.createElement("span");
+      badge.className = "tag-badge none";
+      badge.textContent = "无";
+      container.appendChild(badge);
+      return;
+    }
+
+    for (const value of values) {
+      const badge = document.createElement("span");
+      badge.className = "tag-badge";
+      badge.textContent = value;
+      badge.title = value;
+      container.appendChild(badge);
+    }
+  };
+
+  const updateArrayPreviews = () => {
+    renderTagPreview(onebotWsUrlsPreview, parseCommaListLoose(onebotWsUrlsInput.value));
+    renderTagPreview(ownerIdPreview, parseCommaListLoose(ownerIdInput.value));
+    renderTagPreview(groupIdPreview, parseCommaListLoose(groupIdInput.value));
   };
 
   const validateWsUrls = (values) => {
@@ -134,13 +176,13 @@
   };
 
   const buildPayload = () => {
-    const onebotWsUrls = parseJsonArrayField("ONEBOT_WS_URLS", onebotWsUrlsInput.value);
+    const onebotWsUrls = parseCommaListField("ONEBOT_WS_URLS", onebotWsUrlsInput.value);
     validateWsUrls(onebotWsUrls);
 
-    const ownerId = parseJsonArrayField("OWNER_ID", ownerIdInput.value);
+    const ownerId = parseCommaListField("OWNER_ID", ownerIdInput.value);
     validateQqIdList("OWNER_ID", ownerId);
 
-    const groupId = parseJsonArrayField("GROUP_ID", groupIdInput.value);
+    const groupId = parseCommaListField("GROUP_ID", groupIdInput.value);
     validateQqIdList("GROUP_ID", groupId);
 
     const onebotAccessToken = String(onebotAccessTokenInput.value || "").trim();
@@ -205,15 +247,18 @@
   };
 
   const fillForm = (data) => {
-    onebotWsUrlsInput.value = JSON.stringify(data.onebot_ws_urls ?? [], null, 2);
+    onebotWsUrlsInput.value = Array.isArray(data.onebot_ws_urls)
+      ? data.onebot_ws_urls.join(", ")
+      : "";
     onebotAccessTokenInput.value = String(data.onebot_access_token ?? "");
-    ownerIdInput.value = JSON.stringify(data.owner_id ?? [], null, 2);
-    groupIdInput.value = JSON.stringify(data.group_id ?? [], null, 2);
+    ownerIdInput.value = Array.isArray(data.owner_id) ? data.owner_id.join(", ") : "";
+    groupIdInput.value = Array.isArray(data.group_id) ? data.group_id.join(", ") : "";
     webServerHostInput.value = String(data.web_server_host ?? "");
     webServerPortInput.value = String(data.web_server_port ?? "");
     webServerPublicBaseUrlInput.value = String(data.web_server_public_base_url ?? "");
     commandDisabledModeInput.value = String(data.command_disabled_mode ?? "reply");
     commandDisabledMessageInput.value = String(data.command_disabled_message ?? "");
+    updateArrayPreviews();
   };
 
   const loadSettings = async () => {
@@ -286,6 +331,11 @@
     setTokenButtonIcon(tokenVisible);
   });
 
+  onebotWsUrlsInput.addEventListener("input", updateArrayPreviews);
+  ownerIdInput.addEventListener("input", updateArrayPreviews);
+  groupIdInput.addEventListener("input", updateArrayPreviews);
+
   setTokenButtonIcon(false);
+  updateArrayPreviews();
   void loadSettings();
 })();
