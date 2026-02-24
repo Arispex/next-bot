@@ -22,6 +22,13 @@
   const modalCancelButton = document.getElementById("modal-cancel-btn");
   const modalSaveButton = document.getElementById("modal-save-btn");
   const modalTokenToggleButton = document.getElementById("modal-token-toggle");
+  const deleteModalNode = document.getElementById("delete-modal");
+  const deleteModalTextNode = document.getElementById("delete-modal-text");
+  const deleteModalAlertNode = document.getElementById("delete-modal-alert");
+  const deleteModalAlertMessageNode = document.getElementById("delete-modal-alert-message");
+  const deleteModalCloseButton = document.getElementById("delete-modal-close-btn");
+  const deleteModalCancelButton = document.getElementById("delete-modal-cancel-btn");
+  const deleteModalConfirmButton = document.getElementById("delete-modal-confirm-btn");
 
   const nameInput = document.getElementById("field-name");
   const ipInput = document.getElementById("field-ip");
@@ -47,6 +54,13 @@
     modalCancelButton &&
     modalSaveButton &&
     modalTokenToggleButton &&
+    deleteModalNode &&
+    deleteModalTextNode &&
+    deleteModalAlertNode &&
+    deleteModalAlertMessageNode &&
+    deleteModalCloseButton &&
+    deleteModalCancelButton &&
+    deleteModalConfirmButton &&
     nameInput &&
     ipInput &&
     gamePortInput &&
@@ -78,6 +92,8 @@
   let editingServerId = null;
   let modalTokenVisible = false;
   let modalSaving = false;
+  let deletingServer = null;
+  let deleteSaving = false;
 
   const visibleTokenIds = new Set();
   const testResultMap = new Map();
@@ -108,6 +124,20 @@
       : "info";
     modalAlertNode.className = `alert ${normalizedType} modal-alert`;
     modalAlertMessageNode.textContent = text;
+  };
+
+  const setDeleteModalAlert = (message = "", type = "info") => {
+    const text = String(message || "").trim();
+    if (!text) {
+      deleteModalAlertNode.className = "alert hidden modal-alert";
+      deleteModalAlertMessageNode.textContent = "";
+      return;
+    }
+    const normalizedType = ["success", "error", "warning", "info"].includes(type)
+      ? type
+      : "info";
+    deleteModalAlertNode.className = `alert ${normalizedType} modal-alert`;
+    deleteModalAlertMessageNode.textContent = text;
   };
 
   const parseJsonSafe = async (response) => {
@@ -330,7 +360,7 @@
       deleteButton.className = "btn action-btn action-btn-danger";
       deleteButton.textContent = "删除";
       deleteButton.addEventListener("click", () => {
-        void deleteServer(server);
+        openDeleteModal(server);
       });
 
       actions.appendChild(editButton);
@@ -431,6 +461,25 @@
     modalNode.classList.add("hidden");
   };
 
+  const openDeleteModal = (server) => {
+    deletingServer = server;
+    deleteSaving = false;
+    deleteModalConfirmButton.disabled = false;
+    setDeleteModalAlert("");
+    deleteModalTextNode.textContent = `确认删除服务器 #${server.id}（${server.name}）吗？该操作无法撤销。`;
+    deleteModalNode.classList.remove("hidden");
+  };
+
+  const closeDeleteModal = (force = false) => {
+    if (deleteSaving && !force) {
+      return;
+    }
+    deleteModalNode.classList.add("hidden");
+    if (force || !deleteSaving) {
+      deletingServer = null;
+    }
+  };
+
   const parsePort = (fieldName, rawValue) => {
     const text = String(rawValue || "").trim();
     if (!text) {
@@ -528,16 +577,18 @@
     }
   };
 
-  const deleteServer = async (server) => {
-    const confirmed = window.confirm(`确认删除服务器 #${server.id}（${server.name}）吗？`);
-    if (!confirmed) {
+  const confirmDeleteServer = async () => {
+    if (!deletingServer || deleteSaving) {
       return;
     }
-
-    setStatus(`正在删除服务器 #${server.id}...`, "warning");
+    const targetServer = deletingServer;
+    deleteSaving = true;
+    deleteModalConfirmButton.disabled = true;
+    setDeleteModalAlert(`正在删除服务器 #${targetServer.id}...`, "warning");
+    setStatus(`正在删除服务器 #${targetServer.id}...`, "warning");
 
     try {
-      const response = await fetch(`/webui/api/servers/${server.id}`, {
+      const response = await fetch(`/webui/api/servers/${targetServer.id}`, {
         method: "DELETE",
         headers: { Accept: "application/json" },
       });
@@ -546,13 +597,18 @@
         throw new Error(readErrorMessage(result, "删除失败"));
       }
 
-      visibleTokenIds.delete(server.id);
-      testResultMap.delete(server.id);
+      visibleTokenIds.delete(targetServer.id);
+      testResultMap.delete(targetServer.id);
+      closeDeleteModal(true);
       setStatus("删除成功", "success");
       await loadServers();
     } catch (error) {
       const message = error instanceof Error ? error.message : "删除失败";
+      setDeleteModalAlert(message, "error");
       setStatus(message, "error");
+    } finally {
+      deleteSaving = false;
+      deleteModalConfirmButton.disabled = false;
     }
   };
 
@@ -621,6 +677,26 @@
     }
     if (target.dataset.modalClose === "1") {
       closeModal();
+    }
+  });
+
+  deleteModalCloseButton.addEventListener("click", () => {
+    closeDeleteModal();
+  });
+  deleteModalCancelButton.addEventListener("click", () => {
+    closeDeleteModal();
+  });
+  deleteModalConfirmButton.addEventListener("click", () => {
+    void confirmDeleteServer();
+  });
+
+  deleteModalNode.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    if (target.dataset.deleteModalClose === "1") {
+      closeDeleteModal();
     }
   });
 
