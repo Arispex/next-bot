@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from nonebot import get_bots
 from sqlalchemy import func
 from sqlalchemy.dialects.sqlite import insert
 
@@ -57,7 +58,7 @@ def increment_command_execute_total() -> None:
     increment_stat(STAT_COMMAND_EXECUTE_TOTAL, 1)
 
 
-def get_dashboard_metrics() -> dict[str, int | str]:
+def get_dashboard_metrics() -> dict[str, int | str | list[str]]:
     session = get_session()
     try:
         server_count = int(session.query(func.count(Server.id)).scalar() or 0)
@@ -65,9 +66,17 @@ def get_dashboard_metrics() -> dict[str, int | str]:
     finally:
         session.close()
 
+    connected_bot_ids: list[str] = []
+    try:
+        connected_bot_ids = sorted(str(bot_id) for bot_id in get_bots().keys())
+    except Exception:
+        connected_bot_ids = []
+
     return {
         "running_status": "Running",
         "server_count": server_count,
         "user_count": user_count,
         "command_execute_count": get_stat_value(STAT_COMMAND_EXECUTE_TOTAL, 0),
+        "connected_bot_count": len(connected_bot_ids),
+        "connected_bot_ids": connected_bot_ids,
     }
