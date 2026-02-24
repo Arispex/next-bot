@@ -151,7 +151,16 @@ def _coerce_list_of_str(value: Any, *, field: str) -> list[str]:
 
 
 def _coerce_qq_id_list(value: Any, *, field: str) -> list[str]:
-    values = _coerce_list_of_str(value, field=field)
+    if not isinstance(value, list):
+        raise SettingsValidationError(f"{field} 必须是 JSON 数组", field=field)
+
+    values: list[str] = []
+    for item in value:
+        text = str(item).strip()
+        if not text:
+            continue
+        values.append(text)
+
     for item in values:
         if _QQ_ID_PATTERN.fullmatch(item) is None:
             raise SettingsValidationError(f"{field} 仅支持 5-20 位数字", field=field)
