@@ -32,7 +32,7 @@ DEFAULT_ENV_CONTENT = (
     "OWNER_ID=[\"\"]\n"
     "GROUP_ID=[\"\"]\n"
     "\n"
-    "WEB_SERVER_HOST=127.0.0.1\n"
+    "WEB_SERVER_HOST=0.0.0.0\n"
     "WEB_SERVER_PORT=18081\n"
     "WEB_SERVER_PUBLIC_BASE_URL=http://127.0.0.1:18081\n"
     "COMMAND_DISABLED_MODE=reply\n"
