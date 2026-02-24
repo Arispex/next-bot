@@ -8,7 +8,6 @@
   const statHotNode = document.getElementById("stat-hot");
   const statRestartNode = document.getElementById("stat-restart");
 
-  const commandStartInput = document.getElementById("field-command-start");
   const onebotWsUrlsInput = document.getElementById("field-onebot-ws-urls");
   const onebotAccessTokenInput = document.getElementById("field-onebot-access-token");
   const ownerIdInput = document.getElementById("field-owner-id");
@@ -29,7 +28,6 @@
     restartMessageNode &&
     statHotNode &&
     statRestartNode &&
-    commandStartInput &&
     onebotWsUrlsInput &&
     onebotAccessTokenInput &&
     ownerIdInput &&
@@ -152,11 +150,6 @@
   };
 
   const buildPayload = () => {
-    const commandStart = parseJsonArrayField("COMMAND_START", commandStartInput.value);
-    if (commandStart.length === 0) {
-      throw new Error("COMMAND_START 至少需要 1 项");
-    }
-
     const onebotWsUrls = parseJsonArrayField("ONEBOT_WS_URLS", onebotWsUrlsInput.value);
     validateWsUrls(onebotWsUrls);
 
@@ -210,7 +203,6 @@
     }
 
     return {
-      command_start: commandStart,
       onebot_ws_urls: onebotWsUrls,
       onebot_access_token: onebotAccessToken,
       owner_id: ownerId,
@@ -233,7 +225,6 @@
   };
 
   const fillForm = (data) => {
-    commandStartInput.value = JSON.stringify(data.command_start ?? [], null, 2);
     onebotWsUrlsInput.value = JSON.stringify(data.onebot_ws_urls ?? [], null, 2);
     onebotAccessTokenInput.value = String(data.onebot_access_token ?? "");
     ownerIdInput.value = JSON.stringify(data.owner_id ?? [], null, 2);

@@ -38,7 +38,6 @@ class SettingsValidationError(ValueError):
 
 
 _FIELD_SPECS: tuple[FieldSpec, ...] = (
-    FieldSpec("command_start", "COMMAND_START", hot_apply=False),
     FieldSpec("onebot_ws_urls", "ONEBOT_WS_URLS", hot_apply=False),
     FieldSpec("onebot_access_token", "ONEBOT_ACCESS_TOKEN", hot_apply=False, sensitive=True),
     FieldSpec("owner_id", "OWNER_ID", hot_apply=True),
@@ -83,7 +82,7 @@ def _read_env_values() -> dict[str, str]:
 
 
 def _serialize_env_value(field: str, value: Any) -> str:
-    if field in {"command_start", "onebot_ws_urls", "owner_id", "group_id"}:
+    if field in {"onebot_ws_urls", "owner_id", "group_id"}:
         return json.dumps(value, ensure_ascii=False)
     if field == "web_server_port":
         return str(value)
@@ -191,11 +190,6 @@ def _coerce_port(value: Any, *, field: str) -> int:
 
 
 def _normalize_field(field: str, value: Any) -> Any:
-    if field == "command_start":
-        values = _coerce_list_of_str(value, field=field, allow_empty=True)
-        if not values:
-            raise SettingsValidationError("command_start 至少需要 1 项", field=field)
-        return values
     if field == "onebot_ws_urls":
         return _coerce_ws_urls(value, field=field)
     if field == "onebot_access_token":
@@ -245,7 +239,7 @@ def _parse_json_array_env(raw: str, *, field: str) -> list[Any]:
 
 
 def _load_value_from_env(field: str, raw_value: str) -> Any:
-    if field in {"command_start", "onebot_ws_urls", "owner_id", "group_id"}:
+    if field in {"onebot_ws_urls", "owner_id", "group_id"}:
         values = _parse_json_array_env(raw_value, field=field)
         return _normalize_field(field, values)
     if field == "web_server_port":
@@ -255,7 +249,7 @@ def _load_value_from_env(field: str, raw_value: str) -> Any:
 
 def _load_value_from_config(field: str, config: Any) -> Any:
     raw_value = getattr(config, field, None)
-    if field in {"command_start", "onebot_ws_urls", "owner_id", "group_id"}:
+    if field in {"onebot_ws_urls", "owner_id", "group_id"}:
         if raw_value is None:
             return []
         if isinstance(raw_value, (set, tuple)):
