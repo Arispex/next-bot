@@ -105,7 +105,8 @@ def _run_server() -> None:
     settings = get_server_settings()
     app = create_app(settings)
 
-    logger.info(f"Web UI 已启动：http://{settings.host}:{settings.port}/webui")
+    logger.info(f"Web Server 已启动：http://{settings.host}:{settings.port}")
+    logger.info(f"Web UI：http://127.0.0.1:{settings.port}/webui")
     if settings.auth_file_created:
         logger.info(f"已初始化 Web UI 认证文件：{settings.auth_file_path}")
     logger.warning(f"Web UI Token：{settings.webui_token}")
