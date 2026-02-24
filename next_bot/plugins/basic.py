@@ -11,7 +11,7 @@ from nonebot.params import CommandArg
 
 from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
 from server.web_server import create_inventory_page, create_progress_page
-from next_bot.command_config import command_control, get_current_param
+from next_bot.command_config import command_control
 from next_bot.db import Server, User, get_session
 from next_bot.message_parser import (
     parse_command_args_with_fallback,
@@ -175,15 +175,6 @@ def _to_public_render_url(url: str) -> str:
     display_name="在线",
     permission="basic.online",
     description="查询服务器在线状态与在线玩家列表",
-    params={
-        "max_servers": {
-            "type": "int",
-            "label": "最多展示服务器数",
-            "description": "0 表示不限制",
-            "default": 0,
-            "min": 0,
-        }
-    },
 )
 @require_permission("basic.online")
 async def handle_online(
@@ -199,10 +190,6 @@ async def handle_online(
         servers = session.query(Server).order_by(Server.id.asc()).all()
     finally:
         session.close()
-
-    max_servers = get_current_param("max_servers", 0)
-    if isinstance(max_servers, int) and max_servers > 0:
-        servers = servers[:max_servers]
 
     if not servers:
         await bot.send(event, "查询失败，暂无服务器")
