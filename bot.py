@@ -1,4 +1,5 @@
 import nonebot
+from pathlib import Path
 from nonebot.adapters.console import Adapter as ConsoleAdapter
 from nonebot.adapters.onebot.v11 import Adapter as OneBotV11Adapter
 from nonebot.adapters import Event
@@ -18,6 +19,36 @@ from next_bot.db import (
     init_db,
 )
 
+ENV_PATH = Path(__file__).resolve().parent / ".env"
+DEFAULT_ENV_CONTENT = (
+    "DRIVER=~websockets\n"
+    "LOCALSTORE_USE_CWD=true\n"
+    "\n"
+    "COMMAND_START=[\"/\", \"\"]\n"
+    "\n"
+    "ONEBOT_WS_URLS=[\"ws://127.0.0.1:3001\"]\n"
+    "ONEBOT_ACCESS_TOKEN=MyOneBotAccessToken\n"
+    "\n"
+    "OWNER_ID=[\"\"]\n"
+    "GROUP_ID=[\"\"]\n"
+    "\n"
+    "WEB_SERVER_HOST=127.0.0.1\n"
+    "WEB_SERVER_PORT=18081\n"
+    "WEB_SERVER_PUBLIC_BASE_URL=http://127.0.0.1:18081\n"
+    "COMMAND_DISABLED_MODE=reply\n"
+    "COMMAND_DISABLED_MESSAGE=该命令暂时关闭~\n"
+)
+
+
+def ensure_env_file() -> None:
+    if ENV_PATH.exists():
+        return
+
+    ENV_PATH.write_text(DEFAULT_ENV_CONTENT, encoding="utf-8")
+    logger.warning(".env 不存在，已创建默认 .env 文件：%s", ENV_PATH)
+
+
+ensure_env_file()
 nonebot.init()
 
 driver = nonebot.get_driver()
