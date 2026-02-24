@@ -21,6 +21,13 @@
   const modalCloseButton = document.getElementById("modal-close-btn");
   const modalCancelButton = document.getElementById("modal-cancel-btn");
   const modalSaveButton = document.getElementById("modal-save-btn");
+  const deleteModalNode = document.getElementById("delete-modal");
+  const deleteModalTextNode = document.getElementById("delete-modal-text");
+  const deleteModalAlertNode = document.getElementById("delete-modal-alert");
+  const deleteModalAlertMessageNode = document.getElementById("delete-modal-alert-message");
+  const deleteModalCloseButton = document.getElementById("delete-modal-close-btn");
+  const deleteModalCancelButton = document.getElementById("delete-modal-cancel-btn");
+  const deleteModalConfirmButton = document.getElementById("delete-modal-confirm-btn");
 
   const fieldUserId = document.getElementById("field-user-id");
   const fieldName = document.getElementById("field-name");
@@ -49,6 +56,13 @@
     modalCloseButton &&
     modalCancelButton &&
     modalSaveButton &&
+    deleteModalNode &&
+    deleteModalTextNode &&
+    deleteModalAlertNode &&
+    deleteModalAlertMessageNode &&
+    deleteModalCloseButton &&
+    deleteModalCancelButton &&
+    deleteModalConfirmButton &&
     fieldUserId &&
     fieldName &&
     fieldCoins &&
@@ -69,6 +83,8 @@
   let modalMode = "create";
   let editingUserDbId = null;
   let modalSaving = false;
+  let deletingUser = null;
+  let deleteSaving = false;
 
   const syncResultMap = new Map();
 
@@ -98,6 +114,20 @@
       : "info";
     modalAlertNode.className = `alert ${normalizedType} modal-alert`;
     modalAlertMessageNode.textContent = text;
+  };
+
+  const setDeleteModalAlert = (message = "", type = "info") => {
+    const text = String(message || "").trim();
+    if (!text) {
+      deleteModalAlertNode.className = "alert hidden modal-alert";
+      deleteModalAlertMessageNode.textContent = "";
+      return;
+    }
+    const normalizedType = ["success", "error", "warning", "info"].includes(type)
+      ? type
+      : "info";
+    deleteModalAlertNode.className = `alert ${normalizedType} modal-alert`;
+    deleteModalAlertMessageNode.textContent = text;
   };
 
   const parseJsonSafe = async (response) => {
@@ -314,7 +344,7 @@
       deleteButton.className = "btn action-btn action-btn-danger";
       deleteButton.textContent = "删除";
       deleteButton.addEventListener("click", () => {
-        void deleteUser(user);
+        openDeleteModal(user);
       });
 
       actions.appendChild(editButton);
@@ -387,6 +417,25 @@
       return;
     }
     modalNode.classList.add("hidden");
+  };
+
+  const openDeleteModal = (user) => {
+    deletingUser = user;
+    deleteSaving = false;
+    deleteModalConfirmButton.disabled = false;
+    setDeleteModalAlert("");
+    deleteModalTextNode.textContent = `确认删除用户 #${user.id}（${user.name}）吗？该操作无法撤销。`;
+    deleteModalNode.classList.remove("hidden");
+  };
+
+  const closeDeleteModal = (force = false) => {
+    if (deleteSaving && !force) {
+      return;
+    }
+    deleteModalNode.classList.add("hidden");
+    if (force || !deleteSaving) {
+      deletingUser = null;
+    }
   };
 
   const updatePermissionPreview = () => {
@@ -520,15 +569,18 @@
     }
   };
 
-  const deleteUser = async (user) => {
-    const confirmed = window.confirm(`确认删除用户 #${user.id}（${user.name}）吗？`);
-    if (!confirmed) {
+  const confirmDeleteUser = async () => {
+    if (!deletingUser || deleteSaving) {
       return;
     }
+    const targetUser = deletingUser;
+    deleteSaving = true;
+    deleteModalConfirmButton.disabled = true;
+    setDeleteModalAlert(`正在删除用户 #${targetUser.id}...`, "warning");
 
-    setStatus(`正在删除用户 #${user.id}...`, "warning");
+    setStatus(`正在删除用户 #${targetUser.id}...`, "warning");
     try {
-      const response = await fetch(`/webui/api/users/${user.id}`, {
+      const response = await fetch(`/webui/api/users/${targetUser.id}`, {
         method: "DELETE",
         headers: { Accept: "application/json" },
       });
@@ -536,12 +588,17 @@
       if (!response.ok || !result || result.ok !== true) {
         throw new Error(readErrorMessage(result, "删除失败"));
       }
-      syncResultMap.delete(user.id);
+      syncResultMap.delete(targetUser.id);
+      closeDeleteModal(true);
       setStatus("删除成功", "success");
       await loadUsers();
     } catch (error) {
       const message = error instanceof Error ? error.message : "删除失败";
+      setDeleteModalAlert(message, "error");
       setStatus(message, "error");
+    } finally {
+      deleteSaving = false;
+      deleteModalConfirmButton.disabled = false;
     }
   };
 
@@ -636,6 +693,26 @@
     }
     if (target.dataset.modalClose === "1") {
       closeModal();
+    }
+  });
+
+  deleteModalCloseButton.addEventListener("click", () => {
+    closeDeleteModal();
+  });
+  deleteModalCancelButton.addEventListener("click", () => {
+    closeDeleteModal();
+  });
+  deleteModalConfirmButton.addEventListener("click", () => {
+    void confirmDeleteUser();
+  });
+
+  deleteModalNode.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    if (target.dataset.deleteModalClose === "1") {
+      closeDeleteModal();
     }
   });
 

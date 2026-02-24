@@ -21,6 +21,13 @@
   const modalCloseButton = document.getElementById("modal-close-btn");
   const modalCancelButton = document.getElementById("modal-cancel-btn");
   const modalSaveButton = document.getElementById("modal-save-btn");
+  const deleteModalNode = document.getElementById("delete-modal");
+  const deleteModalTextNode = document.getElementById("delete-modal-text");
+  const deleteModalAlertNode = document.getElementById("delete-modal-alert");
+  const deleteModalAlertMessageNode = document.getElementById("delete-modal-alert-message");
+  const deleteModalCloseButton = document.getElementById("delete-modal-close-btn");
+  const deleteModalCancelButton = document.getElementById("delete-modal-cancel-btn");
+  const deleteModalConfirmButton = document.getElementById("delete-modal-confirm-btn");
 
   const fieldName = document.getElementById("field-name");
   const fieldPermissions = document.getElementById("field-permissions");
@@ -48,6 +55,13 @@
     modalCloseButton &&
     modalCancelButton &&
     modalSaveButton &&
+    deleteModalNode &&
+    deleteModalTextNode &&
+    deleteModalAlertNode &&
+    deleteModalAlertMessageNode &&
+    deleteModalCloseButton &&
+    deleteModalCancelButton &&
+    deleteModalConfirmButton &&
     fieldName &&
     fieldPermissions &&
     fieldInherits &&
@@ -68,6 +82,8 @@
   let modalMode = "create";
   let editingGroupName = "";
   let modalSaving = false;
+  let deletingGroup = null;
+  let deleteSaving = false;
 
   const setStatus = (message, type = "") => {
     const text = String(message || "").trim();
@@ -95,6 +111,20 @@
       : "info";
     modalAlertNode.className = `alert ${normalizedType} modal-alert`;
     modalAlertMessageNode.textContent = text;
+  };
+
+  const setDeleteModalAlert = (message = "", type = "info") => {
+    const text = String(message || "").trim();
+    if (!text) {
+      deleteModalAlertNode.className = "alert hidden modal-alert";
+      deleteModalAlertMessageNode.textContent = "";
+      return;
+    }
+    const normalizedType = ["success", "error", "warning", "info"].includes(type)
+      ? type
+      : "info";
+    deleteModalAlertNode.className = `alert ${normalizedType} modal-alert`;
+    deleteModalAlertMessageNode.textContent = text;
   };
 
   const parseJsonSafe = async (response) => {
@@ -277,7 +307,7 @@
         deleteButton.title = "内置身份组不可删除";
       } else {
         deleteButton.addEventListener("click", () => {
-          void deleteGroup(group);
+          openDeleteModal(group);
         });
       }
 
@@ -341,6 +371,25 @@
       return;
     }
     modalNode.classList.add("hidden");
+  };
+
+  const openDeleteModal = (group) => {
+    deletingGroup = group;
+    deleteSaving = false;
+    deleteModalConfirmButton.disabled = false;
+    setDeleteModalAlert("");
+    deleteModalTextNode.textContent = `确认删除身份组“${group.name}”吗？该操作无法撤销。`;
+    deleteModalNode.classList.remove("hidden");
+  };
+
+  const closeDeleteModal = (force = false) => {
+    if (deleteSaving && !force) {
+      return;
+    }
+    deleteModalNode.classList.add("hidden");
+    if (force || !deleteSaving) {
+      deletingGroup = null;
+    }
   };
 
   const updatePreview = () => {
@@ -467,15 +516,18 @@
     }
   };
 
-  const deleteGroup = async (group) => {
-    const confirmed = window.confirm(`确认删除身份组“${group.name}”吗？`);
-    if (!confirmed) {
+  const confirmDeleteGroup = async () => {
+    if (!deletingGroup || deleteSaving) {
       return;
     }
+    const targetGroup = deletingGroup;
+    deleteSaving = true;
+    deleteModalConfirmButton.disabled = true;
+    setDeleteModalAlert(`正在删除身份组 ${targetGroup.name}...`, "warning");
 
-    setStatus(`正在删除身份组 ${group.name}...`, "warning");
+    setStatus(`正在删除身份组 ${targetGroup.name}...`, "warning");
     try {
-      const response = await fetch(`/webui/api/groups/${encodeURIComponent(group.name)}`, {
+      const response = await fetch(`/webui/api/groups/${encodeURIComponent(targetGroup.name)}`, {
         method: "DELETE",
         headers: { Accept: "application/json" },
       });
@@ -483,11 +535,16 @@
       if (!response.ok || !result || result.ok !== true) {
         throw new Error(readErrorMessage(result, "删除失败"));
       }
+      closeDeleteModal(true);
       setStatus("删除成功", "success");
       await loadGroups();
     } catch (error) {
       const message = error instanceof Error ? error.message : "删除失败";
+      setDeleteModalAlert(message, "error");
       setStatus(message, "error");
+    } finally {
+      deleteSaving = false;
+      deleteModalConfirmButton.disabled = false;
     }
   };
 
@@ -519,6 +576,26 @@
     }
     if (target.dataset.modalClose === "1") {
       closeModal();
+    }
+  });
+
+  deleteModalCloseButton.addEventListener("click", () => {
+    closeDeleteModal();
+  });
+  deleteModalCancelButton.addEventListener("click", () => {
+    closeDeleteModal();
+  });
+  deleteModalConfirmButton.addEventListener("click", () => {
+    void confirmDeleteGroup();
+  });
+
+  deleteModalNode.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    if (target.dataset.deleteModalClose === "1") {
+      closeDeleteModal();
     }
   });
 

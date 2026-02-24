@@ -87,3 +87,23 @@
     </div>
   </div>
 </div>
+
+<div id="delete-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+  <div class="modal-mask" data-delete-modal-close="1"></div>
+  <div class="modal-card confirm-modal-card">
+    <div class="modal-head">
+      <h3 id="delete-modal-title" class="modal-title">删除用户</h3>
+      <button id="delete-modal-close-btn" type="button" class="btn btn-icon modal-close-btn" aria-label="关闭">✕</button>
+    </div>
+    <div id="delete-modal-alert" class="alert hidden modal-alert" role="status" aria-live="polite">
+      <span id="delete-modal-alert-message" class="alert-message"></span>
+    </div>
+    <div class="modal-body confirm-modal-body">
+      <p id="delete-modal-text" class="confirm-modal-text"></p>
+    </div>
+    <div class="modal-foot">
+      <button id="delete-modal-cancel-btn" type="button" class="btn">取消</button>
+      <button id="delete-modal-confirm-btn" type="button" class="btn btn-danger">确认删除</button>
+    </div>
+  </div>
+</div>
