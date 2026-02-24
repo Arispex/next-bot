@@ -74,7 +74,7 @@ async def handle_menu(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
             options=MENU_SCREENSHOT_OPTIONS,
         )
     except RenderScreenshotError as exc:
-        await bot.send(event, f"菜单生成失败，{exc}")
+        await bot.send(event, f"生成失败，{exc}")
         return
 
     logger.info(
@@ -84,9 +84,9 @@ async def handle_menu(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
         try:
             image_uri = _to_base64_image_uri(screenshot_path)
         except OSError:
-            await bot.send(event, "菜单生成失败，读取截图文件失败")
+            await bot.send(event, "生成失败，读取截图文件失败")
             return
         await bot.send(event, OBV11MessageSegment.image(file=image_uri))
         return
 
-    await bot.send(event, f"菜单截图成功，文件：{screenshot_path}")
+    await bot.send(event, f"截图成功，文件：{screenshot_path}")
