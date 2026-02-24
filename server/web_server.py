@@ -14,6 +14,7 @@ from server.routes.webui_commands import router as webui_commands_router
 from server.routes.webui_dashboard import router as webui_dashboard_router
 from server.routes.webui_groups import router as webui_groups_router
 from server.routes.webui_servers import router as webui_servers_router
+from server.routes.webui_settings import router as webui_settings_router
 from server.routes.webui_users import router as webui_users_router
 from server.routes.webui import add_webui_auth_middleware, router as webui_router
 from server.server_config import WebServerSettings, get_server_settings
@@ -91,6 +92,7 @@ def create_app(settings: WebServerSettings | None = None) -> FastAPI:
     app.include_router(webui_servers_router)
     app.include_router(webui_users_router)
     app.include_router(webui_groups_router)
+    app.include_router(webui_settings_router)
 
     @app.get("/health")
     async def health() -> dict[str, str]:

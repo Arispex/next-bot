@@ -1,0 +1,100 @@
+<section class="settings-panel">
+  <div class="panel-toolbar">
+    <div class="panel-summary">
+      <span class="summary-chip">即时生效 <strong id="stat-hot">0</strong></span>
+      <span class="summary-chip">需重启 <strong id="stat-restart" class="danger">0</strong></span>
+    </div>
+    <div class="panel-head-actions">
+      <button id="reload-btn" type="button" class="btn">重新加载</button>
+      <button id="save-btn" type="button" class="btn btn-primary">保存并应用</button>
+    </div>
+  </div>
+
+  <div class="panel-body">
+    <div id="status" class="alert hidden" role="status" aria-live="polite">
+      <span id="status-message" class="alert-message"></span>
+    </div>
+    <div id="restart-alert" class="alert warning hidden" role="status" aria-live="polite">
+      <span id="restart-message" class="alert-message"></span>
+    </div>
+
+    <div class="form-layout">
+      <section class="form-section">
+        <h3 class="section-title">命令解析</h3>
+        <label class="form-item">
+          <span class="form-label">COMMAND_START（JSON 数组）</span>
+          <textarea id="field-command-start" class="input textarea" rows="4" spellcheck="false"></textarea>
+        </label>
+      </section>
+
+      <section class="form-section">
+        <h3 class="section-title">OneBot</h3>
+        <label class="form-item">
+          <span class="form-label">ONEBOT_WS_URLS（JSON 数组）</span>
+          <textarea id="field-onebot-ws-urls" class="input textarea" rows="4" spellcheck="false"></textarea>
+        </label>
+        <label class="form-item">
+          <span class="form-label">ONEBOT_ACCESS_TOKEN</span>
+          <div class="token-input-wrap">
+            <input id="field-onebot-access-token" class="input token-input" type="password" />
+            <button id="token-toggle-btn" type="button" class="token-input-toggle" aria-label="显示 Token" title="显示 Token">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+        </label>
+      </section>
+
+      <section class="form-section">
+        <h3 class="section-title">访问控制</h3>
+        <div class="form-grid">
+          <label class="form-item">
+            <span class="form-label">OWNER_ID（JSON 数组）</span>
+            <textarea id="field-owner-id" class="input textarea" rows="4" spellcheck="false"></textarea>
+          </label>
+          <label class="form-item">
+            <span class="form-label">GROUP_ID（JSON 数组）</span>
+            <textarea id="field-group-id" class="input textarea" rows="4" spellcheck="false"></textarea>
+          </label>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h3 class="section-title">Web 服务</h3>
+        <div class="form-grid">
+          <label class="form-item">
+            <span class="form-label">WEB_SERVER_HOST</span>
+            <input id="field-web-server-host" class="input" type="text" />
+          </label>
+          <label class="form-item">
+            <span class="form-label">WEB_SERVER_PORT</span>
+            <input id="field-web-server-port" class="input" type="number" min="1" max="65535" />
+          </label>
+          <label class="form-item form-span-2">
+            <span class="form-label">WEB_SERVER_PUBLIC_BASE_URL</span>
+            <input id="field-web-server-public-base-url" class="input" type="text" />
+          </label>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h3 class="section-title">命令关闭策略</h3>
+        <div class="form-grid">
+          <label class="form-item">
+            <span class="form-label">COMMAND_DISABLED_MODE</span>
+            <select id="field-command-disabled-mode" class="input select">
+              <option value="reply">reply</option>
+              <option value="silent">silent</option>
+            </select>
+          </label>
+          <label class="form-item form-span-2">
+            <span class="form-label">COMMAND_DISABLED_MESSAGE</span>
+            <input id="field-command-disabled-message" class="input" type="text" />
+          </label>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>

@@ -27,7 +27,7 @@ def _asset_url(path: str) -> str:
 def _render_app_shell_page(
     *,
     page_title: str,
-    active_menu: Literal["dashboard", "commands", "servers", "users", "groups"],
+    active_menu: Literal["dashboard", "commands", "servers", "users", "groups", "settings"],
     content_template: str,
     page_style_urls: tuple[str, ...] = (),
     page_script_urls: tuple[str, ...] = (),
@@ -47,6 +47,7 @@ def _render_app_shell_page(
     servers_active = "is-active" if active_menu == "servers" else ""
     users_active = "is-active" if active_menu == "users" else ""
     groups_active = "is-active" if active_menu == "groups" else ""
+    settings_active = "is-active" if active_menu == "settings" else ""
 
     return (
         base_template.replace("__PAGE_TITLE__", html.escape(page_title))
@@ -56,6 +57,7 @@ def _render_app_shell_page(
         .replace("__NAV_SERVERS_ACTIVE__", servers_active)
         .replace("__NAV_USERS_ACTIVE__", users_active)
         .replace("__NAV_GROUPS_ACTIVE__", groups_active)
+        .replace("__NAV_SETTINGS_ACTIVE__", settings_active)
         .replace("__MAIN_CONTENT__", content_html)
         .replace(
             "__WEBUI_SCRIPT_URL__",
@@ -154,5 +156,20 @@ def render_groups_page() -> str:
         ),
         page_script_urls=(
             _asset_url("js/groups.js"),
+        ),
+    )
+
+
+def render_settings_page() -> str:
+    return _render_app_shell_page(
+        page_title="NextBot Settings",
+        active_menu="settings",
+        content_template="settings_content.html",
+        page_style_urls=(
+            _asset_url("css/app-shell.css"),
+            _asset_url("css/settings.css"),
+        ),
+        page_script_urls=(
+            _asset_url("js/settings.js"),
         ),
     )
