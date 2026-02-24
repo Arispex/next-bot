@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NextBot WebUI - 菜单</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: "#eff6ff",
+              100: "#dbeafe",
+              500: "#3b82f6",
+              600: "#2563eb",
+              700: "#1d4ed8",
+              800: "#1e40af"
+            }
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="min-h-screen bg-[radial-gradient(circle_at_top,#dbeafe_0%,#f8fafc_35%,#e2e8f0_100%)] p-5 text-slate-900">
+  <main class="mx-auto max-w-[1800px] overflow-hidden rounded-3xl border border-slate-200 bg-white/90 shadow-2xl shadow-blue-200/60 backdrop-blur">
+    <header class="relative overflow-hidden bg-gradient-to-r from-brand-700 via-brand-600 to-brand-800 px-6 py-5 text-white">
+      <div class="absolute -left-10 -top-12 h-40 w-40 rounded-full bg-white/15 blur-2xl"></div>
+      <div class="absolute -right-16 top-0 h-44 w-44 rounded-full bg-cyan-200/20 blur-3xl"></div>
+      <div class="relative">
+        <h1 class="text-3xl font-bold tracking-wide">菜单</h1>
+        <div class="mt-4 grid grid-cols-2 gap-2 text-sm md:grid-cols-4">
+          <div class="rounded-lg bg-white/15 px-3 py-2">
+            <div class="text-[11px] text-blue-100">命令总数</div>
+            <div id="meta-total-count" class="truncate font-semibold"></div>
+          </div>
+          <div class="rounded-lg bg-white/15 px-3 py-2 md:col-span-2">
+            <div class="text-[11px] text-blue-100">生成时间</div>
+            <div id="meta-generated-at" class="truncate font-semibold"></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="p-4">
+      <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <table class="min-w-full border-collapse text-sm">
+          <thead class="bg-slate-100 text-slate-600">
+            <tr>
+              <th class="border-b border-slate-200 px-4 py-3 text-left font-semibold">命令名称</th>
+              <th class="border-b border-slate-200 px-4 py-3 text-left font-semibold">命令介绍</th>
+              <th class="border-b border-slate-200 px-4 py-3 text-left font-semibold">权限</th>
+            </tr>
+          </thead>
+          <tbody id="command-table-body" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="px-6 pb-4 text-right text-xs font-medium tracking-wide text-slate-400">
+      Powered by Next Bot
+    </div>
+  </main>
+
+  <script id="menu-data" type="application/json">__MENU_DATA_JSON__</script>
+  <script>
+    const data = JSON.parse(document.getElementById("menu-data").textContent);
+    const commands = Array.isArray(data.commands) ? data.commands : [];
+    const totalCount = Number(data.total_count || commands.length || 0);
+
+    document.getElementById("meta-generated-at").textContent = String(data.generated_at || "");
+    document.getElementById("meta-total-count").textContent = String(totalCount);
+
+    const tableBody = document.getElementById("command-table-body");
+    for (const item of commands) {
+      const row = document.createElement("tr");
+      row.className = "align-top";
+
+      const nameCell = document.createElement("td");
+      nameCell.className = "px-4 py-3 font-semibold text-slate-900";
+      nameCell.textContent = String(item?.display_name || "").trim() || "-";
+
+      const descCell = document.createElement("td");
+      descCell.className = "px-4 py-3 text-slate-700";
+      descCell.textContent = String(item?.description || "").trim() || "暂无介绍";
+
+      const permCell = document.createElement("td");
+      permCell.className = "px-4 py-3";
+      const permBadge = document.createElement("span");
+      permBadge.className =
+        "inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700";
+      permBadge.textContent = String(item?.permission || "").trim() || "无";
+      permCell.appendChild(permBadge);
+
+      row.appendChild(nameCell);
+      row.appendChild(descCell);
+      row.appendChild(permCell);
+      tableBody.appendChild(row);
+    }
+  </script>
+</body>
+</html>

@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from nonebot.log import logger
 
 from server.page_store import create_page
-from server.pages import inventory_page, progress_page
+from server.pages import inventory_page, menu_page, progress_page
 from server.routes.render import router as render_router
 from server.routes.webui_commands import router as webui_commands_router
 from server.routes.webui_dashboard import router as webui_dashboard_router
@@ -71,6 +71,16 @@ def create_progress_page(
     token = create_page("progress", payload)
     settings = get_server_settings()
     return f"{_build_internal_base_url(settings)}/render/progress/{token}"
+
+
+def create_menu_page(
+    *,
+    commands: list[dict[str, str]],
+) -> str:
+    payload = menu_page.build_payload(commands=commands)
+    token = create_page("menu", payload)
+    settings = get_server_settings()
+    return f"{_build_internal_base_url(settings)}/render/menu/{token}"
 
 
 def create_app(settings: WebServerSettings | None = None) -> FastAPI:
