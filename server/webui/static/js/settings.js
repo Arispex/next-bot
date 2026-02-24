@@ -44,6 +44,21 @@
   }
 
   const QQ_ID_PATTERN = /^\d{5,20}$/;
+  const FIELD_LABELS = {
+    onebot_ws_urls: "OneBot WebSocket 地址",
+    onebot_access_token: "OneBot 访问令牌",
+    owner_id: "管理员 QQ",
+    group_id: "允许群号",
+    web_server_host: "Web 服务监听地址",
+    web_server_port: "Web 服务端口",
+    web_server_public_base_url: "Web 服务对外地址",
+    command_disabled_mode: "命令关闭模式",
+    command_disabled_message: "命令关闭提示语",
+  };
+  const MODE_LABELS = {
+    reply: "回复提示",
+    silent: "静默拦截",
+  };
   const SHOW_ICON_SVG = `
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
@@ -83,11 +98,31 @@
     }
   };
 
+  const replaceFieldTokens = (message) => {
+    let normalized = String(message || "");
+    const entries = Object.entries(FIELD_LABELS).sort((a, b) => b[0].length - a[0].length);
+    for (const [field, label] of entries) {
+      normalized = normalized.replaceAll(field, label);
+      normalized = normalized.replaceAll(field.toUpperCase(), label);
+    }
+    return normalized;
+  };
+
   const readErrorMessage = (payload, fallback) => {
     if (payload && typeof payload.message === "string" && payload.message.trim()) {
-      return payload.message.trim();
+      let message = payload.message.trim();
+      if (payload.field && typeof payload.field === "string") {
+        const label = FIELD_LABELS[payload.field] || payload.field;
+        message = replaceFieldTokens(message);
+        if (!message.includes(label) && message.includes(payload.field)) {
+          message = message.replaceAll(payload.field, label);
+        }
+      } else {
+        message = replaceFieldTokens(message);
+      }
+      return message;
     }
-    return fallback;
+    return replaceFieldTokens(fallback);
   };
 
   const setTokenButtonIcon = (visible) => {
@@ -153,16 +188,16 @@
   const validateWsUrls = (values) => {
     for (const value of values) {
       if (!value) {
-        throw new Error("ONEBOT_WS_URLS 不能包含空项");
+        throw new Error(`${FIELD_LABELS.onebot_ws_urls} 不能包含空项`);
       }
       let parsed;
       try {
         parsed = new URL(value);
       } catch (_error) {
-        throw new Error("ONEBOT_WS_URLS 必须是 ws/wss URL");
+        throw new Error(`${FIELD_LABELS.onebot_ws_urls} 必须是 ws/wss URL`);
       }
       if (!["ws:", "wss:"].includes(parsed.protocol)) {
-        throw new Error("ONEBOT_WS_URLS 必须是 ws/wss URL");
+        throw new Error(`${FIELD_LABELS.onebot_ws_urls} 必须是 ws/wss URL`);
       }
     }
   };
@@ -176,56 +211,58 @@
   };
 
   const buildPayload = () => {
-    const onebotWsUrls = parseCommaListField("ONEBOT_WS_URLS", onebotWsUrlsInput.value);
+    const onebotWsUrls = parseCommaListField(FIELD_LABELS.onebot_ws_urls, onebotWsUrlsInput.value);
     validateWsUrls(onebotWsUrls);
 
-    const ownerId = parseCommaListField("OWNER_ID", ownerIdInput.value);
-    validateQqIdList("OWNER_ID", ownerId);
+    const ownerId = parseCommaListField(FIELD_LABELS.owner_id, ownerIdInput.value);
+    validateQqIdList(FIELD_LABELS.owner_id, ownerId);
 
-    const groupId = parseCommaListField("GROUP_ID", groupIdInput.value);
-    validateQqIdList("GROUP_ID", groupId);
+    const groupId = parseCommaListField(FIELD_LABELS.group_id, groupIdInput.value);
+    validateQqIdList(FIELD_LABELS.group_id, groupId);
 
     const onebotAccessToken = String(onebotAccessTokenInput.value || "").trim();
     if (!onebotAccessToken) {
-      throw new Error("ONEBOT_ACCESS_TOKEN 不能为空");
+      throw new Error(`${FIELD_LABELS.onebot_access_token} 不能为空`);
     }
 
     const webServerHost = String(webServerHostInput.value || "").trim();
     if (!webServerHost) {
-      throw new Error("WEB_SERVER_HOST 不能为空");
+      throw new Error(`${FIELD_LABELS.web_server_host} 不能为空`);
     }
 
     const webServerPortText = String(webServerPortInput.value || "").trim();
     if (!webServerPortText) {
-      throw new Error("WEB_SERVER_PORT 不能为空");
+      throw new Error(`${FIELD_LABELS.web_server_port} 不能为空`);
     }
     const webServerPort = Number(webServerPortText);
     if (!Number.isInteger(webServerPort) || webServerPort < 1 || webServerPort > 65535) {
-      throw new Error("WEB_SERVER_PORT 范围必须在 1-65535");
+      throw new Error(`${FIELD_LABELS.web_server_port} 范围必须在 1-65535`);
     }
 
     const baseUrl = String(webServerPublicBaseUrlInput.value || "").trim();
     if (!baseUrl) {
-      throw new Error("WEB_SERVER_PUBLIC_BASE_URL 不能为空");
+      throw new Error(`${FIELD_LABELS.web_server_public_base_url} 不能为空`);
     }
     let parsedBaseUrl;
     try {
       parsedBaseUrl = new URL(baseUrl);
     } catch (_error) {
-      throw new Error("WEB_SERVER_PUBLIC_BASE_URL 必须是 http/https URL");
+      throw new Error(`${FIELD_LABELS.web_server_public_base_url} 必须是 http/https URL`);
     }
     if (!["http:", "https:"].includes(parsedBaseUrl.protocol)) {
-      throw new Error("WEB_SERVER_PUBLIC_BASE_URL 必须是 http/https URL");
+      throw new Error(`${FIELD_LABELS.web_server_public_base_url} 必须是 http/https URL`);
     }
 
     const commandDisabledMode = String(commandDisabledModeInput.value || "").trim().toLowerCase();
     if (!["reply", "silent"].includes(commandDisabledMode)) {
-      throw new Error("COMMAND_DISABLED_MODE 仅支持 reply 或 silent");
+      throw new Error(
+        `${FIELD_LABELS.command_disabled_mode} 仅支持 ${MODE_LABELS.reply} 或 ${MODE_LABELS.silent}`
+      );
     }
 
     const commandDisabledMessage = String(commandDisabledMessageInput.value || "").trim();
     if (!commandDisabledMessage) {
-      throw new Error("COMMAND_DISABLED_MESSAGE 不能为空");
+      throw new Error(`${FIELD_LABELS.command_disabled_message} 不能为空`);
     }
 
     return {

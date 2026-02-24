@@ -18,7 +18,7 @@
       <section class="form-section">
         <h3 class="section-title">OneBot</h3>
         <label class="form-item">
-          <span class="form-label">ONEBOT_WS_URLS（逗号分隔）</span>
+          <span class="form-label">OneBot WebSocket 地址（逗号分隔）</span>
           <input
             id="field-onebot-ws-urls"
             class="input"
@@ -32,7 +32,7 @@
           </div>
         </label>
         <label class="form-item">
-          <span class="form-label">ONEBOT_ACCESS_TOKEN</span>
+          <span class="form-label">OneBot 访问令牌</span>
           <div class="token-input-wrap">
             <input id="field-onebot-access-token" class="input token-input" type="password" />
             <button id="token-toggle-btn" type="button" class="token-input-toggle" aria-label="显示 Token" title="显示 Token">
@@ -49,7 +49,7 @@
         <h3 class="section-title">访问控制</h3>
         <div class="form-grid">
           <label class="form-item">
-            <span class="form-label">OWNER_ID（逗号分隔）</span>
+            <span class="form-label">管理员 QQ（逗号分隔）</span>
             <input
               id="field-owner-id"
               class="input"
@@ -63,7 +63,7 @@
             </div>
           </label>
           <label class="form-item">
-            <span class="form-label">GROUP_ID（逗号分隔）</span>
+            <span class="form-label">允许群号（逗号分隔）</span>
             <input
               id="field-group-id"
               class="input"
@@ -83,15 +83,15 @@
         <h3 class="section-title">Web 服务</h3>
         <div class="form-grid">
           <label class="form-item">
-            <span class="form-label">WEB_SERVER_HOST</span>
+            <span class="form-label">Web 服务监听地址</span>
             <input id="field-web-server-host" class="input" type="text" />
           </label>
           <label class="form-item">
-            <span class="form-label">WEB_SERVER_PORT</span>
+            <span class="form-label">Web 服务端口</span>
             <input id="field-web-server-port" class="input" type="number" min="1" max="65535" />
           </label>
           <label class="form-item form-span-2">
-            <span class="form-label">WEB_SERVER_PUBLIC_BASE_URL</span>
+            <span class="form-label">Web 服务对外地址</span>
             <input id="field-web-server-public-base-url" class="input" type="text" />
           </label>
         </div>
@@ -101,14 +101,14 @@
         <h3 class="section-title">命令关闭策略</h3>
         <div class="form-grid">
           <label class="form-item">
-            <span class="form-label">COMMAND_DISABLED_MODE</span>
+            <span class="form-label">命令关闭模式</span>
             <select id="field-command-disabled-mode" class="input select">
-              <option value="reply">reply</option>
-              <option value="silent">silent</option>
+              <option value="reply">回复提示</option>
+              <option value="silent">静默拦截</option>
             </select>
           </label>
           <label class="form-item form-span-2">
-            <span class="form-label">COMMAND_DISABLED_MESSAGE</span>
+            <span class="form-label">命令关闭提示语</span>
             <input id="field-command-disabled-message" class="input" type="text" />
           </label>
         </div>
