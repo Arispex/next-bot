@@ -3,10 +3,7 @@
   const saveButton = document.getElementById("save-btn");
   const statusNode = document.getElementById("status");
   const statusMessageNode = document.getElementById("status-message");
-  const restartAlertNode = document.getElementById("restart-alert");
-  const restartMessageNode = document.getElementById("restart-message");
-  const statHotNode = document.getElementById("stat-hot");
-  const statRestartNode = document.getElementById("stat-restart");
+  const statManagedNode = document.getElementById("stat-managed");
 
   const onebotWsUrlsInput = document.getElementById("field-onebot-ws-urls");
   const onebotAccessTokenInput = document.getElementById("field-onebot-access-token");
@@ -24,10 +21,7 @@
     saveButton &&
     statusNode &&
     statusMessageNode &&
-    restartAlertNode &&
-    restartMessageNode &&
-    statHotNode &&
-    statRestartNode &&
+    statManagedNode &&
     onebotWsUrlsInput &&
     onebotAccessTokenInput &&
     ownerIdInput &&
@@ -73,16 +67,6 @@
       : "info";
     statusNode.className = `alert ${normalizedType}`;
     statusMessageNode.textContent = text;
-  };
-
-  const setRestartAlert = (fields) => {
-    if (!Array.isArray(fields) || fields.length === 0) {
-      restartAlertNode.classList.add("hidden");
-      restartMessageNode.textContent = "";
-      return;
-    }
-    restartAlertNode.classList.remove("hidden");
-    restartMessageNode.textContent = `以下配置需重启机器人后生效：${fields.join("、")}`;
   };
 
   const parseJsonSafe = async (response) => {
@@ -216,12 +200,8 @@
   };
 
   const setStats = (meta) => {
-    const hotFields = Array.isArray(meta?.hot_apply_fields) ? meta.hot_apply_fields : [];
-    const restartFields = Array.isArray(meta?.restart_required_fields)
-      ? meta.restart_required_fields
-      : [];
-    statHotNode.textContent = String(hotFields.length);
-    statRestartNode.textContent = String(restartFields.length);
+    const managedFields = Array.isArray(meta?.managed_fields) ? meta.managed_fields : [];
+    statManagedNode.textContent = String(managedFields.length);
   };
 
   const fillForm = (data) => {
@@ -238,7 +218,6 @@
 
   const loadSettings = async () => {
     setStatus("正在加载设置...", "info");
-    setRestartAlert([]);
     try {
       const response = await fetch("/webui/api/settings", {
         method: "GET",
@@ -268,7 +247,7 @@
     }
 
     saveButton.disabled = true;
-    setStatus("正在保存...", "warning");
+    setStatus("正在保存并重启...", "warning");
     try {
       const response = await fetch("/webui/api/settings", {
         method: "PUT",
@@ -283,22 +262,13 @@
         throw new Error(readErrorMessage(payload, "保存失败"));
       }
 
-      const applied = Array.isArray(payload.applied_now_fields)
-        ? payload.applied_now_fields
-        : [];
-      const restartRequired = Array.isArray(payload.restart_required_fields)
-        ? payload.restart_required_fields
-        : [];
-      const applyText = applied.length
-        ? `即时生效：${applied.join("、")}`
-        : "即时生效：无";
-      setStatus(`保存成功。${applyText}`, "success");
-      setRestartAlert(restartRequired);
+      setStatus("保存成功，程序正在重启...", "success");
+      setTimeout(() => {
+        window.location.reload();
+      }, 3000);
     } catch (error) {
       const message = error instanceof Error ? error.message : "保存失败";
       setStatus(message, "error");
-      setRestartAlert([]);
-    } finally {
       saveButton.disabled = false;
     }
   };

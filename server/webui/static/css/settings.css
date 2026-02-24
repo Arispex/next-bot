@@ -61,10 +61,6 @@ html.dark {
   font-weight: 650;
 }
 
-.summary-chip strong.danger {
-  color: var(--danger);
-}
-
 .panel-head-actions {
   display: inline-flex;
   align-items: center;

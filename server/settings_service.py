@@ -21,14 +21,12 @@ _QQ_ID_PATTERN = re.compile(r"^\d{5,20}$")
 class FieldSpec:
     field: str
     env_key: str
-    hot_apply: bool
     sensitive: bool = False
 
 
 @dataclass(frozen=True)
 class SaveSettingsResult:
-    applied_now_fields: list[str]
-    restart_required_fields: list[str]
+    saved_fields: list[str]
 
 
 class SettingsValidationError(ValueError):
@@ -38,15 +36,15 @@ class SettingsValidationError(ValueError):
 
 
 _FIELD_SPECS: tuple[FieldSpec, ...] = (
-    FieldSpec("onebot_ws_urls", "ONEBOT_WS_URLS", hot_apply=False),
-    FieldSpec("onebot_access_token", "ONEBOT_ACCESS_TOKEN", hot_apply=False, sensitive=True),
-    FieldSpec("owner_id", "OWNER_ID", hot_apply=True),
-    FieldSpec("group_id", "GROUP_ID", hot_apply=True),
-    FieldSpec("web_server_host", "WEB_SERVER_HOST", hot_apply=False),
-    FieldSpec("web_server_port", "WEB_SERVER_PORT", hot_apply=False),
-    FieldSpec("web_server_public_base_url", "WEB_SERVER_PUBLIC_BASE_URL", hot_apply=True),
-    FieldSpec("command_disabled_mode", "COMMAND_DISABLED_MODE", hot_apply=True),
-    FieldSpec("command_disabled_message", "COMMAND_DISABLED_MESSAGE", hot_apply=True),
+    FieldSpec("onebot_ws_urls", "ONEBOT_WS_URLS"),
+    FieldSpec("onebot_access_token", "ONEBOT_ACCESS_TOKEN", sensitive=True),
+    FieldSpec("owner_id", "OWNER_ID"),
+    FieldSpec("group_id", "GROUP_ID"),
+    FieldSpec("web_server_host", "WEB_SERVER_HOST"),
+    FieldSpec("web_server_port", "WEB_SERVER_PORT"),
+    FieldSpec("web_server_public_base_url", "WEB_SERVER_PUBLIC_BASE_URL"),
+    FieldSpec("command_disabled_mode", "COMMAND_DISABLED_MODE"),
+    FieldSpec("command_disabled_message", "COMMAND_DISABLED_MESSAGE"),
 )
 
 _FIELD_BY_NAME: dict[str, FieldSpec] = {item.field: item for item in _FIELD_SPECS}
@@ -140,13 +138,13 @@ def _coerce_string(value: Any, *, field: str, allow_empty: bool = False) -> str:
     return text
 
 
-def _coerce_list_of_str(value: Any, *, field: str, allow_empty: bool = False) -> list[str]:
+def _coerce_list_of_str(value: Any, *, field: str) -> list[str]:
     if not isinstance(value, list):
         raise SettingsValidationError(f"{field} 必须是 JSON 数组", field=field)
     normalized: list[str] = []
     for item in value:
         text = str(item).strip()
-        if not allow_empty and not text:
+        if not text:
             raise SettingsValidationError(f"{field} 不能包含空项", field=field)
         normalized.append(text)
     return normalized
@@ -284,37 +282,15 @@ def get_settings_snapshot() -> dict[str, Any]:
     return data
 
 
-def _apply_runtime_updates(values: dict[str, Any]) -> list[str]:
-    config = get_driver().config
-    applied: list[str] = []
-    for spec in _FIELD_SPECS:
-        if not spec.hot_apply:
-            continue
-        if spec.field not in values:
-            continue
-        setattr(config, spec.field, values[spec.field])
-        applied.append(spec.field)
-    return applied
-
-
 def save_settings(payload: dict[str, Any]) -> SaveSettingsResult:
     normalized_values = _normalize_payload(payload)
     _write_env_values(normalized_values)
-    applied_now = _apply_runtime_updates(normalized_values)
-    restart_required = [
-        spec.field
-        for spec in _FIELD_SPECS
-        if (not spec.hot_apply) and spec.field in normalized_values
-    ]
-    return SaveSettingsResult(
-        applied_now_fields=applied_now,
-        restart_required_fields=restart_required,
-    )
+    saved_fields = [spec.field for spec in _FIELD_SPECS if spec.field in normalized_values]
+    return SaveSettingsResult(saved_fields=saved_fields)
 
 
 def get_settings_metadata() -> dict[str, Any]:
     return {
-        "hot_apply_fields": [item.field for item in _FIELD_SPECS if item.hot_apply],
-        "restart_required_fields": [item.field for item in _FIELD_SPECS if not item.hot_apply],
+        "managed_fields": [item.field for item in _FIELD_SPECS],
         "sensitive_fields": [item.field for item in _FIELD_SPECS if item.sensitive],
     }

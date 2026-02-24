@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+import os
+import sys
+import threading
+import time
 from typing import Any
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
+from nonebot.log import logger
 
 from server.pages.console_page import render_settings_page
 from server.settings_service import (
@@ -14,6 +19,35 @@ from server.settings_service import (
 )
 
 router = APIRouter()
+_RESTART_LOCK = threading.Lock()
+_RESTART_SCHEDULED = False
+
+
+def _restart_worker() -> None:
+    global _RESTART_SCHEDULED
+    try:
+        time.sleep(0.8)
+        logger.warning("检测到设置变更，程序即将重启...")
+        os.execv(sys.executable, [sys.executable, *sys.argv])
+    except Exception as exc:
+        logger.exception(f"重启失败：{exc}")
+        with _RESTART_LOCK:
+            _RESTART_SCHEDULED = False
+
+
+def _schedule_process_restart() -> bool:
+    global _RESTART_SCHEDULED
+    with _RESTART_LOCK:
+        if _RESTART_SCHEDULED:
+            return False
+        _RESTART_SCHEDULED = True
+    thread = threading.Thread(
+        target=_restart_worker,
+        name="nextbot-restart-worker",
+        daemon=True,
+    )
+    thread.start()
+    return True
 
 
 @router.get("/webui/settings", response_class=HTMLResponse)
@@ -70,11 +104,21 @@ async def webui_settings_put(request: Request) -> JSONResponse:
             content={"ok": False, "message": f"保存失败：{exc}"},
         )
 
+    if not _schedule_process_restart():
+        return JSONResponse(
+            status_code=409,
+            content={
+                "ok": False,
+                "message": "重启已在进行中，请稍后刷新页面",
+                "restart_scheduled": True,
+            },
+        )
+
     return JSONResponse(
         content={
             "ok": True,
-            "message": "保存成功",
-            "applied_now_fields": result.applied_now_fields,
-            "restart_required_fields": result.restart_required_fields,
+            "message": "保存成功，正在重启程序",
+            "restart_scheduled": True,
+            "saved_fields": result.saved_fields,
         }
     )

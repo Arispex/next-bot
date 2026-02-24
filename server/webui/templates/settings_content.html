@@ -1,21 +1,17 @@
 <section class="settings-panel">
   <div class="panel-toolbar">
     <div class="panel-summary">
-      <span class="summary-chip">即时生效 <strong id="stat-hot">0</strong></span>
-      <span class="summary-chip">需重启 <strong id="stat-restart" class="danger">0</strong></span>
+      <span class="summary-chip">受管配置项 <strong id="stat-managed">9</strong></span>
     </div>
     <div class="panel-head-actions">
       <button id="reload-btn" type="button" class="btn">重新加载</button>
-      <button id="save-btn" type="button" class="btn btn-primary">保存并应用</button>
+      <button id="save-btn" type="button" class="btn btn-primary">保存并重启</button>
     </div>
   </div>
 
   <div class="panel-body">
     <div id="status" class="alert hidden" role="status" aria-live="polite">
       <span id="status-message" class="alert-message"></span>
-    </div>
-    <div id="restart-alert" class="alert warning hidden" role="status" aria-live="polite">
-      <span id="restart-message" class="alert-message"></span>
     </div>
 
     <div class="form-layout">
