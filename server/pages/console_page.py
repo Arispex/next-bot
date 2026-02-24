@@ -87,7 +87,7 @@ def render_login_page(*, next_path: str, error_message: str = "") -> str:
 
 def render_console_page() -> str:
     return _render_app_shell_page(
-        page_title="NextBot WebUI",
+        page_title="NextBot WebUI - 仪表盘",
         active_menu="dashboard",
         content_template="dashboard_content.html",
         page_style_urls=(
@@ -102,7 +102,7 @@ def render_console_page() -> str:
 
 def render_commands_page() -> str:
     return _render_app_shell_page(
-        page_title="NextBot Command Config",
+        page_title="NextBot WebUI - 命令配置",
         active_menu="commands",
         content_template="commands_content.html",
         page_style_urls=(
@@ -117,7 +117,7 @@ def render_commands_page() -> str:
 
 def render_servers_page() -> str:
     return _render_app_shell_page(
-        page_title="NextBot Server Management",
+        page_title="NextBot WebUI - 服务器管理",
         active_menu="servers",
         content_template="servers_content.html",
         page_style_urls=(
@@ -132,7 +132,7 @@ def render_servers_page() -> str:
 
 def render_users_page() -> str:
     return _render_app_shell_page(
-        page_title="NextBot User Management",
+        page_title="NextBot WebUI - 用户管理",
         active_menu="users",
         content_template="users_content.html",
         page_style_urls=(
@@ -147,7 +147,7 @@ def render_users_page() -> str:
 
 def render_groups_page() -> str:
     return _render_app_shell_page(
-        page_title="NextBot Group Management",
+        page_title="NextBot WebUI - 身份组管理",
         active_menu="groups",
         content_template="groups_content.html",
         page_style_urls=(
@@ -162,7 +162,7 @@ def render_groups_page() -> str:
 
 def render_settings_page() -> str:
     return _render_app_shell_page(
-        page_title="NextBot Settings",
+        page_title="NextBot WebUI - 设置",
         active_menu="settings",
         content_template="settings_content.html",
         page_style_urls=(
