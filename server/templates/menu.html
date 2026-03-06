@@ -65,14 +65,14 @@
 
     <section class="mt-8 px-8 pb-8">
       <div class="overflow-hidden rounded-[28px] border border-slate-200/90 bg-white shadow-soft">
-        <table class="min-w-full border-collapse">
+        <table class="min-w-full table-fixed border-collapse">
           <thead>
-            <tr class="bg-paper-100/80 text-left text-[11px] font-semibold uppercase tracking-[0.22em] text-ink-500">
+            <tr class="border-b border-slate-200/70 bg-paper-50/75 text-left text-[10px] font-medium uppercase tracking-[0.18em] text-ink-500/85">
               <th class="w-16 px-6 py-4">序号</th>
-              <th class="px-6 py-4">命令名称</th>
-              <th class="px-6 py-4">命令介绍</th>
-              <th class="px-6 py-4">用法</th>
-              <th class="px-6 py-4">权限</th>
+              <th class="w-[18%] px-6 py-4">命令名称</th>
+              <th class="w-[34%] px-6 py-4">命令介绍</th>
+              <th class="w-[28%] px-6 py-4">用法</th>
+              <th class="w-[20%] px-6 py-4">权限</th>
             </tr>
           </thead>
           <tbody id="command-table-body"></tbody>
@@ -124,7 +124,7 @@
     for (let index = 0; index < commands.length; index += 1) {
       const item = commands[index];
       const row = document.createElement("tr");
-      row.className = "align-top border-t border-slate-100";
+      row.className = "align-top border-t border-slate-100/90";
 
       const orderCell = document.createElement("td");
       orderCell.className = "px-6 py-5";
@@ -137,9 +137,9 @@
       const nameCell = document.createElement("td");
       nameCell.className = "px-6 py-5";
       const nameWrap = document.createElement("div");
-      nameWrap.className = "max-w-[22rem]";
+      nameWrap.className = "max-w-[18rem]";
       const nameNode = document.createElement("div");
-      nameNode.className = "text-[22px] font-semibold tracking-[-0.03em] text-ink-900";
+      nameNode.className = "text-[21px] font-semibold tracking-[-0.03em] text-ink-900";
       nameNode.textContent = String(item?.display_name || "").trim() || "-";
       nameWrap.appendChild(nameNode);
       nameCell.appendChild(nameWrap);
@@ -147,7 +147,7 @@
       const descCell = document.createElement("td");
       descCell.className = "px-6 py-5";
       const descWrap = document.createElement("div");
-      descWrap.className = "max-w-[40rem] text-[15px] leading-8 text-ink-500";
+      descWrap.className = "max-w-[34rem] text-[15px] leading-8 text-ink-500";
       descWrap.textContent = String(item?.description || "").trim() || "暂无介绍";
       descCell.appendChild(descWrap);
 
@@ -155,7 +155,7 @@
       usageCell.className = "px-6 py-5";
       const usageWrap = document.createElement("div");
       usageWrap.className =
-        "max-w-[24rem] whitespace-pre-wrap break-words text-[15px] leading-8 text-ink-500";
+        "max-w-[28rem] whitespace-pre-wrap break-words text-[15px] leading-8 text-ink-500";
       usageWrap.textContent = String(item?.usage || "").trim() || "未填写用法";
       usageCell.appendChild(usageWrap);
 
@@ -165,8 +165,8 @@
       const permBadge = document.createElement("span");
       permBadge.className =
         permission
-          ? "inline-flex max-w-[18rem] items-center rounded-full border border-indigo-200 bg-accent-100 px-3.5 py-1.5 text-xs font-semibold tracking-[0.08em] text-accent-600 break-all"
-          : "inline-flex max-w-[18rem] items-center rounded-full border border-amber-200 bg-gold-100 px-3.5 py-1.5 text-xs font-semibold tracking-[0.08em] text-gold-700 break-all";
+          ? "inline-flex max-w-[14rem] items-center rounded-full border border-indigo-200/80 bg-indigo-50/90 px-3 py-1 text-[11px] font-medium tracking-[0.04em] text-indigo-600 break-all shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]"
+          : "inline-flex max-w-[14rem] items-center rounded-full border border-amber-200/80 bg-amber-50/90 px-3 py-1 text-[11px] font-medium tracking-[0.04em] text-amber-700 break-all shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]";
       permBadge.textContent = permission || "无需额外权限";
       permCell.appendChild(permBadge);
 
