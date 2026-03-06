@@ -11,7 +11,11 @@ from nonebot.params import CommandArg
 
 from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
 from server.web_server import create_inventory_page, create_progress_page
-from next_bot.command_config import command_control, raise_command_usage
+from next_bot.command_config import (
+    command_control,
+    get_current_param,
+    raise_command_usage,
+)
 from next_bot.db import Server, User, get_session
 from next_bot.message_parser import (
     parse_command_args_with_fallback,
@@ -351,6 +355,22 @@ async def handle_self_kick(
     permission="basic.inventory.user",
     description="查询指定用户背包并生成截图",
     usage="用户背包 <服务器 ID> <用户 ID/@用户/用户名称>",
+    params={
+        "show_stats": {
+            "type": "bool",
+            "label": "显示统计信息",
+            "description": "关闭后隐藏背包顶部的统计信息栏",
+            "required": False,
+            "default": True,
+        },
+        "show_index": {
+            "type": "bool",
+            "label": "显示索引",
+            "description": "关闭后隐藏物品格左上角的索引编号",
+            "required": False,
+            "default": True,
+        },
+    },
 )
 @require_permission("basic.inventory.user")
 async def handle_user_inventory(
@@ -444,6 +464,8 @@ async def handle_user_inventory(
         fishing_tasks_text=info_texts["fishing_tasks_text"],
         pve_deaths_text=info_texts["pve_deaths_text"],
         pvp_deaths_text=info_texts["pvp_deaths_text"],
+        show_stats=bool(get_current_param("show_stats", True)),
+        show_index=bool(get_current_param("show_index", True)),
         slots=[item for item in inventory if isinstance(item, dict)],
     )
     public_page_url = _to_public_render_url(page_url)
@@ -487,6 +509,22 @@ async def handle_user_inventory(
     permission="basic.inventory.self",
     description="查询当前用户背包并生成截图",
     usage="我的背包 <服务器 ID>",
+    params={
+        "show_stats": {
+            "type": "bool",
+            "label": "显示统计信息",
+            "description": "关闭后隐藏背包顶部的统计信息栏",
+            "required": False,
+            "default": True,
+        },
+        "show_index": {
+            "type": "bool",
+            "label": "显示索引",
+            "description": "关闭后隐藏物品格左上角的索引编号",
+            "required": False,
+            "default": True,
+        },
+    },
 )
 @require_permission("basic.inventory.self")
 async def handle_my_inventory(
@@ -564,6 +602,8 @@ async def handle_my_inventory(
         fishing_tasks_text=info_texts["fishing_tasks_text"],
         pve_deaths_text=info_texts["pve_deaths_text"],
         pvp_deaths_text=info_texts["pvp_deaths_text"],
+        show_stats=bool(get_current_param("show_stats", True)),
+        show_index=bool(get_current_param("show_index", True)),
         slots=[item for item in inventory if isinstance(item, dict)],
     )
     public_page_url = _to_public_render_url(page_url)
