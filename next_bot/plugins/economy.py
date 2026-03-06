@@ -37,6 +37,7 @@ def _resolve_streak_reward(
     current_streak: int,
     enable_streak: bool,
     streak_bonus_per_day: int,
+    max_streak_bonus: int,
     today_text: str,
 ) -> SignResult:
     if not enable_streak:
@@ -49,9 +50,10 @@ def _resolve_streak_reward(
     else:
         next_streak = 1
 
+    streak_reward = max(next_streak - 1, 0) * max(streak_bonus_per_day, 0)
     return SignResult(
         next_streak=next_streak,
-        streak_reward=max(next_streak - 1, 0) * max(streak_bonus_per_day, 0),
+        streak_reward=min(streak_reward, max(max_streak_bonus, 0)),
     )
 
 
@@ -94,6 +96,14 @@ def _resolve_streak_reward(
             "default": 5,
             "min": 0,
         },
+        "max_streak_bonus": {
+            "type": "int",
+            "label": "连续签到最大奖励",
+            "description": "连续签到奖励超过该值时会被限制到该值",
+            "required": False,
+            "default": 50,
+            "min": 0,
+        },
     },
 )
 @require_permission("economy.sign")
@@ -106,8 +116,9 @@ async def handle_sign(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     max_coins = int(get_current_param("max_coins", 30))
     enable_streak = bool(get_current_param("enable_streak", True))
     streak_bonus_per_day = int(get_current_param("streak_bonus_per_day", 5))
+    max_streak_bonus = int(get_current_param("max_streak_bonus", 50))
 
-    if min_coins < 0 or max_coins < 0 or streak_bonus_per_day < 0:
+    if min_coins < 0 or max_coins < 0 or streak_bonus_per_day < 0 or max_streak_bonus < 0:
         await bot.send(event, "签到失败，签到奖励配置不能为负数")
         return
     if min_coins > max_coins:
@@ -134,6 +145,7 @@ async def handle_sign(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
             current_streak=int(user.sign_streak or 0),
             enable_streak=enable_streak,
             streak_bonus_per_day=streak_bonus_per_day,
+            max_streak_bonus=max_streak_bonus,
             today_text=today_text,
         )
         total_reward = base_reward + streak_result.streak_reward
