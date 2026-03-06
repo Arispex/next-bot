@@ -240,6 +240,7 @@ async def handle_user_info(
         [
             f"用户 ID：{user.user_id}",
             f"用户名称：{user.name}",
+            f"金币：{user.coins}",
             f"权限：{user.permissions or '无'}",
             f"身份组：{user.group}",
             f"创建时间：{created_at}",
@@ -280,6 +281,7 @@ async def handle_self_info(
         [
             f"用户 ID：{user.user_id}",
             f"用户名称：{user.name}",
+            f"金币：{user.coins}",
             f"权限：{user.permissions or '无'}",
             f"身份组：{user.group}",
             f"创建时间：{created_at}",
