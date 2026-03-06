@@ -11,7 +11,7 @@ from nonebot.params import CommandArg
 
 from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
 from server.web_server import create_inventory_page, create_progress_page
-from next_bot.command_config import command_control
+from next_bot.command_config import command_control, raise_command_usage
 from next_bot.db import Server, User, get_session
 from next_bot.message_parser import (
     parse_command_args_with_fallback,
@@ -32,13 +32,6 @@ self_kick_matcher = on_command("自踢")
 inventory_matcher = on_command("用户背包")
 my_inventory_matcher = on_command("我的背包")
 progress_matcher = on_command("进度")
-
-ONLINE_USAGE = "格式错误，正确格式：在线"
-EXECUTE_USAGE = "格式错误，正确格式：执行 <服务器 ID> <命令>"
-SELF_KICK_USAGE = "格式错误，正确格式：自踢"
-INVENTORY_USAGE = "格式错误，正确格式：用户背包 <服务器 ID> <用户 ID/@用户/用户名称>"
-MY_INVENTORY_USAGE = "格式错误，正确格式：我的背包 <服务器 ID>"
-PROGRESS_USAGE = "格式错误，正确格式：进度 <服务器 ID>"
 INVENTORY_SCREENSHOT_OPTIONS = ScreenshotOptions(
     viewport_width=2000,
     viewport_height=1000,
@@ -175,6 +168,7 @@ def _to_public_render_url(url: str) -> str:
     display_name="在线",
     permission="basic.online",
     description="查询服务器在线状态与在线玩家列表",
+    usage="在线",
 )
 @require_permission("basic.online")
 async def handle_online(
@@ -182,8 +176,7 @@ async def handle_online(
 ):
     args = parse_command_args_with_fallback(event, arg, "在线")
     if args:
-        await bot.send(event, ONLINE_USAGE)
-        return
+        raise_command_usage()
 
     session = get_session()
     try:
@@ -250,6 +243,7 @@ async def handle_online(
     display_name="执行",
     permission="basic.execute",
     description="在指定服务器执行指令",
+    usage="执行 <服务器 ID> <命令>",
 )
 @require_permission("basic.execute")
 async def handle_execute(
@@ -258,8 +252,7 @@ async def handle_execute(
     text = parse_command_text_with_fallback(event, arg, "执行")
     parsed = _parse_execute_arg_text(text)
     if parsed is None:
-        await bot.send(event, EXECUTE_USAGE)
-        return
+        raise_command_usage()
 
     target_id, command = parsed
     session = get_session()
@@ -300,6 +293,7 @@ async def handle_execute(
     display_name="自踢",
     permission="basic.kick.self",
     description="对所有服务器执行当前用户的踢出命令",
+    usage="自踢",
 )
 @require_permission("basic.kick.self")
 async def handle_self_kick(
@@ -307,8 +301,7 @@ async def handle_self_kick(
 ):
     args = parse_command_args_with_fallback(event, arg, "自踢")
     if args:
-        await bot.send(event, SELF_KICK_USAGE)
-        return
+        raise_command_usage()
 
     user_id = event.get_user_id()
     session = get_session()
@@ -357,6 +350,7 @@ async def handle_self_kick(
     display_name="用户背包",
     permission="basic.inventory.user",
     description="查询指定用户背包并生成截图",
+    usage="用户背包 <服务器 ID> <用户 ID/@用户/用户名称>",
 )
 @require_permission("basic.inventory.user")
 async def handle_user_inventory(
@@ -364,14 +358,12 @@ async def handle_user_inventory(
 ):
     args = parse_command_args_with_fallback(event, arg, "用户背包")
     if len(args) != 2:
-        await bot.send(event, INVENTORY_USAGE)
-        return
+        raise_command_usage()
 
     try:
         server_id = int(args[0])
     except ValueError:
-        await bot.send(event, INVENTORY_USAGE)
-        return
+        raise_command_usage()
     target_user_id, parse_error = resolve_user_id_arg_with_fallback(
         event,
         arg,
@@ -379,8 +371,7 @@ async def handle_user_inventory(
         arg_index=1,
     )
     if parse_error == "missing":
-        await bot.send(event, INVENTORY_USAGE)
-        return
+        raise_command_usage()
     if parse_error == "name_not_found":
         await bot.send(event, "查询失败，用户名称不存在")
         return
@@ -495,6 +486,7 @@ async def handle_user_inventory(
     display_name="我的背包",
     permission="basic.inventory.self",
     description="查询当前用户背包并生成截图",
+    usage="我的背包 <服务器 ID>",
 )
 @require_permission("basic.inventory.self")
 async def handle_my_inventory(
@@ -502,14 +494,12 @@ async def handle_my_inventory(
 ):
     args = parse_command_args_with_fallback(event, arg, "我的背包")
     if len(args) != 1:
-        await bot.send(event, MY_INVENTORY_USAGE)
-        return
+        raise_command_usage()
 
     try:
         server_id = int(args[0])
     except ValueError:
-        await bot.send(event, MY_INVENTORY_USAGE)
-        return
+        raise_command_usage()
 
     user_id = event.get_user_id()
     session = get_session()
@@ -617,6 +607,7 @@ async def handle_my_inventory(
     display_name="进度",
     permission="basic.progress",
     description="查询世界进度并生成截图",
+    usage="进度 <服务器 ID>",
 )
 @require_permission("basic.progress")
 async def handle_world_progress(
@@ -624,14 +615,12 @@ async def handle_world_progress(
 ):
     args = parse_command_args_with_fallback(event, arg, "进度")
     if len(args) != 1:
-        await bot.send(event, PROGRESS_USAGE)
-        return
+        raise_command_usage()
 
     try:
         server_id = int(args[0])
     except ValueError:
-        await bot.send(event, PROGRESS_USAGE)
-        return
+        raise_command_usage()
 
     session = get_session()
     try:

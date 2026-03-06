@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sqlite3
 from pathlib import Path
 
 from datetime import datetime
@@ -56,6 +57,7 @@ class CommandConfig(Base):
     command_key: Mapped[str] = mapped_column(String, primary_key=True)
     display_name: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str] = mapped_column(String, nullable=False, default="")
+    usage: Mapped[str] = mapped_column(Text, nullable=False, default="")
     module_path: Mapped[str] = mapped_column(String, nullable=False, default="")
     handler_name: Mapped[str] = mapped_column(String, nullable=False, default="")
     permission: Mapped[str] = mapped_column(String, nullable=False, default="")
@@ -94,6 +96,7 @@ def get_engine() -> Engine:
 def init_db() -> None:
     engine = get_engine()
     Base.metadata.create_all(engine)
+    ensure_command_config_schema()
     ensure_default_groups()
     ensure_default_stats()
 
@@ -143,3 +146,23 @@ def ensure_default_stats() -> None:
         session.commit()
     finally:
         session.close()
+
+
+def ensure_command_config_schema() -> None:
+    if not DB_PATH.exists():
+        return
+
+    conn = sqlite3.connect(str(DB_PATH))
+    try:
+        rows = conn.execute('PRAGMA table_info("command_config")').fetchall()
+        if not rows:
+            return
+
+        columns = {str(row[1]) for row in rows}
+        if "usage" not in columns:
+            conn.execute(
+                'ALTER TABLE "command_config" ADD COLUMN "usage" TEXT NOT NULL DEFAULT ""'
+            )
+            conn.commit()
+    finally:
+        conn.close()

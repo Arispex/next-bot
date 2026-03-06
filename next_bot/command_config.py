@@ -9,7 +9,7 @@ import typing
 from dataclasses import dataclass
 from datetime import datetime
 from functools import wraps
-from typing import Any
+from typing import Any, NoReturn
 
 from nonebot import get_driver
 from nonebot.log import logger
@@ -27,6 +27,7 @@ class RegisteredCommand:
     command_key: str
     display_name: str
     description: str
+    usage: str
     module_path: str
     handler_name: str
     permission: str
@@ -40,6 +41,7 @@ class RuntimeCommandState:
     command_key: str
     display_name: str
     description: str
+    usage: str
     module_path: str
     handler_name: str
     permission: str
@@ -53,6 +55,10 @@ class CommandConfigValidationError(ValueError):
     def __init__(self, message: str, *, errors: list[dict[str, Any]] | None = None):
         super().__init__(message)
         self.errors = errors or []
+
+
+class CommandUsageError(Exception):
+    pass
 
 
 _registry_lock = threading.RLock()
@@ -80,6 +86,17 @@ def _parse_json_object(raw: str | None) -> dict[str, Any]:
     except json.JSONDecodeError:
         return {}
     return parsed if isinstance(parsed, dict) else {}
+
+
+def _normalize_usage_text(value: Any) -> str:
+    return str(value).strip()
+
+
+def _build_usage_message(usage: str) -> str:
+    normalized = _normalize_usage_text(usage)
+    if not normalized:
+        return "命令格式错误"
+    return f"格式错误，正确格式：{normalized}"
 
 
 def _normalize_param_key(name: str) -> str:
@@ -275,6 +292,7 @@ def _build_meta_hash(
     command_key: str,
     display_name: str,
     description: str,
+    usage: str,
     module_path: str,
     handler_name: str,
     permission: str,
@@ -284,6 +302,7 @@ def _build_meta_hash(
         "command_key": command_key,
         "display_name": display_name,
         "description": description,
+        "usage": usage,
         "module_path": module_path,
         "handler_name": handler_name,
         "permission": permission,
@@ -332,6 +351,16 @@ def _merge_param_values(
     return merged
 
 
+def _resolve_bot_event(
+    resolved_signature: inspect.Signature, args: tuple[Any, ...], kwargs: dict[str, Any]
+) -> tuple[Any | None, Any | None]:
+    try:
+        bound = resolved_signature.bind_partial(*args, **kwargs)
+    except Exception:
+        return None, None
+    return bound.arguments.get("bot"), bound.arguments.get("event")
+
+
 def _to_runtime_state(row: CommandConfig) -> RuntimeCommandState:
     schema = _normalize_param_schema(_parse_json_object(row.param_schema_json))
     values = _merge_param_values(
@@ -342,6 +371,7 @@ def _to_runtime_state(row: CommandConfig) -> RuntimeCommandState:
         command_key=row.command_key,
         display_name=row.display_name,
         description=row.description,
+        usage=_normalize_usage_text(row.usage),
         module_path=row.module_path,
         handler_name=row.handler_name,
         permission=row.permission,
@@ -392,6 +422,7 @@ def _get_runtime_state(command_key: str) -> RuntimeCommandState:
             command_key=command_key,
             display_name=command_key,
             description="",
+            usage="",
             module_path="",
             handler_name="",
             permission="",
@@ -405,6 +436,7 @@ def _get_runtime_state(command_key: str) -> RuntimeCommandState:
         command_key=registered.command_key,
         display_name=registered.display_name,
         description=registered.description,
+        usage=registered.usage,
         module_path=registered.module_path,
         handler_name=registered.handler_name,
         permission=registered.permission,
@@ -423,6 +455,7 @@ def get_current_command_config() -> dict[str, Any] | None:
         "command_key": context.command_key,
         "display_name": context.display_name,
         "description": context.description,
+        "usage": context.usage,
         "permission": context.permission,
         "enabled": context.enabled,
         "params": _clone_dict(context.param_values),
@@ -440,6 +473,18 @@ def get_current_param(name: str, default: Any = None) -> Any:
     return context.param_values.get(key, default)
 
 
+def get_current_command_usage() -> str | None:
+    context = _current_command_context.get()
+    if context is None:
+        return None
+    usage = str(context.usage).strip()
+    return usage or None
+
+
+def raise_command_usage() -> NoReturn:
+    raise CommandUsageError
+
+
 def list_command_configs() -> list[dict[str, Any]]:
     _ensure_runtime_cache_loaded()
     with _registry_lock:
@@ -454,6 +499,7 @@ def list_command_configs() -> list[dict[str, Any]]:
             "command_key": item.command_key,
             "display_name": item.display_name,
             "description": item.description,
+            "usage": item.usage,
             "module_path": item.module_path,
             "handler_name": item.handler_name,
             "permission": item.permission,
@@ -625,6 +671,7 @@ def sync_registered_commands_to_db() -> None:
                     command_key=command.command_key,
                     display_name=command.display_name,
                     description=command.description,
+                    usage=command.usage,
                     module_path=command.module_path,
                     handler_name=command.handler_name,
                     permission=command.permission,
@@ -644,6 +691,7 @@ def sync_registered_commands_to_db() -> None:
 
             row.display_name = command.display_name
             row.description = command.description
+            row.usage = command.usage
             row.module_path = command.module_path
             row.handler_name = command.handler_name
             row.permission = command.permission
@@ -675,6 +723,7 @@ def command_control(
     display_name: str,
     permission: str,
     description: str = "",
+    usage: str = "",
     default_enabled: bool = True,
     params: dict[str, dict[str, Any]] | None = None,
 ):
@@ -685,6 +734,7 @@ def command_control(
     normalized_display_name = str(display_name).strip() or normalized_key
     normalized_permission = str(permission).strip()
     normalized_description = str(description).strip()
+    normalized_usage = str(usage).strip()
     normalized_schema = _normalize_param_schema(params)
 
     def decorator(func):
@@ -694,6 +744,7 @@ def command_control(
             command_key=normalized_key,
             display_name=normalized_display_name,
             description=normalized_description,
+            usage=normalized_usage,
             module_path=module_path,
             handler_name=handler_name,
             permission=normalized_permission,
@@ -704,6 +755,7 @@ def command_control(
             command_key=normalized_key,
             display_name=normalized_display_name,
             description=normalized_description,
+            usage=normalized_usage,
             module_path=module_path,
             handler_name=handler_name,
             permission=normalized_permission,
@@ -745,18 +797,17 @@ def command_control(
                 except Exception:
                     logger.exception(f"命令计数写入失败：command_key={normalized_key}")
                 if not state.enabled:
-                    try:
-                        bound = resolved_signature.bind_partial(*args, **kwargs)
-                        bot = bound.arguments.get("bot")
-                        event = bound.arguments.get("event")
-                    except Exception:
-                        bot = None
-                        event = None
+                    bot, event = _resolve_bot_event(resolved_signature, args, kwargs)
                     mode, message = _get_disabled_policy()
                     if mode == "reply" and bot is not None and event is not None:
                         await bot.send(event, message)
                     return None
                 return await func(*args, **kwargs)
+            except CommandUsageError:
+                bot, event = _resolve_bot_event(resolved_signature, args, kwargs)
+                if bot is not None and event is not None:
+                    await bot.send(event, _build_usage_message(state.usage))
+                return None
             finally:
                 _current_command_context.reset(context_token)
 

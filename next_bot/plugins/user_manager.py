@@ -4,7 +4,7 @@ from nonebot import on_command
 from nonebot.adapters import Bot, Event, Message
 from nonebot.log import logger
 from nonebot.params import CommandArg
-from next_bot.command_config import command_control
+from next_bot.command_config import command_control, raise_command_usage
 from next_bot.message_parser import (
     parse_command_args_with_fallback,
     resolve_user_id_arg_with_fallback,
@@ -25,13 +25,6 @@ info_matcher = on_command("用户信息")
 self_info_matcher = on_command("我的信息")
 add_coins_matcher = on_command("添加金币")
 remove_coins_matcher = on_command("扣除金币")
-
-ADD_USAGE = "格式错误，正确格式：注册账号 <用户名称>"
-SYNC_USAGE = "格式错误，正确格式：同步白名单"
-INFO_USAGE = "格式错误，正确格式：用户信息 <用户 ID/@用户/用户名称>"
-SELF_INFO_USAGE = "格式错误，正确格式：我的信息"
-ADD_COINS_USAGE = "格式错误，正确格式：添加金币 <用户 ID/@用户/用户名称> <数量>"
-REMOVE_COINS_USAGE = "格式错误，正确格式：扣除金币 <用户 ID/@用户/用户名称> <数量>"
 MAX_USER_NAME_LENGTH = 16
 
 
@@ -103,6 +96,7 @@ async def _sync_whitelist_to_all_servers(
     display_name="注册账号",
     permission="user.register",
     description="注册当前 QQ 对应的账号",
+    usage="注册账号 <用户名称>",
 )
 @require_permission("user.register")
 async def handle_add_whitelist(
@@ -110,8 +104,7 @@ async def handle_add_whitelist(
 ):
     args = parse_command_args_with_fallback(event, arg, "注册账号")
     if len(args) != 1:
-        await bot.send(event, ADD_USAGE)
-        return
+        raise_command_usage()
 
     name = args[0].strip()
     invalid_reason = _validate_user_name(name)
@@ -152,6 +145,7 @@ async def handle_add_whitelist(
     display_name="同步白名单",
     permission="user.whitelist.sync",
     description="将当前用户同步到所有服务器白名单",
+    usage="同步白名单",
 )
 @require_permission("user.whitelist.sync")
 async def handle_sync_whitelist(
@@ -159,8 +153,7 @@ async def handle_sync_whitelist(
 ):
     args = parse_command_args_with_fallback(event, arg, "同步白名单")
     if args:
-        await bot.send(event, SYNC_USAGE)
-        return
+        raise_command_usage()
 
     user_id = event.get_user_id()
     session = get_session()
@@ -197,6 +190,7 @@ async def handle_sync_whitelist(
     display_name="用户信息",
     permission="user.info.user",
     description="查询指定用户信息",
+    usage="用户信息 <用户 ID/@用户/用户名称>",
 )
 @require_permission("user.info.user")
 async def handle_user_info(
@@ -204,8 +198,7 @@ async def handle_user_info(
 ):
     args = parse_command_args_with_fallback(event, arg, "用户信息")
     if len(args) != 1:
-        await bot.send(event, INFO_USAGE)
-        return
+        raise_command_usage()
 
     target_user_id, parse_error = resolve_user_id_arg_with_fallback(
         event,
@@ -213,8 +206,7 @@ async def handle_user_info(
         "用户信息",
     )
     if parse_error == "missing":
-        await bot.send(event, INFO_USAGE)
-        return
+        raise_command_usage()
     if parse_error == "name_not_found":
         await bot.send(event, "查询失败，用户名称不存在")
         return
@@ -255,6 +247,7 @@ async def handle_user_info(
     display_name="我的信息",
     permission="user.info.self",
     description="查询当前用户信息",
+    usage="我的信息",
 )
 @require_permission("user.info.self")
 async def handle_self_info(
@@ -262,8 +255,7 @@ async def handle_self_info(
 ):
     args = parse_command_args_with_fallback(event, arg, "我的信息")
     if args:
-        await bot.send(event, SELF_INFO_USAGE)
-        return
+        raise_command_usage()
 
     user_id = event.get_user_id()
     session = get_session()
@@ -296,6 +288,7 @@ async def handle_self_info(
     display_name="添加金币",
     permission="user.coins.add",
     description="为指定用户增加金币",
+    usage="添加金币 <用户 ID/@用户/用户名称> <数量>",
 )
 @require_permission("user.coins.add")
 async def handle_add_coins(
@@ -303,8 +296,7 @@ async def handle_add_coins(
 ):
     args = parse_command_args_with_fallback(event, arg, "添加金币")
     if len(args) != 2:
-        await bot.send(event, ADD_COINS_USAGE)
-        return
+        raise_command_usage()
 
     target_user_id, parse_error = resolve_user_id_arg_with_fallback(
         event,
@@ -312,8 +304,7 @@ async def handle_add_coins(
         "添加金币",
     )
     if parse_error == "missing":
-        await bot.send(event, ADD_COINS_USAGE)
-        return
+        raise_command_usage()
     if parse_error == "name_not_found":
         await bot.send(event, "添加失败，用户名称不存在")
         return
@@ -355,6 +346,7 @@ async def handle_add_coins(
     display_name="扣除金币",
     permission="user.coins.remove",
     description="为指定用户扣减金币",
+    usage="扣除金币 <用户 ID/@用户/用户名称> <数量>",
 )
 @require_permission("user.coins.remove")
 async def handle_remove_coins(
@@ -362,8 +354,7 @@ async def handle_remove_coins(
 ):
     args = parse_command_args_with_fallback(event, arg, "扣除金币")
     if len(args) != 2:
-        await bot.send(event, REMOVE_COINS_USAGE)
-        return
+        raise_command_usage()
 
     target_user_id, parse_error = resolve_user_id_arg_with_fallback(
         event,
@@ -371,8 +362,7 @@ async def handle_remove_coins(
         "扣除金币",
     )
     if parse_error == "missing":
-        await bot.send(event, REMOVE_COINS_USAGE)
-        return
+        raise_command_usage()
     if parse_error == "name_not_found":
         await bot.send(event, "删除失败，用户名称不存在")
         return

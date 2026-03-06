@@ -13,6 +13,7 @@ from next_bot.access_control import get_group_ids, get_owner_ids
 from next_bot.db import (
     DB_PATH,
     Base,
+    ensure_command_config_schema,
     ensure_default_groups,
     ensure_default_stats,
     get_engine,
@@ -101,6 +102,7 @@ async def _init_database() -> None:
     else:
         logger.info("检测到 app.db，检查表结构")
         Base.metadata.create_all(get_engine())
+        ensure_command_config_schema()
         ensure_default_groups()
         ensure_default_stats()
         logger.info("表结构检查完成")

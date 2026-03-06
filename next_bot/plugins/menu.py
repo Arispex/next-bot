@@ -8,15 +8,17 @@ from nonebot.adapters.onebot.v11 import MessageSegment as OBV11MessageSegment
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
-from next_bot.command_config import command_control, list_command_configs
+from next_bot.command_config import (
+    command_control,
+    list_command_configs,
+    raise_command_usage,
+)
 from next_bot.message_parser import parse_command_args_with_fallback
 from next_bot.permissions import require_permission
 from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
 from server.web_server import create_menu_page
 
 menu_matcher = on_command("菜单")
-
-MENU_USAGE = "格式错误，正确格式：菜单"
 MENU_SCREENSHOT_OPTIONS = ScreenshotOptions(
     viewport_width=1800,
     viewport_height=1100,
@@ -36,13 +38,13 @@ def _to_base64_image_uri(path: Path) -> str:
     display_name="菜单",
     permission="menu.root",
     description="显示命令菜单截图",
+    usage="菜单",
 )
 @require_permission("menu.root")
 async def handle_menu(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
     args = parse_command_args_with_fallback(event, arg, "菜单")
     if args:
-        await bot.send(event, MENU_USAGE)
-        return
+        raise_command_usage()
 
     command_items = list_command_configs()
     command_items.sort(key=lambda item: str(item.get("command_key", "")))

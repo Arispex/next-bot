@@ -3,7 +3,7 @@ from nonebot.adapters import Bot, Event, Message
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
-from next_bot.command_config import command_control
+from next_bot.command_config import command_control, raise_command_usage
 from next_bot.db import Group, User, get_session
 from next_bot.message_parser import parse_command_args_with_fallback
 from next_bot.permissions import (
@@ -21,20 +21,13 @@ inherit_matcher = on_command("继承身份组")
 clear_inherit_matcher = on_command("取消继承身份组")
 add_perm_matcher = on_command("添加身份组权限")
 remove_perm_matcher = on_command("删除身份组权限")
-
-ADD_USAGE = "格式错误，正确格式：添加身份组 <身份组名称>"
-DELETE_USAGE = "格式错误，正确格式：删除身份组 <身份组名称>"
-INHERIT_USAGE = "格式错误，正确格式：继承身份组 <身份组名称> <要继承的身份组名称>"
-CLEAR_INHERIT_USAGE = "格式错误，正确格式：取消继承身份组 <身份组名称>"
-ADD_PERM_USAGE = "格式错误，正确格式：添加身份组权限 <身份组名称> <权限名称>"
-REMOVE_PERM_USAGE = "格式错误，正确格式：删除身份组权限 <身份组名称> <权限名称>"
-LIST_USAGE = "格式错误，正确格式：身份组列表"
 @list_matcher.handle()
 @command_control(
     command_key="group.list",
     display_name="身份组列表",
     permission="group.list",
     description="显示所有身份组",
+    usage="身份组列表",
 )
 @require_permission("group.list")
 async def handle_list_groups(
@@ -42,8 +35,7 @@ async def handle_list_groups(
 ):
     args = parse_command_args_with_fallback(event, arg, "身份组列表")
     if args:
-        await bot.send(event, LIST_USAGE)
-        return
+        raise_command_usage()
 
     session = get_session()
     try:
@@ -73,6 +65,7 @@ async def handle_list_groups(
     display_name="添加身份组",
     permission="group.add",
     description="新增身份组",
+    usage="添加身份组 <身份组名称>",
 )
 @require_permission("group.add")
 async def handle_add_group(
@@ -80,8 +73,7 @@ async def handle_add_group(
 ):
     args = parse_command_args_with_fallback(event, arg, "添加身份组")
     if len(args) != 1:
-        await bot.send(event, ADD_USAGE)
-        return
+        raise_command_usage()
 
     name = args[0]
     session = get_session()
@@ -106,6 +98,7 @@ async def handle_add_group(
     display_name="删除身份组",
     permission="group.delete",
     description="删除身份组",
+    usage="删除身份组 <身份组名称>",
 )
 @require_permission("group.delete")
 async def handle_delete_group(
@@ -113,8 +106,7 @@ async def handle_delete_group(
 ):
     args = parse_command_args_with_fallback(event, arg, "删除身份组")
     if len(args) != 1:
-        await bot.send(event, DELETE_USAGE)
-        return
+        raise_command_usage()
 
     name = args[0]
     if name in {"guest", "default"}:
@@ -153,6 +145,7 @@ async def handle_delete_group(
     display_name="继承身份组",
     permission="group.inherit.add",
     description="设置身份组继承关系",
+    usage="继承身份组 <身份组名称> <要继承的身份组名称>",
 )
 @require_permission("group.inherit.add")
 async def handle_inherit_group(
@@ -160,8 +153,7 @@ async def handle_inherit_group(
 ):
     args = parse_command_args_with_fallback(event, arg, "继承身份组")
     if len(args) != 2:
-        await bot.send(event, INHERIT_USAGE)
-        return
+        raise_command_usage()
 
     child, parent = args
     if child == parent:
@@ -191,6 +183,7 @@ async def handle_inherit_group(
     display_name="取消继承身份组",
     permission="group.inherit.clear",
     description="清空身份组继承关系",
+    usage="取消继承身份组 <身份组名称>",
 )
 @require_permission("group.inherit.clear")
 async def handle_clear_inherit_group(
@@ -198,8 +191,7 @@ async def handle_clear_inherit_group(
 ):
     args = parse_command_args_with_fallback(event, arg, "取消继承身份组")
     if len(args) != 1:
-        await bot.send(event, CLEAR_INHERIT_USAGE)
-        return
+        raise_command_usage()
 
     name = args[0]
     session = get_session()
@@ -224,6 +216,7 @@ async def handle_clear_inherit_group(
     display_name="添加身份组权限",
     permission="group.permission.add",
     description="为身份组添加权限",
+    usage="添加身份组权限 <身份组名称> <权限名称>",
 )
 @require_permission("group.permission.add")
 async def handle_add_group_perm(
@@ -231,8 +224,7 @@ async def handle_add_group_perm(
 ):
     args = parse_command_args_with_fallback(event, arg, "添加身份组权限")
     if len(args) != 2:
-        await bot.send(event, ADD_PERM_USAGE)
-        return
+        raise_command_usage()
 
     name, permission = args
     session = get_session()
@@ -257,6 +249,7 @@ async def handle_add_group_perm(
     display_name="删除身份组权限",
     permission="group.permission.remove",
     description="从身份组移除权限",
+    usage="删除身份组权限 <身份组名称> <权限名称>",
 )
 @require_permission("group.permission.remove")
 async def handle_remove_group_perm(
@@ -264,8 +257,7 @@ async def handle_remove_group_perm(
 ):
     args = parse_command_args_with_fallback(event, arg, "删除身份组权限")
     if len(args) != 2:
-        await bot.send(event, REMOVE_PERM_USAGE)
-        return
+        raise_command_usage()
 
     name, permission = args
     session = get_session()

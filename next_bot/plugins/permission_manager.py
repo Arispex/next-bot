@@ -3,7 +3,7 @@ from nonebot.adapters import Bot, Event, Message
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
-from next_bot.command_config import command_control
+from next_bot.command_config import command_control, raise_command_usage
 from next_bot.db import Group, User, get_session
 from next_bot.message_parser import (
     parse_command_args_with_fallback,
@@ -18,16 +18,13 @@ from next_bot.permissions import (
 add_user_perm_matcher = on_command("添加用户权限")
 remove_user_perm_matcher = on_command("删除用户权限")
 set_user_group_matcher = on_command("修改用户身份组")
-
-ADD_USER_PERM_USAGE = "格式错误，正确格式：添加用户权限 <用户 ID/@用户/用户名称> <权限名称>"
-REMOVE_USER_PERM_USAGE = "格式错误，正确格式：删除用户权限 <用户 ID/@用户/用户名称> <权限名称>"
-SET_USER_GROUP_USAGE = "格式错误，正确格式：修改用户身份组 <用户 ID/@用户/用户名称> <身份组名称>"
 @add_user_perm_matcher.handle()
 @command_control(
     command_key="permission.user.add",
     display_name="添加用户权限",
     permission="permission.user.add",
     description="为用户增加单独权限",
+    usage="添加用户权限 <用户 ID/@用户/用户名称> <权限名称>",
 )
 @require_permission("permission.user.add")
 async def handle_add_user_perm(
@@ -35,8 +32,7 @@ async def handle_add_user_perm(
 ):
     args = parse_command_args_with_fallback(event, arg, "添加用户权限")
     if len(args) != 2:
-        await bot.send(event, ADD_USER_PERM_USAGE)
-        return
+        raise_command_usage()
 
     user_id, parse_error = resolve_user_id_arg_with_fallback(
         event,
@@ -44,8 +40,7 @@ async def handle_add_user_perm(
         "添加用户权限",
     )
     if parse_error == "missing":
-        await bot.send(event, ADD_USER_PERM_USAGE)
-        return
+        raise_command_usage()
     if parse_error == "name_not_found":
         await bot.send(event, "添加失败，用户名称不存在")
         return
@@ -79,6 +74,7 @@ async def handle_add_user_perm(
     display_name="删除用户权限",
     permission="permission.user.remove",
     description="从用户移除单独权限",
+    usage="删除用户权限 <用户 ID/@用户/用户名称> <权限名称>",
 )
 @require_permission("permission.user.remove")
 async def handle_remove_user_perm(
@@ -86,8 +82,7 @@ async def handle_remove_user_perm(
 ):
     args = parse_command_args_with_fallback(event, arg, "删除用户权限")
     if len(args) != 2:
-        await bot.send(event, REMOVE_USER_PERM_USAGE)
-        return
+        raise_command_usage()
 
     user_id, parse_error = resolve_user_id_arg_with_fallback(
         event,
@@ -95,8 +90,7 @@ async def handle_remove_user_perm(
         "删除用户权限",
     )
     if parse_error == "missing":
-        await bot.send(event, REMOVE_USER_PERM_USAGE)
-        return
+        raise_command_usage()
     if parse_error == "name_not_found":
         await bot.send(event, "删除失败，用户名称不存在")
         return
@@ -130,6 +124,7 @@ async def handle_remove_user_perm(
     display_name="修改用户身份组",
     permission="permission.user.group.set",
     description="调整用户所属身份组",
+    usage="修改用户身份组 <用户 ID/@用户/用户名称> <身份组名称>",
 )
 @require_permission("permission.user.group.set")
 async def handle_set_user_group(
@@ -137,8 +132,7 @@ async def handle_set_user_group(
 ):
     args = parse_command_args_with_fallback(event, arg, "修改用户身份组")
     if len(args) != 2:
-        await bot.send(event, SET_USER_GROUP_USAGE)
-        return
+        raise_command_usage()
 
     target_user_id, parse_error = resolve_user_id_arg_with_fallback(
         event,
@@ -146,8 +140,7 @@ async def handle_set_user_group(
         "修改用户身份组",
     )
     if parse_error == "missing":
-        await bot.send(event, SET_USER_GROUP_USAGE)
-        return
+        raise_command_usage()
     if parse_error == "name_not_found":
         await bot.send(event, "修改失败，用户名称不存在")
         return

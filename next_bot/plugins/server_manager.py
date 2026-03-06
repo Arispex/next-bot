@@ -3,7 +3,7 @@ from nonebot.adapters import Bot, Event, Message
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
-from next_bot.command_config import command_control
+from next_bot.command_config import command_control, raise_command_usage
 from next_bot.db import Server, get_session
 from next_bot.message_parser import parse_command_args_with_fallback
 from next_bot.permissions import require_permission
@@ -19,16 +19,13 @@ delete_matcher = on_command("删除服务器")
 list_matcher = on_command("服务器列表")
 test_matcher = on_command("测试连通性")
 
-ADD_USAGE = "格式错误，正确格式：添加服务器 <服务器名称> <IP> <游戏端口> <RestAPI 端口> <RestAPI Token>"
-DELETE_USAGE = "格式错误，正确格式：删除服务器 <服务器 ID>"
-LIST_USAGE = "格式错误，正确格式：服务器列表"
-TEST_USAGE = "格式错误，正确格式：测试连通性 <服务器 ID>"
 @add_matcher.handle()
 @command_control(
     command_key="server.add",
     display_name="添加服务器",
     permission="server.add",
     description="新增服务器",
+    usage="添加服务器 <服务器名称> <IP> <游戏端口> <RestAPI 端口> <RestAPI Token>",
 )
 @require_permission("server.add")
 async def handle_add_server(
@@ -36,8 +33,7 @@ async def handle_add_server(
 ):
     args = parse_command_args_with_fallback(event, arg, "添加服务器")
     if len(args) != 5:
-        await bot.send(event, ADD_USAGE)
-        return
+        raise_command_usage()
 
     name, ip, game_port, restapi_port, token = args
     session = get_session()
@@ -68,6 +64,7 @@ async def handle_add_server(
     display_name="删除服务器",
     permission="server.delete",
     description="删除服务器",
+    usage="删除服务器 <服务器 ID>",
 )
 @require_permission("server.delete")
 async def handle_delete_server(
@@ -75,14 +72,12 @@ async def handle_delete_server(
 ):
     args = parse_command_args_with_fallback(event, arg, "删除服务器")
     if len(args) != 1:
-        await bot.send(event, DELETE_USAGE)
-        return
+        raise_command_usage()
 
     try:
         target_id = int(args[0])
     except ValueError:
-        await bot.send(event, DELETE_USAGE)
-        return
+        raise_command_usage()
 
     session = get_session()
     try:
@@ -112,6 +107,7 @@ async def handle_delete_server(
     display_name="服务器列表",
     permission="server.list",
     description="输出服务器列表",
+    usage="服务器列表",
 )
 @require_permission("server.list")
 async def handle_list_servers(
@@ -119,8 +115,7 @@ async def handle_list_servers(
 ):
     args = parse_command_args_with_fallback(event, arg, "服务器列表")
     if args:
-        await bot.send(event, LIST_USAGE)
-        return
+        raise_command_usage()
 
     session = get_session()
     try:
@@ -150,6 +145,7 @@ async def handle_list_servers(
     display_name="测试连通性",
     permission="server.test",
     description="测试服务器 REST API 连通性",
+    usage="测试连通性 <服务器 ID>",
 )
 @require_permission("server.test")
 async def handle_test_server(
@@ -157,14 +153,12 @@ async def handle_test_server(
 ):
     args = parse_command_args_with_fallback(event, arg, "测试连通性")
     if len(args) != 1:
-        await bot.send(event, TEST_USAGE)
-        return
+        raise_command_usage()
 
     try:
         target_id = int(args[0])
     except ValueError:
-        await bot.send(event, TEST_USAGE)
-        return
+        raise_command_usage()
 
     session = get_session()
     try:
