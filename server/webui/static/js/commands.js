@@ -365,8 +365,6 @@
       return;
     }
 
-    paramNames.sort((a, b) => a.localeCompare(b));
-
     for (const paramName of paramNames) {
       const definition = schema[paramName] || {};
       const currentValue = command.param_values?.[paramName];

@@ -71,7 +71,7 @@ _current_command_context: contextvars.ContextVar[RuntimeCommandState | None] = (
 
 
 def _json_dumps(value: Any) -> str:
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
 
 
 def _clone_dict(value: dict[str, Any]) -> dict[str, Any]:
@@ -219,9 +219,8 @@ def _normalize_param_schema(params: dict[str, dict[str, Any]] | None) -> dict[st
         raise CommandConfigValidationError("参数定义必须是对象")
 
     normalized: dict[str, dict[str, Any]] = {}
-    for raw_name in sorted(params.keys()):
+    for raw_name, raw_def in params.items():
         param_name = _normalize_param_key(raw_name)
-        raw_def = params[raw_name]
         if not isinstance(raw_def, dict):
             raise CommandConfigValidationError(f"参数 {param_name} 的定义必须是对象")
 
