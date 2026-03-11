@@ -403,7 +403,7 @@
     deleteSaving = false;
     deleteModalConfirmButton.disabled = false;
     setDeleteModalAlert("");
-    deleteModalTextNode.textContent = `确认删除用户 #${user.id}（${user.name}）吗？该操作无法撤销。`;
+    deleteModalTextNode.textContent = `确定要删除用户 “${user.name || "未命名用户"}” 吗？此操作无法撤销。`;
     deleteModalNode.classList.remove("hidden");
   };
 
