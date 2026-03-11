@@ -27,6 +27,7 @@ def _asset_url(path: str) -> str:
 def _render_app_shell_page(
     *,
     page_title: str,
+    header_title: str,
     active_menu: Literal["dashboard", "commands", "servers", "users", "groups", "settings"],
     content_template: str,
     page_style_urls: tuple[str, ...] = (),
@@ -51,6 +52,7 @@ def _render_app_shell_page(
 
     return (
         base_template.replace("__PAGE_TITLE__", html.escape(page_title))
+        .replace("__HEADER_TITLE__", html.escape(header_title))
         .replace("__PAGE_STYLE_LINKS__", style_links_html)
         .replace("__NAV_DASHBOARD_ACTIVE__", dashboard_active)
         .replace("__NAV_COMMANDS_ACTIVE__", commands_active)
@@ -88,6 +90,7 @@ def render_login_page(*, next_path: str, error_message: str = "") -> str:
 def render_console_page() -> str:
     return _render_app_shell_page(
         page_title="NextBot WebUI - 仪表盘",
+        header_title="仪表盘",
         active_menu="dashboard",
         content_template="dashboard_content.html",
         page_style_urls=(
@@ -103,6 +106,7 @@ def render_console_page() -> str:
 def render_commands_page() -> str:
     return _render_app_shell_page(
         page_title="NextBot WebUI - 命令配置",
+        header_title="命令配置",
         active_menu="commands",
         content_template="commands_content.html",
         page_style_urls=(
@@ -118,6 +122,7 @@ def render_commands_page() -> str:
 def render_servers_page() -> str:
     return _render_app_shell_page(
         page_title="NextBot WebUI - 服务器管理",
+        header_title="服务器管理",
         active_menu="servers",
         content_template="servers_content.html",
         page_style_urls=(
@@ -133,6 +138,7 @@ def render_servers_page() -> str:
 def render_users_page() -> str:
     return _render_app_shell_page(
         page_title="NextBot WebUI - 用户管理",
+        header_title="用户管理",
         active_menu="users",
         content_template="users_content.html",
         page_style_urls=(
@@ -148,6 +154,7 @@ def render_users_page() -> str:
 def render_groups_page() -> str:
     return _render_app_shell_page(
         page_title="NextBot WebUI - 身份组管理",
+        header_title="身份组管理",
         active_menu="groups",
         content_template="groups_content.html",
         page_style_urls=(
@@ -163,6 +170,7 @@ def render_groups_page() -> str:
 def render_settings_page() -> str:
     return _render_app_shell_page(
         page_title="NextBot WebUI - 设置",
+        header_title="设置",
         active_menu="settings",
         content_template="settings_content.html",
         page_style_urls=(
