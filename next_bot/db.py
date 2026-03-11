@@ -12,6 +12,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sess
 BASE_DIR = Path(__file__).resolve().parent.parent
 DB_PATH = BASE_DIR / "app.db"
 DATABASE_URL = f"sqlite:///{DB_PATH}"
+STAT_COMMAND_EXECUTE_TOTAL = "command.execute.total"
 
 
 class Base(DeclarativeBase):
@@ -137,13 +138,13 @@ def ensure_default_stats() -> None:
     try:
         command_total = (
             session.query(SystemStat)
-            .filter(SystemStat.stat_key == "command.execute.total")
+            .filter(SystemStat.stat_key == STAT_COMMAND_EXECUTE_TOTAL)
             .first()
         )
         if command_total is None:
             session.add(
                 SystemStat(
-                    stat_key="command.execute.total",
+                    stat_key=STAT_COMMAND_EXECUTE_TOTAL,
                     stat_value=0,
                 )
             )

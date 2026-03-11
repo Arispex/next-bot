@@ -1,4 +1,61 @@
 <section class="dashboard-layout">
+  <div class="dashboard-toolbar">
+    <div class="dashboard-toolbar-meta">
+      <span class="meta-tag">更新时间：<span id="dashboard-updated-at">--</span></span>
+    </div>
+    <div class="panel-head-actions">
+      <button id="reload-btn" type="button" class="btn">刷新</button>
+    </div>
+  </div>
+
+  <div id="status" class="alert hidden" role="status" aria-live="polite">
+    <span id="status-message" class="alert-message"></span>
+  </div>
+
+  <div id="loading" class="empty">加载中...</div>
+
+  <section id="stats-grid" class="stats-grid hidden" aria-label="关键指标">
+    <article class="stat-card stat-card-primary">
+      <p class="stat-label">服务器数量</p>
+      <p id="server_count" class="stat-value">--</p>
+    </article>
+    <article class="stat-card">
+      <p class="stat-label">用户数量</p>
+      <p id="user_count" class="stat-value">--</p>
+    </article>
+    <article class="stat-card">
+      <p class="stat-label">身份组数量</p>
+      <p id="group_count" class="stat-value">--</p>
+    </article>
+    <article class="stat-card">
+      <p class="stat-label">命令总数</p>
+      <p id="command_total" class="stat-value">--</p>
+    </article>
+    <article class="stat-card">
+      <p class="stat-label">已启用命令</p>
+      <p id="command_enabled_count" class="stat-value">--</p>
+    </article>
+    <article class="stat-card">
+      <p class="stat-label">累计命令执行次数</p>
+      <p id="command_execute_count" class="stat-value">--</p>
+    </article>
+  </section>
+
+  <section id="dashboard-panels" class="dashboard-panels hidden">
+    <section class="detail-card detail-card-wide">
+      <div class="detail-card-head">
+        <div>
+          <h3 class="detail-card-title">Bot 连接概览</h3>
+          <p id="running_status" class="detail-card-desc">--</p>
+        </div>
+      </div>
+      <div class="detail-content-block">
+        <div class="detail-section-label">Bot ID 列表</div>
+        <div id="connected_bot_ids" class="tag-list">无</div>
+      </div>
+    </section>
+  </section>
+
   <article class="ad-card" aria-label="广告位">
     <div class="ad-banner">
       <div class="ad-main">
@@ -20,38 +77,4 @@
       </a>
     </div>
   </article>
-
-  <article class="welcome-card">
-    <div class="welcome-main">
-      <h2 class="welcome-title">欢迎回来</h2>
-    </div>
-    <div class="welcome-meta">
-      <span class="meta-tag"><span class="status-dot"></span>运行状态：<span id="running_status">Running</span></span>
-      <span id="dashboard-refresh-text" class="meta-tag">最近刷新：加载中</span>
-    </div>
-  </article>
-
-  <section class="stats-grid" aria-label="关键指标">
-    <article class="stat-card">
-      <p class="stat-label">运行状态</p>
-      <p id="running_status_value" class="stat-value">Running</p>
-    </article>
-    <article class="stat-card">
-      <p class="stat-label">服务器数量</p>
-      <p id="server_count" class="stat-value">--</p>
-    </article>
-    <article class="stat-card">
-      <p class="stat-label">用户数量</p>
-      <p id="user_count" class="stat-value">--</p>
-    </article>
-    <article class="stat-card">
-      <p class="stat-label">命令执行次数</p>
-      <p id="command_execute_count" class="stat-value">--</p>
-    </article>
-    <article class="stat-card">
-      <p class="stat-label">已连接 Bot</p>
-      <p id="connected_bot_count" class="stat-value">--</p>
-      <div id="connected_bot_ids" class="bot-id-list">无</div>
-    </article>
-  </section>
 </section>
