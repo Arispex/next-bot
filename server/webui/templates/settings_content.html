@@ -1,119 +1,127 @@
-<section class="settings-panel">
-  <div class="panel-toolbar">
-    <div class="panel-summary">
-      <span class="summary-chip">受管配置项 <strong id="stat-managed">9</strong></span>
-    </div>
+<section class="settings-layout">
+  <div class="settings-toolbar">
     <div class="panel-head-actions">
-      <button id="reload-btn" type="button" class="btn">重新加载</button>
-      <button id="save-btn" type="button" class="btn btn-primary">保存并重启</button>
+      <button id="reload-btn" type="button" class="btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+          <path d="M21 3v6h-6"></path>
+        </svg>
+        重新加载
+      </button>
+      <button id="save-btn" type="button" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"></path>
+          <path d="M17 21v-8H7v8"></path>
+          <path d="M7 3v5h8"></path>
+        </svg>
+        保存并重启
+      </button>
     </div>
   </div>
 
-  <div class="panel-body">
-    <div id="status" class="alert hidden" role="status" aria-live="polite">
-      <span id="status-message" class="alert-message"></span>
-    </div>
+  <div id="status" class="alert hidden" role="status" aria-live="polite">
+    <span id="status-message" class="alert-message"></span>
+  </div>
 
-    <div class="form-layout">
-      <section class="form-section">
-        <h3 class="section-title">OneBot</h3>
+  <div class="form-layout">
+    <section class="form-section">
+      <h3 class="section-title">OneBot</h3>
+      <label class="form-item">
+        <span class="form-label">OneBot WebSocket 地址（逗号分隔）</span>
+        <input
+          id="field-onebot-ws-urls"
+          class="input"
+          type="text"
+          placeholder="ws://127.0.0.1:3001, wss://example.com/ws"
+          spellcheck="false"
+        />
+        <div class="form-preview">
+          <span class="form-label">预览</span>
+          <div id="preview-onebot-ws-urls" class="tag-list"></div>
+        </div>
+      </label>
+      <label class="form-item">
+        <span class="form-label">OneBot 访问令牌</span>
+        <div class="token-input-wrap">
+          <input id="field-onebot-access-token" class="input token-input" type="password" placeholder="请输入 OneBot 访问令牌" />
+          <button id="token-toggle-btn" type="button" class="token-input-toggle" aria-label="显示 Token" title="显示 Token">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
+        </div>
+      </label>
+    </section>
+
+    <section class="form-section">
+      <h3 class="section-title">访问控制</h3>
+      <div class="form-grid">
         <label class="form-item">
-          <span class="form-label">OneBot WebSocket 地址（逗号分隔）</span>
+          <span class="form-label">管理员 QQ（逗号分隔）</span>
           <input
-            id="field-onebot-ws-urls"
+            id="field-owner-id"
             class="input"
             type="text"
-            placeholder="ws://127.0.0.1:3001, wss://example.com/ws"
+            placeholder="10001, 10002"
             spellcheck="false"
           />
           <div class="form-preview">
             <span class="form-label">预览</span>
-            <div id="preview-onebot-ws-urls" class="tag-list"></div>
+            <div id="preview-owner-id" class="tag-list"></div>
           </div>
         </label>
         <label class="form-item">
-          <span class="form-label">OneBot 访问令牌</span>
-          <div class="token-input-wrap">
-            <input id="field-onebot-access-token" class="input token-input" type="password" placeholder="请输入 OneBot 访问令牌" />
-            <button id="token-toggle-btn" type="button" class="token-input-toggle" aria-label="显示 Token" title="显示 Token">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </button>
+          <span class="form-label">允许群号（逗号分隔）</span>
+          <input
+            id="field-group-id"
+            class="input"
+            type="text"
+            placeholder="10001, 10002"
+            spellcheck="false"
+          />
+          <div class="form-preview">
+            <span class="form-label">预览</span>
+            <div id="preview-group-id" class="tag-list"></div>
           </div>
         </label>
-      </section>
+      </div>
+    </section>
 
-      <section class="form-section">
-        <h3 class="section-title">访问控制</h3>
-        <div class="form-grid">
-          <label class="form-item">
-            <span class="form-label">管理员 QQ（逗号分隔）</span>
-            <input
-              id="field-owner-id"
-              class="input"
-              type="text"
-              placeholder="10001, 10002"
-              spellcheck="false"
-            />
-            <div class="form-preview">
-              <span class="form-label">预览</span>
-              <div id="preview-owner-id" class="tag-list"></div>
-            </div>
-          </label>
-          <label class="form-item">
-            <span class="form-label">允许群号（逗号分隔）</span>
-            <input
-              id="field-group-id"
-              class="input"
-              type="text"
-              placeholder="10001, 10002"
-              spellcheck="false"
-            />
-            <div class="form-preview">
-              <span class="form-label">预览</span>
-              <div id="preview-group-id" class="tag-list"></div>
-            </div>
-          </label>
-        </div>
-      </section>
+    <section class="form-section">
+      <h3 class="section-title">Web 服务</h3>
+      <div class="form-grid">
+        <label class="form-item">
+          <span class="form-label">Web 服务监听地址</span>
+          <input id="field-web-server-host" class="input" type="text" placeholder="0.0.0.0" />
+          <span class="form-help">仅用于服务监听，机器人内部访问固定使用 127.0.0.1。</span>
+        </label>
+        <label class="form-item">
+          <span class="form-label">Web 服务端口</span>
+          <input id="field-web-server-port" class="input" type="number" min="1" max="65535" placeholder="18081" />
+        </label>
+        <label class="form-item form-span-2">
+          <span class="form-label">Web 服务对外地址</span>
+          <input id="field-web-server-public-base-url" class="input" type="text" placeholder="http://127.0.0.1:18081" />
+        </label>
+      </div>
+    </section>
 
-      <section class="form-section">
-        <h3 class="section-title">Web 服务</h3>
-        <div class="form-grid">
-          <label class="form-item">
-            <span class="form-label">Web 服务监听地址</span>
-            <input id="field-web-server-host" class="input" type="text" placeholder="0.0.0.0" />
-            <span class="form-help">仅用于服务监听，机器人内部访问固定使用 127.0.0.1。</span>
-          </label>
-          <label class="form-item">
-            <span class="form-label">Web 服务端口</span>
-            <input id="field-web-server-port" class="input" type="number" min="1" max="65535" placeholder="18081" />
-          </label>
-          <label class="form-item form-span-2">
-            <span class="form-label">Web 服务对外地址</span>
-            <input id="field-web-server-public-base-url" class="input" type="text" placeholder="http://127.0.0.1:18081" />
-          </label>
-        </div>
-      </section>
-
-      <section class="form-section">
-        <h3 class="section-title">命令关闭策略</h3>
-        <div class="form-grid">
-          <label class="form-item">
-            <span class="form-label">命令关闭模式</span>
-            <select id="field-command-disabled-mode" class="input select">
-              <option value="reply">回复提示</option>
-              <option value="silent">静默拦截</option>
-            </select>
-          </label>
-          <label class="form-item form-span-2">
-            <span class="form-label">命令关闭提示语</span>
-            <input id="field-command-disabled-message" class="input" type="text" placeholder="该命令暂时关闭~" />
-          </label>
-        </div>
-      </section>
-    </div>
+    <section class="form-section">
+      <h3 class="section-title">命令关闭策略</h3>
+      <div class="form-grid">
+        <label class="form-item">
+          <span class="form-label">命令关闭模式</span>
+          <select id="field-command-disabled-mode" class="input select">
+            <option value="reply">回复提示</option>
+            <option value="silent">静默拦截</option>
+          </select>
+        </label>
+        <label class="form-item form-span-2">
+          <span class="form-label">命令关闭提示语</span>
+          <input id="field-command-disabled-message" class="input" type="text" placeholder="该命令暂时关闭~" />
+        </label>
+      </div>
+    </section>
   </div>
 </section>

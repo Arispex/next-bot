@@ -3,9 +3,8 @@
   const saveButton = document.getElementById("save-btn");
   const statusNode = document.getElementById("status");
   const statusMessageNode = document.getElementById("status-message");
-  const statManagedNode = document.getElementById("stat-managed");
-
   const onebotWsUrlsInput = document.getElementById("field-onebot-ws-urls");
+
   const onebotWsUrlsPreview = document.getElementById("preview-onebot-ws-urls");
   const onebotAccessTokenInput = document.getElementById("field-onebot-access-token");
   const ownerIdInput = document.getElementById("field-owner-id");
@@ -24,7 +23,6 @@
     saveButton &&
     statusNode &&
     statusMessageNode &&
-    statManagedNode &&
     onebotWsUrlsInput &&
     onebotWsUrlsPreview &&
     onebotAccessTokenInput &&
@@ -278,11 +276,6 @@
     };
   };
 
-  const setStats = (meta) => {
-    const managedFields = Array.isArray(meta?.managed_fields) ? meta.managed_fields : [];
-    statManagedNode.textContent = String(managedFields.length);
-  };
-
   const fillForm = (data) => {
     onebotWsUrlsInput.value = Array.isArray(data.onebot_ws_urls)
       ? data.onebot_ws_urls.join(", ")
@@ -310,7 +303,6 @@
         throw new Error(readErrorMessage(payload, `加载失败（HTTP ${response.status}）`));
       }
       fillForm(payload.data);
-      setStats(payload.meta || {});
       setStatus("设置加载完成", "success");
     } catch (error) {
       const message = error instanceof Error ? error.message : "加载失败";
