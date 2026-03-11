@@ -6,7 +6,15 @@
       <span class="summary-chip">普通组 <strong id="stat-normal" class="danger">0</strong></span>
     </div>
     <div class="panel-filter">
-      <input id="group-search" class="input search-input" type="text" placeholder="搜索身份组名称 / 权限 / 继承" />
+      <div class="search-input-wrap">
+        <span class="search-input-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m20 20-3.5-3.5"></path>
+          </svg>
+        </span>
+        <input id="group-search" class="input search-input" type="text" placeholder="搜索身份组名称 / 权限 / 继承" />
+      </div>
     </div>
     <div class="panel-head-actions">
       <button id="reload-btn" type="button" class="btn">刷新</button>
