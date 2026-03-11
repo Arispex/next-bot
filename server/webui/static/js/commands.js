@@ -10,10 +10,6 @@
   const tableWrapNode = document.getElementById("table-wrap");
   const tableBodyNode = document.getElementById("command-table-body");
 
-  const statTotalNode = document.getElementById("stat-total");
-  const statEnabledNode = document.getElementById("stat-enabled");
-  const statDisabledNode = document.getElementById("stat-disabled");
-
   const modalNode = document.getElementById("param-modal");
   const modalBodyNode = document.getElementById("param-modal-body");
   const modalTitleNode = document.getElementById("param-modal-title");
@@ -28,11 +24,11 @@
 
   const requiredNodesReady = Boolean(
     statusNode &&
-    statusMessageNode &&
-    loadingNode &&
-    emptyNode &&
-    tableWrapNode &&
-    tableBodyNode
+      statusMessageNode &&
+      loadingNode &&
+      emptyNode &&
+      tableWrapNode &&
+      tableBodyNode
   );
 
   const setStatus = (message, type = "") => {
@@ -197,16 +193,6 @@
     });
   };
 
-  const updateStats = () => {
-    const total = commandStates.length;
-    const enabled = commandStates.filter((item) => Boolean(item.enabled)).length;
-    const disabled = total - enabled;
-
-    if (statTotalNode) statTotalNode.textContent = String(total);
-    if (statEnabledNode) statEnabledNode.textContent = String(enabled);
-    if (statDisabledNode) statDisabledNode.textContent = String(disabled);
-  };
-
   const buildPermissionNode = (permission) => {
     const badge = document.createElement("span");
     badge.className = "badge";
@@ -226,7 +212,6 @@
     loadingNode.classList.add("hidden");
 
     const filteredCommands = getFilteredCommands();
-    updateStats();
 
     if (!commandStates.length) {
       emptyNode.textContent = "暂无可配置命令。";
@@ -291,7 +276,6 @@
       enabledInput.addEventListener("change", () => {
         command.enabled = Boolean(enabledInput.checked);
         setStatus("开关已更新，点击“保存全部”后生效", "success");
-        updateStats();
       });
 
       const switchTrack = document.createElement("span");

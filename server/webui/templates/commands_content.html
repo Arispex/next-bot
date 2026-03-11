@@ -1,11 +1,6 @@
-<section class="command-panel">
-  <div class="panel-toolbar">
-    <div class="panel-summary">
-      <span class="summary-chip">命令总数 <strong id="stat-total">0</strong></span>
-      <span class="summary-chip">启用中 <strong id="stat-enabled" class="success">0</strong></span>
-      <span class="summary-chip">已关闭 <strong id="stat-disabled" class="danger">0</strong></span>
-    </div>
-    <div class="panel-filter">
+<section class="commands-layout">
+  <div class="commands-toolbar">
+    <div class="commands-toolbar-search">
       <div class="search-input-wrap">
         <span class="search-input-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -22,28 +17,26 @@
     </div>
   </div>
 
-  <div class="panel-body">
-    <div id="status" class="alert hidden" role="status" aria-live="polite">
-      <span id="status-message" class="alert-message"></span>
-    </div>
-    <div id="loading" class="empty">加载中...</div>
-    <div id="empty" class="empty hidden">暂无可配置命令。</div>
+  <div id="status" class="alert hidden" role="status" aria-live="polite">
+    <span id="status-message" class="alert-message"></span>
+  </div>
+  <div id="loading" class="empty">加载中...</div>
+  <div id="empty" class="empty hidden">暂无可配置命令。</div>
 
-    <div id="table-wrap" class="table-wrap hidden">
-      <table class="command-table" aria-label="命令配置表格">
-        <thead>
-          <tr>
-            <th>命令名称</th>
-            <th>命令介绍</th>
-            <th>用法</th>
-            <th>权限</th>
-            <th>状态</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody id="command-table-body"></tbody>
-      </table>
-    </div>
+  <div id="table-wrap" class="table-wrap hidden">
+    <table class="command-table" aria-label="命令配置表格">
+      <thead>
+        <tr>
+          <th>命令名称</th>
+          <th>命令介绍</th>
+          <th>用法</th>
+          <th>权限</th>
+          <th>状态</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="command-table-body"></tbody>
+    </table>
   </div>
 </section>
 

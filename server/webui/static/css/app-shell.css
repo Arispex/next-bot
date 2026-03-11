@@ -240,7 +240,7 @@ html.dark .brand-logo-image-dark {
 
 .btn {
   height: 34px;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid var(--line-strong);
   background: var(--surface);
   color: var(--text);
