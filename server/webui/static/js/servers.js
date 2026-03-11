@@ -407,7 +407,7 @@
     setModalAlert("");
 
     if (mode === "edit" && server) {
-      modalTitleNode.textContent = `编辑服务器 #${server.id}`;
+      modalTitleNode.textContent = "编辑服务器";
       modalSaveButton.textContent = "保存修改";
       nameInput.value = server.name;
       ipInput.value = server.ip;

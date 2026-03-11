@@ -387,7 +387,7 @@
     setModalAlert("");
 
     if (mode === "edit" && group) {
-      modalTitleNode.textContent = `编辑身份组：${group.name}`;
+      modalTitleNode.textContent = "编辑身份组";
       modalSaveButton.textContent = "保存修改";
       fieldName.value = group.name;
       fieldName.readOnly = true;

@@ -428,7 +428,7 @@
     setModalAlert("");
 
     if (mode === "edit" && user) {
-      modalTitleNode.textContent = `编辑用户 #${user.id}`;
+      modalTitleNode.textContent = "编辑用户";
       modalSaveButton.textContent = "保存修改";
       fieldUserId.value = user.user_id;
       fieldName.value = user.name;

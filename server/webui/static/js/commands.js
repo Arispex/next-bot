@@ -336,7 +336,7 @@
       : {};
     const paramNames = Object.keys(schema);
 
-    modalTitleNode.textContent = `编辑参数 #${command.command_key || command.display_name || "unknown"}`;
+    modalTitleNode.textContent = "编辑参数";
     modalBodyNode.innerHTML = "";
 
     if (!paramNames.length) {
