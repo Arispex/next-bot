@@ -17,6 +17,7 @@ from next_bot.command_config import (
 from next_bot.db import User, get_session
 from next_bot.message_parser import parse_command_args_with_fallback
 from next_bot.permissions import require_permission
+from next_bot.time_utils import beijing_today_text
 
 sign_matcher = on_command("签到")
 
@@ -28,7 +29,7 @@ class SignResult:
 
 
 def _today_text() -> str:
-    return date.today().isoformat()
+    return beijing_today_text()
 
 
 def _resolve_streak_reward(

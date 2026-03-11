@@ -10,6 +10,7 @@ from next_bot.message_parser import (
     resolve_user_id_arg_with_fallback,
 )
 from next_bot.permissions import require_permission
+from next_bot.time_utils import format_beijing_datetime
 
 from next_bot.db import Server, User, get_session
 from next_bot.tshock_api import (
@@ -227,7 +228,7 @@ async def handle_user_info(
         await bot.send(event, "查询失败，用户不存在")
         return
 
-    created_at = user.created_at.strftime("%Y-%m-%d %H:%M:%S")
+    created_at = format_beijing_datetime(user.created_at)
     message = "\n".join(
         [
             f"用户 ID：{user.user_id}",
@@ -268,7 +269,7 @@ async def handle_self_info(
         await bot.send(event, "查询失败，未注册账号")
         return
 
-    created_at = user.created_at.strftime("%Y-%m-%d %H:%M:%S")
+    created_at = format_beijing_datetime(user.created_at)
     message = "\n".join(
         [
             f"用户 ID：{user.user_id}",

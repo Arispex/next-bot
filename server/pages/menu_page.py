@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+from next_bot.time_utils import beijing_now_text
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 TEMPLATE_PATH = BASE_DIR / "server" / "templates" / "menu.html"
@@ -24,7 +25,7 @@ def build_payload(*, commands: list[dict[str, str]]) -> dict[str, Any]:
         )
 
     return {
-        "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generated_at": beijing_now_text(),
         "commands": normalized_commands,
     }
 

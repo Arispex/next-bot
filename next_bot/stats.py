@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 from nonebot import get_bots
 from sqlalchemy import func
 from sqlalchemy.dialects.sqlite import insert
@@ -16,6 +14,7 @@ from next_bot.db import (
     get_engine,
     get_session,
 )
+from next_bot.time_utils import beijing_now_text, db_now_utc_naive, format_beijing_datetime
 
 
 def increment_stat(stat_key: str, delta: int = 1) -> None:
@@ -27,7 +26,7 @@ def increment_stat(stat_key: str, delta: int = 1) -> None:
     if amount == 0:
         return
 
-    now = datetime.utcnow()
+    now = db_now_utc_naive()
     engine = get_engine()
 
     with engine.begin() as connection:
@@ -65,14 +64,8 @@ def increment_command_execute_total() -> None:
     increment_stat(STAT_COMMAND_EXECUTE_TOTAL, 1)
 
 
-def _format_datetime(value: datetime | None) -> str:
-    if value is None:
-        return ""
-    return value.strftime("%Y-%m-%d %H:%M:%S")
-
-
 def get_dashboard_metrics() -> dict[str, int | str | list[str]]:
-    generated_at = datetime.utcnow()
+    generated_at = beijing_now_text()
 
     session = get_session()
     try:
@@ -129,10 +122,10 @@ def get_dashboard_metrics() -> dict[str, int | str | list[str]]:
         "command_enabled_count": command_enabled_count,
         "command_disabled_count": command_disabled_count,
         "command_execute_count": command_execute_count,
-        "command_execute_updated_at": _format_datetime(command_execute_updated_at),
+        "command_execute_updated_at": format_beijing_datetime(command_execute_updated_at),
         "connected_bot_count": connected_bot_count,
         "connected_bot_ids": connected_bot_ids,
         "signed_today_count": signed_today_count,
         "total_coins": total_coins,
-        "generated_at": _format_datetime(generated_at),
+        "generated_at": generated_at,
     }

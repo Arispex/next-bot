@@ -9,6 +9,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
 from next_bot.db import Group, Server, User, get_session
+from next_bot.time_utils import format_beijing_datetime
 from next_bot.tshock_api import (
     TShockRequestError,
     get_error_reason,
@@ -151,9 +152,7 @@ def _validate_payload(payload: dict[str, Any]) -> ValidatedUserPayload:
 
 
 def _format_created_at(value: datetime | None) -> str:
-    if value is None:
-        return ""
-    return value.strftime("%Y-%m-%d %H:%M:%S")
+    return format_beijing_datetime(value)
 
 
 def _serialize_user(user: User) -> dict[str, Any]:

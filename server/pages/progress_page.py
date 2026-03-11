@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+from next_bot.time_utils import beijing_now_text
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 TEMPLATE_PATH = BASE_DIR / "server" / "templates" / "progress.html"
@@ -46,7 +47,7 @@ def build_payload(
     normalized = _normalize_progress(progress)
     defeated_count = sum(1 for item in normalized if item["defeated"])
     return {
-        "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generated_at": beijing_now_text(),
         "server_id": str(server_id),
         "server_name": str(server_name),
         "progress": normalized,

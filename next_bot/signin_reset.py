@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import threading
 import time
-from datetime import date, datetime, time as datetime_time, timedelta
 
 from nonebot.log import logger
 
 from next_bot.db import User, get_session
+from next_bot.time_utils import beijing_today_text, seconds_until_next_beijing_midnight
 
 _worker_started = False
 _worker_lock = threading.Lock()
@@ -17,7 +17,7 @@ def _reset_signed_today(*, reset_all: bool) -> int:
     try:
         query = session.query(User).filter(User.signed_today.is_(True))
         if not reset_all:
-            today_text = date.today().isoformat()
+            today_text = beijing_today_text()
             query = query.filter(User.last_sign_date != today_text)
         changed = query.update({User.signed_today: False}, synchronize_session=False)
         session.commit()
@@ -27,12 +27,7 @@ def _reset_signed_today(*, reset_all: bool) -> int:
 
 
 def _seconds_until_next_midnight() -> float:
-    now = datetime.now()
-    next_midnight = datetime.combine(
-        (now + timedelta(days=1)).date(),
-        datetime_time.min,
-    )
-    return max((next_midnight - now).total_seconds(), 1.0)
+    return seconds_until_next_beijing_midnight()
 
 
 def _signin_reset_worker() -> None:

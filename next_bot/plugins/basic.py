@@ -23,6 +23,7 @@ from next_bot.message_parser import (
     resolve_user_id_arg_with_fallback,
 )
 from next_bot.permissions import require_permission
+from next_bot.time_utils import beijing_filename_timestamp
 from next_bot.tshock_api import (
     TShockRequestError,
     get_error_reason,
@@ -476,7 +477,7 @@ async def handle_user_inventory(
     )
     await bot.send(event, f"用户背包链接：{public_page_url}")
     screenshot_path = Path("/tmp") / (
-        f"inventory-{server.id}-{target_user.user_id}-{datetime.now().strftime('%Y%m%d%H%M%S')}.png"
+        f"inventory-{server.id}-{target_user.user_id}-{beijing_filename_timestamp()}.png"
     )
     try:
         await screenshot_url(
@@ -615,7 +616,7 @@ async def handle_my_inventory(
     await bot.send(event, f"我的背包链接：{public_page_url}")
 
     screenshot_path = Path("/tmp") / (
-        f"inventory-{server.id}-{user.user_id}-{datetime.now().strftime('%Y%m%d%H%M%S')}.png"
+        f"inventory-{server.id}-{user.user_id}-{beijing_filename_timestamp()}.png"
     )
     try:
         await screenshot_url(
@@ -713,7 +714,7 @@ async def handle_world_progress(
     )
 
     screenshot_path = Path("/tmp") / (
-        f"progress-{server.id}-{datetime.now().strftime('%Y%m%d%H%M%S')}.png"
+        f"progress-{server.id}-{beijing_filename_timestamp()}.png"
     )
     try:
         await screenshot_url(

@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import sqlite3
-from pathlib import Path
-
 from datetime import datetime
+from pathlib import Path
 
 from sqlalchemy import Boolean, DateTime, Integer, String, Text
 from sqlalchemy.engine import Engine, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
+
+from next_bot.time_utils import db_now_utc_naive
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DB_PATH = BASE_DIR / "app.db"
@@ -43,7 +44,7 @@ class User(Base):
     permissions: Mapped[str] = mapped_column(String, nullable=False, default="")
     group: Mapped[str] = mapped_column(String, nullable=False, default="guest")
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=datetime.utcnow
+        DateTime, nullable=False, default=db_now_utc_naive
     )
 
 
@@ -71,10 +72,10 @@ class CommandConfig(Base):
     is_registered: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     meta_hash: Mapped[str] = mapped_column(String, nullable=False, default="")
     last_synced_at: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=datetime.utcnow
+        DateTime, nullable=False, default=db_now_utc_naive
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=datetime.utcnow
+        DateTime, nullable=False, default=db_now_utc_naive
     )
 
 
@@ -84,7 +85,7 @@ class SystemStat(Base):
     stat_key: Mapped[str] = mapped_column(String, primary_key=True)
     stat_value: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=datetime.utcnow
+        DateTime, nullable=False, default=db_now_utc_naive
     )
 
 
