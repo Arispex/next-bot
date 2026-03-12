@@ -19,6 +19,10 @@ from next_bot.tshock_api import (
 router = APIRouter()
 
 _NAME_PATTERN = re.compile(r"^[A-Za-z0-9\u4e00-\u9fff ._-]{1,32}$")
+
+
+@dataclass(frozen=True)
+class ValidatedServerPayload:
     name: str
     ip: str
     game_port: str
@@ -141,26 +145,6 @@ def _validate_server_payload(payload: dict[str, Any]) -> ValidatedServerPayload:
     )
 
 
-def _validate_restapi_endpoint_uniqueness(
-    *,
-    session,
-    ip: str,
-    restapi_port: str,
-    exclude_id: int | None = None,
-) -> None:
-    query = session.query(Server).filter(
-        Server.ip == ip,
-        Server.restapi_port == restapi_port,
-    )
-    if exclude_id is not None:
-        query = query.filter(Server.id != exclude_id)
-    if query.first() is not None:
-        raise ServerPayloadValidationError(
-            "同一地址和 REST API 端口已存在服务器配置",
-            field="restapi_port",
-        )
-
-
 @router.get("/webui/api/servers")
 async def webui_servers_list() -> JSONResponse:
     session = get_session()
@@ -194,11 +178,6 @@ async def webui_servers_create(request: Request) -> JSONResponse:
 
     session = get_session()
     try:
-        _validate_restapi_endpoint_uniqueness(
-            session=session,
-            ip=validated.ip,
-            restapi_port=validated.restapi_port,
-        )
         max_id = int(session.query(func.max(Server.id)).scalar() or 0)
         server = Server(
             id=max_id + 1,
@@ -246,13 +225,6 @@ async def webui_servers_update(server_id: int, request: Request) -> JSONResponse
         server = session.query(Server).filter(Server.id == server_id).first()
         if server is None:
             return _not_found("更新失败，服务器不存在")
-
-        _validate_restapi_endpoint_uniqueness(
-            session=session,
-            ip=validated.ip,
-            restapi_port=validated.restapi_port,
-            exclude_id=server_id,
-        )
 
         server.name = validated.name
         server.ip = validated.ip
