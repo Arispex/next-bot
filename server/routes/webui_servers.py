@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import ipaddress
 import re
 from dataclasses import dataclass
 from typing import Any
@@ -20,11 +19,6 @@ from next_bot.tshock_api import (
 router = APIRouter()
 
 _NAME_PATTERN = re.compile(r"^[A-Za-z0-9\u4e00-\u9fff ._-]{1,32}$")
-_HOST_LABEL_PATTERN = re.compile(r"^[A-Za-z0-9-]+$")
-
-
-@dataclass(frozen=True)
-class ValidatedServerPayload:
     name: str
     ip: str
     game_port: str
@@ -68,28 +62,6 @@ def _serialize_server(server: Server) -> dict[str, Any]:
     }
 
 
-def _is_valid_hostname(value: str) -> bool:
-    host = value.strip()
-    if not host:
-        return False
-    if host.endswith("."):
-        host = host[:-1]
-    if not host or len(host) > 253:
-        return False
-
-    labels = host.split(".")
-    for label in labels:
-        if not label:
-            return False
-        if len(label) > 63:
-            return False
-        if label.startswith("-") or label.endswith("-"):
-            return False
-        if _HOST_LABEL_PATTERN.fullmatch(label) is None:
-            return False
-    return True
-
-
 def _require_field(payload: dict[str, Any], key: str) -> Any:
     if key not in payload:
         raise ServerPayloadValidationError(f"{key} 为必填项", field=key)
@@ -112,17 +84,7 @@ def _normalize_host(raw_value: Any) -> str:
     value = str(raw_value).strip()
     if not value:
         raise ServerPayloadValidationError("服务器地址不能为空", field="ip")
-
-    try:
-        parsed_ip = ipaddress.ip_address(value)
-        return parsed_ip.compressed
-    except ValueError:
-        if not _is_valid_hostname(value):
-            raise ServerPayloadValidationError(
-                "服务器地址必须是有效 IP 或域名",
-                field="ip",
-            ) from None
-        return value.lower()
+    return value
 
 
 def _normalize_port(raw_value: Any, *, field: str) -> str:
