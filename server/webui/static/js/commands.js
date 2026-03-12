@@ -375,10 +375,20 @@
 
       let inputNode;
       if (definition.type === "bool") {
+        const boolWrap = document.createElement("label");
+        boolWrap.className = "param-bool-control";
+
         inputNode = document.createElement("input");
         inputNode.type = "checkbox";
         inputNode.className = "bool-input";
         inputNode.checked = Boolean(currentValue);
+
+        const boolTrack = document.createElement("span");
+        boolTrack.className = "param-bool-track";
+
+        boolWrap.appendChild(inputNode);
+        boolWrap.appendChild(boolTrack);
+        item.appendChild(boolWrap);
       } else if (Array.isArray(definition.enum) && definition.enum.length) {
         inputNode = document.createElement("select");
         inputNode.className = "select";
@@ -423,7 +433,9 @@
       inputNode.dataset.paramLabel = definition.label || paramName;
       inputNode.dataset.paramSchema = JSON.stringify(definition);
 
-      item.appendChild(inputNode);
+      if (definition.type !== "bool") {
+        item.appendChild(inputNode);
+      }
       modalBodyNode.appendChild(item);
     }
 
