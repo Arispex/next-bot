@@ -118,8 +118,8 @@ def _normalize_token(raw_value: Any) -> str:
     value = str(raw_value).strip()
     if not value:
         raise ServerPayloadValidationError("Token 不能为空", field="token")
-    if not 6 <= len(value) <= 128:
-        raise ServerPayloadValidationError("Token 长度必须在 6-128 之间", field="token")
+    if not 1 <= len(value) <= 128:
+        raise ServerPayloadValidationError("Token 长度必须在 1-128 之间", field="token")
     return value
 
 

@@ -491,8 +491,8 @@
     if (!token) {
       throw new Error("Token 不能为空");
     }
-    if (token.length < 6 || token.length > 128) {
-      throw new Error("Token 长度必须在 6-128 之间");
+    if (token.length < 1 || token.length > 128) {
+      throw new Error("Token 长度必须在 1-128 之间");
     }
 
     return {
