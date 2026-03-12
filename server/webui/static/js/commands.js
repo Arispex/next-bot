@@ -323,7 +323,7 @@
             enabled: nextEnabled,
           });
           if (reloaded) {
-            setStatus("保存成功，已立即生效", "success");
+            setStatus("保存成功", "success");
           } else {
             setStatus("保存成功，已立即生效；列表刷新失败，请手动刷新页面确认最新状态", "warning");
           }
@@ -377,7 +377,7 @@
     if (!command) return;
 
     activeModalCommandKey = commandKey;
-    setModalAlert("修改参数后会立即保存并生效。", "info");
+    setModalAlert("");
 
     const schema = command.param_schema && typeof command.param_schema === "object"
       ? command.param_schema
@@ -562,7 +562,7 @@
       });
       command.param_values = nextValues;
       if (reloaded) {
-        setStatus("参数保存成功，已立即生效", "success");
+        setStatus("保存成功", "success");
       } else {
         setStatus("参数保存成功，已立即生效；列表刷新失败，请手动刷新页面确认最新状态", "warning");
       }
