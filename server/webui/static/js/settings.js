@@ -188,6 +188,14 @@
     }
   };
 
+  const assertSingleLineValue = (fieldLabel, rawValue) => {
+    const text = String(rawValue ?? "");
+    if (text.includes("\r") || text.includes("\n")) {
+      throw new Error(`${fieldLabel} 不能包含换行`);
+    }
+    return text.trim();
+  };
+
   const buildPayload = () => {
     const onebotWsUrls = parseCommaListField(FIELD_LABELS.onebot_ws_urls, onebotWsUrlsInput.value);
     validateWsUrls(onebotWsUrls);
@@ -198,12 +206,18 @@
     const groupId = parseCommaListField(FIELD_LABELS.group_id, groupIdInput.value);
     validateQqIdList(FIELD_LABELS.group_id, groupId);
 
-    const onebotAccessToken = String(onebotAccessTokenInput.value || "").trim();
+    const onebotAccessToken = assertSingleLineValue(
+      FIELD_LABELS.onebot_access_token,
+      onebotAccessTokenInput.value
+    );
     if (!onebotAccessToken) {
       throw new Error(`${FIELD_LABELS.onebot_access_token} 不能为空`);
     }
 
-    const webServerHost = String(webServerHostInput.value || "").trim();
+    const webServerHost = assertSingleLineValue(
+      FIELD_LABELS.web_server_host,
+      webServerHostInput.value
+    );
     if (!webServerHost) {
       throw new Error(`${FIELD_LABELS.web_server_host} 不能为空`);
     }
@@ -217,7 +231,10 @@
       throw new Error(`${FIELD_LABELS.web_server_port} 范围必须在 1-65535`);
     }
 
-    const baseUrl = String(webServerPublicBaseUrlInput.value || "").trim();
+    const baseUrl = assertSingleLineValue(
+      FIELD_LABELS.web_server_public_base_url,
+      webServerPublicBaseUrlInput.value
+    );
     if (!baseUrl) {
       throw new Error(`${FIELD_LABELS.web_server_public_base_url} 不能为空`);
     }
@@ -231,14 +248,20 @@
       throw new Error(`${FIELD_LABELS.web_server_public_base_url} 必须是 http/https URL`);
     }
 
-    const commandDisabledMode = String(commandDisabledModeInput.value || "").trim().toLowerCase();
+    const commandDisabledMode = assertSingleLineValue(
+      FIELD_LABELS.command_disabled_mode,
+      commandDisabledModeInput.value
+    ).toLowerCase();
     if (!["reply", "silent"].includes(commandDisabledMode)) {
       throw new Error(
         `${FIELD_LABELS.command_disabled_mode} 仅支持 ${MODE_LABELS.reply} 或 ${MODE_LABELS.silent}`
       );
     }
 
-    const commandDisabledMessage = String(commandDisabledMessageInput.value || "").trim();
+    const commandDisabledMessage = assertSingleLineValue(
+      FIELD_LABELS.command_disabled_message,
+      commandDisabledMessageInput.value
+    );
     if (!commandDisabledMessage) {
       throw new Error(`${FIELD_LABELS.command_disabled_message} 不能为空`);
     }

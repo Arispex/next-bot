@@ -49,6 +49,13 @@ _FIELD_SPECS: tuple[FieldSpec, ...] = (
 
 _FIELD_BY_NAME: dict[str, FieldSpec] = {item.field: item for item in _FIELD_SPECS}
 _FIELD_BY_ENV: dict[str, FieldSpec] = {item.env_key: item for item in _FIELD_SPECS}
+_SINGLE_LINE_STRING_FIELDS = {
+    "onebot_access_token",
+    "web_server_host",
+    "web_server_public_base_url",
+    "command_disabled_mode",
+    "command_disabled_message",
+}
 
 
 def _parse_env_key(line: str) -> str | None:
@@ -136,6 +143,14 @@ def _coerce_string(value: Any, *, field: str, allow_empty: bool = False) -> str:
     if not allow_empty and not text:
         raise SettingsValidationError(f"{field} 不能为空", field=field)
     return text
+
+
+def _assert_single_line_string(field: str, value: Any) -> None:
+    if field not in _SINGLE_LINE_STRING_FIELDS:
+        return
+    raw_text = str(value)
+    if "\r" in raw_text or "\n" in raw_text:
+        raise SettingsValidationError(f"{field} 不能包含换行", field=field)
 
 
 def _coerce_list_of_str(value: Any, *, field: str) -> list[str]:
@@ -229,6 +244,7 @@ def _normalize_payload(payload: dict[str, Any]) -> dict[str, Any]:
     for key, value in payload.items():
         if key not in _FIELD_BY_NAME:
             raise SettingsValidationError(f"不允许修改字段：{key}", field=key)
+        _assert_single_line_string(key, value)
         normalized[key] = _normalize_field(key, value)
     if not normalized:
         raise SettingsValidationError("至少提交一个字段")
