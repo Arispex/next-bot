@@ -81,21 +81,15 @@ def _render_app_shell_page(  # noqa: PLR0913
     )
 
 
-def render_login_page(*, next_path: str, error_message: str = "") -> str:
+def render_login_page(*, next_path: str) -> str:
     escaped_next = html.escape(next_path, quote=True)
-    escaped_error = html.escape(error_message)
-    error_section = ""
-    if escaped_error:
-        error_section = (
-            '<div class="login-error">'
-            f"{escaped_error}"
-            "</div>"
-        )
-
     template = _load_template("login.html")
     return (
         template.replace("__NEXT_PATH__", escaped_next)
-        .replace("__ERROR_SECTION__", error_section)
+        .replace(
+            "__WEBUI_API_SCRIPT_URL__",
+            html.escape(_asset_url("js/api.js"), quote=True),
+        )
     )
 
 

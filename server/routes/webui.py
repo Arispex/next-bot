@@ -5,11 +5,12 @@ import hashlib
 import hmac
 import time
 from pathlib import Path
-from urllib.parse import parse_qs, urlencode
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, FastAPI, Request
 from fastapi import HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
+from nonebot.log import logger
 
 from server.pages.console_page import (
     render_console_page,
@@ -18,6 +19,7 @@ from server.pages.console_page import (
     render_servers_page,
     render_users_page,
 )
+from server.routes import api_error, api_success, read_json_object
 from server.server_config import WebServerSettings
 
 router = APIRouter()
@@ -92,12 +94,25 @@ def _is_authenticated(request: Request, settings: WebServerSettings) -> bool:
     return _verify_session_cookie(cookie_value, settings.session_secret)
 
 
+def _set_session_cookie(response: Response, settings: WebServerSettings) -> None:
+    response.set_cookie(
+        key=settings.cookie_name,
+        value=_build_session_cookie(settings.session_secret),
+        httponly=True,
+        samesite="lax",
+        secure=False,
+        path="/",
+        max_age=_SESSION_TTL_SECONDS,
+    )
+
+
 def add_webui_auth_middleware(app: FastAPI, settings: WebServerSettings) -> None:
     @app.middleware("http")
     async def _webui_auth_middleware(request: Request, call_next):
         path = request.url.path
         is_webui_auth_free_path = (
             path.startswith("/webui/login")
+            or path.startswith("/webui/api/session")
             or path.startswith("/webui/static/")
         )
         if path.startswith("/webui") and not is_webui_auth_free_path:
@@ -159,33 +174,41 @@ async def webui_login_page(request: Request) -> Response:
     return HTMLResponse(content=render_login_page(next_path=next_path))
 
 
-@router.post("/webui/login", response_class=HTMLResponse)
-async def webui_login_submit(request: Request) -> Response:
+@router.post("/webui/api/session")
+async def webui_session_create(request: Request) -> Response:
     settings = _get_settings_from_request(request)
-    raw_body = (await request.body()).decode("utf-8", errors="ignore")
-    form_data = parse_qs(raw_body, keep_blank_values=True)
+    data, error_response = await read_json_object(request)
+    if error_response is not None:
+        return error_response
+    assert data is not None
 
-    provided_token = form_data.get("token", [""])[0].strip()
-    next_path = _sanitize_next_path(form_data.get("next", [""])[0])
+    provided_token = str(data.get("token", "")).strip()
+    next_path = _sanitize_next_path(str(data.get("next", "")))
 
-    if not hmac.compare_digest(provided_token, settings.webui_token):
-        return HTMLResponse(
-            content=render_login_page(
-                next_path=next_path,
-                error_message="登录失败，Token 错误，请重试。",
-            )
+    if not provided_token:
+        logger.warning("创建登录会话失败：reason=Token 不能为空")
+        return api_error(
+            status_code=422,
+            code="validation_error",
+            message="Token 不能为空",
+            details=[{"field": "token", "message": "Token 不能为空"}],
         )
 
-    response = RedirectResponse(url=next_path, status_code=302)
-    response.set_cookie(
-        key=settings.cookie_name,
-        value=_build_session_cookie(settings.session_secret),
-        httponly=True,
-        samesite="lax",
-        secure=False,
-        path="/",
-        max_age=_SESSION_TTL_SECONDS,
+    if not hmac.compare_digest(provided_token, settings.webui_token):
+        logger.warning("创建登录会话失败：reason=Token 错误")
+        return api_error(
+            status_code=401,
+            code="unauthorized",
+            message="Token 错误",
+        )
+
+    response = api_success(
+        status_code=201,
+        data={"next": next_path},
+        headers={"Location": "/webui/api/session"},
     )
+    _set_session_cookie(response, settings)
+    logger.info("创建登录会话成功")
     return response
 
 

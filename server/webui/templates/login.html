@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <script src="/webui/static/js/theme-init.js"></script>
+  <script src="__WEBUI_API_SCRIPT_URL__"></script>
   <style>
     :root {
       --bg: #f5f5f5;
@@ -186,17 +186,10 @@
       line-height: 1.4;
     }
 
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      border: 0;
-      white-space: nowrap;
+    .hidden {
+      display: none;
     }
+
   </style>
 </head>
 <body>
@@ -213,14 +206,13 @@
   <main class="viewport">
     <section class="card">
       <h1 class="title">
-        <span class="sr-only">WebUI 登录</span>
         Web <span class="title-accent">Login</span>
       </h1>
 
       <div class="form-wrap">
-        __ERROR_SECTION__
-        <form method="post" action="/webui/login">
-          <input type="hidden" name="next" value="__NEXT_PATH__" />
+        <div id="login-error" class="login-error hidden"></div>
+        <form id="login-form">
+          <input type="hidden" id="next-path" name="next" value="__NEXT_PATH__" />
 
           <div class="field">
             <label for="token" class="field-label">Token</label>
@@ -240,18 +232,71 @@
     </section>
   </main>
 
+  <script src="/webui/static/js/theme-init.js"></script>
   <script>
     (() => {
       const root = document.documentElement;
       const toggle = document.getElementById("theme-toggle");
-      if (!toggle) return;
+      const api = window.NextBotWebUIApi;
+      const form = document.getElementById("login-form");
+      const errorNode = document.getElementById("login-error");
+      const nextPathInput = document.getElementById("next-path");
+      const tokenInput = document.getElementById("token");
+      const submitButton = form?.querySelector("button[type=\"submit\"]");
 
-      toggle.addEventListener("click", () => {
-        const dark = root.classList.toggle("dark");
+      if (toggle) {
+        toggle.addEventListener("click", () => {
+          const dark = root.classList.toggle("dark");
+          try {
+            localStorage.setItem("nextbot-webui-theme", dark ? "dark" : "light");
+          } catch (error) {
+            // Ignore storage errors.
+          }
+        });
+      }
+
+      if (!api || !form || !errorNode || !nextPathInput || !tokenInput || !submitButton) {
+        return;
+      }
+
+      const setError = (message = "") => {
+        const text = String(message || "").trim();
+        errorNode.textContent = text;
+        errorNode.classList.toggle("hidden", !text);
+      };
+
+      const setSubmitting = (submitting) => {
+        submitButton.disabled = submitting;
+        submitButton.textContent = submitting ? "登录中..." : "登录";
+      };
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        setError("");
+        setSubmitting(true);
+
         try {
-          localStorage.setItem("nextbot-webui-theme", dark ? "dark" : "light");
+          const payload = {
+            token: String(tokenInput.value || ""),
+            next: String(nextPathInput.value || ""),
+          };
+          const result = await api.apiRequest("/webui/api/session", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify(payload),
+            action: "登录",
+            expectedStatus: 201,
+          });
+          const data = api.unwrapData(result);
+          const nextPath = typeof data?.next === "string" && data.next.trim() ? data.next : "/webui";
+          window.location.assign(nextPath);
         } catch (error) {
-          // Ignore storage errors.
+          setError(error instanceof Error ? error.message : "登录失败");
+        } finally {
+          setSubmitting(false);
         }
       });
     })();
