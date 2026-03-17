@@ -212,9 +212,10 @@ async def webui_session_create(request: Request) -> Response:
     return response
 
 
-@router.post("/webui/logout")
-async def webui_logout(request: Request) -> RedirectResponse:
-    response = RedirectResponse(url="/webui/login", status_code=302)
+@router.delete("/webui/api/session")
+async def webui_session_delete(request: Request) -> Response:
     settings = _get_settings_from_request(request)
+    response = Response(status_code=204)
     response.delete_cookie(key=settings.cookie_name, path="/")
+    logger.info("删除登录会话成功")
     return response

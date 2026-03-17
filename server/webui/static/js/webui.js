@@ -4,6 +4,8 @@
   const sidebarOverlay = document.getElementById("sidebar-overlay");
   const sidebarToggle = document.getElementById("sidebar-toggle");
   const themeToggle = document.getElementById("theme-toggle");
+  const logoutButton = document.getElementById("logout-btn");
+  const api = window.NextBotWebUIApi;
   const sidebarLinks = sidebar ? sidebar.querySelectorAll("a[href]") : [];
   const sidebarStateKey = "nextbot-webui-sidebar-collapsed";
   const mobileMedia = window.matchMedia("(max-width: 840px)");
@@ -127,6 +129,26 @@
         // Ignore storage errors.
       }
       syncThemeButton();
+    });
+  }
+
+  if (logoutButton && api) {
+    logoutButton.addEventListener("click", async () => {
+      logoutButton.disabled = true;
+      try {
+        await api.apiRequest("/webui/api/session", {
+          method: "DELETE",
+          headers: {
+            Accept: "application/json",
+          },
+          action: "退出登录",
+          expectedStatus: 204,
+        });
+      } catch (_error) {
+        // Ignore logout errors and continue to login page.
+      } finally {
+        window.location.assign("/webui/login");
+      }
     });
   }
 
