@@ -199,7 +199,7 @@ async def _sync_user_whitelist(user: User) -> list[dict[str, Any]]:
 
 
 def _validation_error(action: str, exc: UserPayloadValidationError) -> JSONResponse:
-    logger.warning(f"{action} Web UI 用户失败：field={exc.field or ''}，reason={exc}")
+    logger.warning(f"{action}用户失败：field={exc.field or ''}，reason={exc}")
     return api_error(
         status_code=422,
         code="validation_error",
@@ -219,7 +219,7 @@ async def webui_users_list() -> JSONResponse:
             meta={"groups": [str(item.name) for item in groups]},
         )
     except Exception as exc:
-        logger.exception(f"加载 Web UI 用户列表失败：reason={exc}")
+        logger.exception(f"加载用户列表失败：reason={exc}")
         return api_error(
             status_code=500,
             code="internal_error",
@@ -276,7 +276,7 @@ async def webui_users_create(request: Request) -> JSONResponse:
         )
         session.add(user)
         session.commit()
-        logger.info(f"创建 Web UI 用户成功：user_id={user.user_id}，name={user.name}")
+        logger.info(f"创建用户成功：user_id={user.user_id}，name={user.name}")
         return api_success(
             status_code=201,
             data=_serialize_user(user),
@@ -284,7 +284,7 @@ async def webui_users_create(request: Request) -> JSONResponse:
         )
     except Exception as exc:
         session.rollback()
-        logger.exception(f"创建 Web UI 用户异常：user_id={validated.user_id}，reason={exc}")
+        logger.exception(f"创建用户异常：user_id={validated.user_id}，reason={exc}")
         return api_error(
             status_code=500,
             code="internal_error",
@@ -310,7 +310,7 @@ async def webui_users_update(id: int, request: Request) -> JSONResponse:
     try:
         user = session.query(User).filter(User.id == id).first()
         if user is None:
-            logger.warning(f"更新 Web UI 用户失败：id={id}，reason=用户不存在")
+            logger.warning(f"更新用户失败：id={id}，reason=用户不存在")
             return api_error(
                 status_code=404,
                 code="not_found",
@@ -357,11 +357,11 @@ async def webui_users_update(id: int, request: Request) -> JSONResponse:
         user.permissions = validated.permissions
         user.group = validated.group
         session.commit()
-        logger.info(f"更新 Web UI 用户成功：id={id}，user_id={user.user_id}")
+        logger.info(f"更新用户成功：id={id}，user_id={user.user_id}")
         return api_success(data=_serialize_user(user))
     except Exception as exc:
         session.rollback()
-        logger.exception(f"更新 Web UI 用户异常：id={id}，reason={exc}")
+        logger.exception(f"更新用户异常：id={id}，reason={exc}")
         return api_error(
             status_code=500,
             code="internal_error",
@@ -377,7 +377,7 @@ async def webui_users_delete(id: int) -> JSONResponse:
     try:
         user = session.query(User).filter(User.id == id).first()
         if user is None:
-            logger.warning(f"删除 Web UI 用户失败：id={id}，reason=用户不存在")
+            logger.warning(f"删除用户失败：id={id}，reason=用户不存在")
             return api_error(
                 status_code=404,
                 code="not_found",
@@ -388,11 +388,11 @@ async def webui_users_delete(id: int) -> JSONResponse:
         deleted_name = str(user.name)
         session.delete(user)
         session.commit()
-        logger.info(f"删除 Web UI 用户成功：id={id}，user_id={deleted_user_id}，name={deleted_name}")
+        logger.info(f"删除用户成功：id={id}，user_id={deleted_user_id}，name={deleted_name}")
         return api_success(data={"message": "删除成功"})
     except Exception as exc:
         session.rollback()
-        logger.exception(f"删除 Web UI 用户异常：id={id}，reason={exc}")
+        logger.exception(f"删除用户异常：id={id}，reason={exc}")
         return api_error(
             status_code=500,
             code="internal_error",
@@ -408,7 +408,7 @@ async def webui_users_sync_whitelist(id: int) -> JSONResponse:
     try:
         user = session.query(User).filter(User.id == id).first()
     except Exception as exc:
-        logger.exception(f"同步 Web UI 用户白名单异常：id={id}，reason={exc}")
+        logger.exception(f"同步用户白名单异常：id={id}，reason={exc}")
         return api_error(
             status_code=500,
             code="internal_error",
@@ -418,7 +418,7 @@ async def webui_users_sync_whitelist(id: int) -> JSONResponse:
         session.close()
 
     if user is None:
-        logger.warning(f"同步 Web UI 用户白名单失败：id={id}，reason=用户不存在")
+        logger.warning(f"同步用户白名单失败：id={id}，reason=用户不存在")
         return api_error(
             status_code=404,
             code="not_found",
@@ -428,7 +428,7 @@ async def webui_users_sync_whitelist(id: int) -> JSONResponse:
     try:
         results = await _sync_user_whitelist(user)
     except Exception as exc:
-        logger.exception(f"同步 Web UI 用户白名单异常：id={id}，reason={exc}")
+        logger.exception(f"同步用户白名单异常：id={id}，reason={exc}")
         return api_error(
             status_code=500,
             code="internal_error",
@@ -438,9 +438,9 @@ async def webui_users_sync_whitelist(id: int) -> JSONResponse:
     message = "同步成功"
     if not results:
         message = "同步失败，暂无可同步的服务器"
-        logger.warning(f"同步 Web UI 用户白名单失败：id={id}，reason=暂无可同步的服务器")
+        logger.warning(f"同步用户白名单失败：id={id}，reason=暂无可同步的服务器")
     else:
-        logger.info(f"同步 Web UI 用户白名单完成：id={id}，server_count={len(results)}")
+        logger.info(f"同步用户白名单完成：id={id}，server_count={len(results)}")
 
     return api_success(
         data={

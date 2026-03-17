@@ -129,7 +129,7 @@ def _validate_server_payload(payload: dict[str, Any]) -> ValidatedServerPayload:
 
 
 def _validation_error(action: str, exc: ServerPayloadValidationError) -> JSONResponse:
-    logger.warning(f"{action} Web UI 服务器失败：field={exc.field or ''}，reason={exc}")
+    logger.warning(f"{action}服务器失败：field={exc.field or ''}，reason={exc}")
     return api_error(
         status_code=422,
         code="validation_error",
@@ -145,7 +145,7 @@ async def webui_servers_list() -> JSONResponse:
         servers = session.query(Server).order_by(Server.id.asc()).all()
         return api_success(data=[_serialize_server(item) for item in servers])
     except Exception as exc:
-        logger.exception(f"加载 Web UI 服务器列表失败：reason={exc}")
+        logger.exception(f"加载服务器列表失败：reason={exc}")
         return api_error(
             status_code=500,
             code="internal_error",
@@ -180,7 +180,7 @@ async def webui_servers_create(request: Request) -> JSONResponse:
         )
         session.add(server)
         session.commit()
-        logger.info(f"创建 Web UI 服务器成功：server_id={server.id}，name={server.name}")
+        logger.info(f"创建服务器成功：server_id={server.id}，name={server.name}")
         return api_success(
             status_code=201,
             data=_serialize_server(server),
@@ -188,7 +188,7 @@ async def webui_servers_create(request: Request) -> JSONResponse:
         )
     except Exception as exc:
         session.rollback()
-        logger.exception(f"创建 Web UI 服务器异常：name={validated.name}，reason={exc}")
+        logger.exception(f"创建服务器异常：name={validated.name}，reason={exc}")
         return api_error(
             status_code=500,
             code="internal_error",
@@ -214,7 +214,7 @@ async def webui_servers_update(server_id: int, request: Request) -> JSONResponse
     try:
         server = session.query(Server).filter(Server.id == server_id).first()
         if server is None:
-            logger.warning(f"更新 Web UI 服务器失败：server_id={server_id}，reason=服务器不存在")
+            logger.warning(f"更新服务器失败：server_id={server_id}，reason=服务器不存在")
             return api_error(
                 status_code=404,
                 code="not_found",
@@ -227,11 +227,11 @@ async def webui_servers_update(server_id: int, request: Request) -> JSONResponse
         server.restapi_port = validated.restapi_port
         server.token = validated.token
         session.commit()
-        logger.info(f"更新 Web UI 服务器成功：server_id={server.id}，name={server.name}")
+        logger.info(f"更新服务器成功：server_id={server.id}，name={server.name}")
         return api_success(data=_serialize_server(server))
     except Exception as exc:
         session.rollback()
-        logger.exception(f"更新 Web UI 服务器异常：server_id={server_id}，reason={exc}")
+        logger.exception(f"更新服务器异常：server_id={server_id}，reason={exc}")
         return api_error(
             status_code=500,
             code="internal_error",
@@ -247,7 +247,7 @@ async def webui_servers_delete(server_id: int) -> JSONResponse:
     try:
         server = session.query(Server).filter(Server.id == server_id).first()
         if server is None:
-            logger.warning(f"删除 Web UI 服务器失败：server_id={server_id}，reason=服务器不存在")
+            logger.warning(f"删除服务器失败：server_id={server_id}，reason=服务器不存在")
             return api_error(
                 status_code=404,
                 code="not_found",
@@ -263,11 +263,11 @@ async def webui_servers_delete(server_id: int) -> JSONResponse:
             synchronize_session=False,
         )
         session.commit()
-        logger.info(f"删除 Web UI 服务器成功：server_id={deleted_id}，name={deleted_name}")
+        logger.info(f"删除服务器成功：server_id={deleted_id}，name={deleted_name}")
         return api_success(data={"message": "删除成功"})
     except Exception as exc:
         session.rollback()
-        logger.exception(f"删除 Web UI 服务器异常：server_id={server_id}，reason={exc}")
+        logger.exception(f"删除服务器异常：server_id={server_id}，reason={exc}")
         return api_error(
             status_code=500,
             code="internal_error",
@@ -283,7 +283,7 @@ async def webui_servers_test(server_id: int) -> JSONResponse:
     try:
         server = session.query(Server).filter(Server.id == server_id).first()
     except Exception as exc:
-        logger.exception(f"测试 Web UI 服务器异常：server_id={server_id}，reason={exc}")
+        logger.exception(f"测试服务器异常：server_id={server_id}，reason={exc}")
         return api_error(
             status_code=500,
             code="internal_error",
@@ -293,7 +293,7 @@ async def webui_servers_test(server_id: int) -> JSONResponse:
         session.close()
 
     if server is None:
-        logger.warning(f"测试 Web UI 服务器失败：server_id={server_id}，reason=服务器不存在")
+        logger.warning(f"测试服务器失败：server_id={server_id}，reason=服务器不存在")
         return api_error(
             status_code=404,
             code="not_found",
@@ -303,7 +303,7 @@ async def webui_servers_test(server_id: int) -> JSONResponse:
     try:
         response = await request_server_api(server, "/tokentest")
     except TShockRequestError:
-        logger.warning(f"测试 Web UI 服务器失败：server_id={server_id}，reason=无法连接服务器")
+        logger.warning(f"测试服务器失败：server_id={server_id}，reason=无法连接服务器")
         return api_success(
             data={
                 "reachable": False,
@@ -311,7 +311,7 @@ async def webui_servers_test(server_id: int) -> JSONResponse:
             }
         )
     except Exception as exc:
-        logger.exception(f"测试 Web UI 服务器异常：server_id={server_id}，reason={exc}")
+        logger.exception(f"测试服务器异常：server_id={server_id}，reason={exc}")
         return api_error(
             status_code=500,
             code="internal_error",
@@ -319,7 +319,7 @@ async def webui_servers_test(server_id: int) -> JSONResponse:
         )
 
     if is_success(response):
-        logger.info(f"测试 Web UI 服务器成功：server_id={server_id}")
+        logger.info(f"测试服务器成功：server_id={server_id}")
         return api_success(
             data={
                 "reachable": True,
@@ -328,7 +328,7 @@ async def webui_servers_test(server_id: int) -> JSONResponse:
         )
 
     reason = get_error_reason(response)
-    logger.warning(f"测试 Web UI 服务器失败：server_id={server_id}，reason={reason}")
+    logger.warning(f"测试服务器失败：server_id={server_id}，reason={reason}")
     return api_success(
         data={
             "reachable": False,

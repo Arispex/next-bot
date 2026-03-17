@@ -15,7 +15,7 @@ async def webui_dashboard_api() -> JSONResponse:
     try:
         metrics = get_dashboard_metrics()
     except Exception as exc:
-        logger.exception(f"加载 Web UI 仪表盘失败：reason={exc}")
+        logger.exception(f"加载仪表盘失败：reason={exc}")
         return api_error(
             status_code=500,
             code="internal_error",

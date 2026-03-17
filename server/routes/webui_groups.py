@@ -177,7 +177,7 @@ def _remove_inherit(inherits: str, removed_name: str) -> str:
 
 
 def _validation_error(action: str, exc: GroupPayloadValidationError) -> JSONResponse:
-    logger.warning(f"{action} Web UI 身份组失败：field={exc.field or ''}，reason={exc}")
+    logger.warning(f"{action}身份组失败：field={exc.field or ''}，reason={exc}")
     return api_error(
         status_code=422,
         code="validation_error",
@@ -200,7 +200,7 @@ async def webui_groups_list() -> JSONResponse:
             meta={"builtin_groups": list(_BUILTIN_GROUPS)},
         )
     except Exception as exc:
-        logger.exception(f"加载 Web UI 身份组列表失败：reason={exc}")
+        logger.exception(f"加载身份组列表失败：reason={exc}")
         return api_error(
             status_code=500,
             code="internal_error",
@@ -248,7 +248,7 @@ async def webui_groups_create(request: Request) -> JSONResponse:
         session.commit()
 
         user_count_map = _build_user_count_map(session)
-        logger.info(f"创建 Web UI 身份组成功：name={group.name}")
+        logger.info(f"创建身份组成功：name={group.name}")
         return api_success(
             status_code=201,
             data=_serialize_group(group, user_count_map=user_count_map),
@@ -259,7 +259,7 @@ async def webui_groups_create(request: Request) -> JSONResponse:
         return _validation_error("创建", exc)
     except Exception as exc:
         session.rollback()
-        logger.exception(f"创建 Web UI 身份组异常：name={validated.name}，reason={exc}")
+        logger.exception(f"创建身份组异常：name={validated.name}，reason={exc}")
         return api_error(
             status_code=500,
             code="internal_error",
@@ -280,7 +280,7 @@ async def webui_groups_update(group_name: str, request: Request) -> JSONResponse
     try:
         group = session.query(Group).filter(Group.name == group_name).first()
         if group is None:
-            logger.warning(f"更新 Web UI 身份组失败：name={group_name}，reason=身份组不存在")
+            logger.warning(f"更新身份组失败：name={group_name}，reason=身份组不存在")
             return api_error(
                 status_code=404,
                 code="not_found",
@@ -307,14 +307,14 @@ async def webui_groups_update(group_name: str, request: Request) -> JSONResponse
         session.commit()
 
         user_count_map = _build_user_count_map(session)
-        logger.info(f"更新 Web UI 身份组成功：name={group_name}")
+        logger.info(f"更新身份组成功：name={group_name}")
         return api_success(data=_serialize_group(group, user_count_map=user_count_map))
     except GroupPayloadValidationError as exc:
         session.rollback()
         return _validation_error("更新", exc)
     except Exception as exc:
         session.rollback()
-        logger.exception(f"更新 Web UI 身份组异常：name={group_name}，reason={exc}")
+        logger.exception(f"更新身份组异常：name={group_name}，reason={exc}")
         return api_error(
             status_code=500,
             code="internal_error",
@@ -327,7 +327,7 @@ async def webui_groups_update(group_name: str, request: Request) -> JSONResponse
 @router.delete("/webui/api/groups/{group_name}")
 async def webui_groups_delete(group_name: str) -> JSONResponse:
     if group_name in _BUILTIN_GROUPS:
-        logger.warning(f"删除 Web UI 身份组失败：name={group_name}，reason=系统内置身份组不可删除")
+        logger.warning(f"删除身份组失败：name={group_name}，reason=系统内置身份组不可删除")
         return api_error(
             status_code=422,
             code="validation_error",
@@ -339,7 +339,7 @@ async def webui_groups_delete(group_name: str) -> JSONResponse:
     try:
         group = session.query(Group).filter(Group.name == group_name).first()
         if group is None:
-            logger.warning(f"删除 Web UI 身份组失败：name={group_name}，reason=身份组不存在")
+            logger.warning(f"删除身份组失败：name={group_name}，reason=身份组不存在")
             return api_error(
                 status_code=404,
                 code="not_found",
@@ -359,11 +359,11 @@ async def webui_groups_delete(group_name: str) -> JSONResponse:
             item.inherits = _remove_inherit(item.inherits, group_name)
 
         session.commit()
-        logger.info(f"删除 Web UI 身份组成功：name={group_name}")
+        logger.info(f"删除身份组成功：name={group_name}")
         return api_success(data={"message": "删除成功"})
     except Exception as exc:
         session.rollback()
-        logger.exception(f"删除 Web UI 身份组异常：name={group_name}，reason={exc}")
+        logger.exception(f"删除身份组异常：name={group_name}，reason={exc}")
         return api_error(
             status_code=500,
             code="internal_error",

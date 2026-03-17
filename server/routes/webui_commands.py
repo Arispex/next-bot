@@ -27,7 +27,7 @@ async def webui_commands_api_list() -> JSONResponse:
     try:
         commands = list_command_configs()
     except Exception as exc:  # noqa: BLE001
-        logger.exception(f"加载 Web UI 命令配置失败：reason={exc}")
+        logger.exception(f"加载命令配置失败：reason={exc}")
         return api_error(
             status_code=500,
             code="internal_error",
@@ -75,7 +75,7 @@ async def webui_commands_api_update(command_key: str, request: Request) -> JSONR
                 error_code = "conflict"
                 break
         logger.warning(
-            f"保存 Web UI 命令配置失败：command_key={command_key}，reason={exc}"
+            f"保存命令配置失败：command_key={command_key}，reason={exc}"
         )
         return api_error(
             status_code=status_code,
@@ -85,7 +85,7 @@ async def webui_commands_api_update(command_key: str, request: Request) -> JSONR
         )
     except Exception as exc:  # noqa: BLE001
         logger.exception(
-            f"保存 Web UI 命令配置异常：command_key={command_key}，reason={exc}"
+            f"保存命令配置异常：command_key={command_key}，reason={exc}"
         )
         return api_error(
             status_code=500,
@@ -93,5 +93,5 @@ async def webui_commands_api_update(command_key: str, request: Request) -> JSONR
             message=f"保存失败，{exc}",
         )
 
-    logger.info(f"保存 Web UI 命令配置成功：command_key={command_key}")
+    logger.info(f"保存命令配置成功：command_key={command_key}")
     return api_success(data=updated_command)

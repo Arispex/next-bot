@@ -75,7 +75,7 @@ async def webui_settings_put(request: Request) -> JSONResponse:
     try:
         result = save_settings(data)
     except SettingsValidationError as exc:
-        logger.warning(f"保存 Web UI 设置失败：field={exc.field or ''}，reason={exc}")
+        logger.warning(f"保存设置失败：field={exc.field or ''}，reason={exc}")
         details: list[dict[str, Any]] | None = None
         if exc.field:
             details = [{"field": exc.field, "message": str(exc)}]
@@ -86,7 +86,7 @@ async def webui_settings_put(request: Request) -> JSONResponse:
             details=details,
         )
     except Exception as exc:
-        logger.exception(f"保存 Web UI 设置异常：reason={exc}")
+        logger.exception(f"保存设置异常：reason={exc}")
         return api_error(
             status_code=500,
             code="internal_error",
@@ -94,7 +94,7 @@ async def webui_settings_put(request: Request) -> JSONResponse:
         )
 
     if not _schedule_process_restart():
-        logger.warning("保存 Web UI 设置失败：reason=重启已在进行中")
+        logger.warning("保存设置失败：reason=重启已在进行中")
         return api_error(
             status_code=409,
             code="conflict",
@@ -102,7 +102,7 @@ async def webui_settings_put(request: Request) -> JSONResponse:
             details=[{"field": "restart", "message": "重启已在进行中"}],
         )
 
-    logger.info(f"保存 Web UI 设置成功：saved_fields={','.join(result.saved_fields)}")
+    logger.info(f"保存设置成功：saved_fields={','.join(result.saved_fields)}")
     return api_success(
         data={
             "message": "保存成功，正在重启程序",
