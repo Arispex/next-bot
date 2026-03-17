@@ -31,7 +31,7 @@ async def webui_commands_api_list() -> JSONResponse:
         return api_error(
             status_code=500,
             code="internal_error",
-            message=str(exc),
+            message="内部错误",
         )
     return api_success(data=commands)
 
@@ -89,7 +89,7 @@ async def webui_commands_api_update(command_key: str, request: Request) -> JSONR
         return api_error(
             status_code=500,
             code="internal_error",
-            message=str(exc),
+            message="内部错误",
         )
 
     logger.info(f"保存命令配置成功：command_key={command_key}")

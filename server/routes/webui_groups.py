@@ -204,7 +204,7 @@ async def webui_groups_list() -> JSONResponse:
         return api_error(
             status_code=500,
             code="internal_error",
-            message=str(exc),
+            message="内部错误",
         )
     finally:
         session.close()
@@ -263,7 +263,7 @@ async def webui_groups_create(request: Request) -> JSONResponse:
         return api_error(
             status_code=500,
             code="internal_error",
-            message=str(exc),
+            message="内部错误",
         )
     finally:
         session.close()
@@ -318,7 +318,7 @@ async def webui_groups_update(group_name: str, request: Request) -> JSONResponse
         return api_error(
             status_code=500,
             code="internal_error",
-            message=str(exc),
+            message="内部错误",
         )
     finally:
         session.close()
@@ -367,7 +367,7 @@ async def webui_groups_delete(group_name: str) -> JSONResponse:
         return api_error(
             status_code=500,
             code="internal_error",
-            message=str(exc),
+            message="内部错误",
         )
     finally:
         session.close()

@@ -223,7 +223,7 @@ async def webui_users_list() -> JSONResponse:
         return api_error(
             status_code=500,
             code="internal_error",
-            message=str(exc),
+            message="内部错误",
         )
     finally:
         session.close()
@@ -288,7 +288,7 @@ async def webui_users_create(request: Request) -> JSONResponse:
         return api_error(
             status_code=500,
             code="internal_error",
-            message=str(exc),
+            message="内部错误",
         )
     finally:
         session.close()
@@ -365,7 +365,7 @@ async def webui_users_update(id: int, request: Request) -> JSONResponse:
         return api_error(
             status_code=500,
             code="internal_error",
-            message=str(exc),
+            message="内部错误",
         )
     finally:
         session.close()
@@ -396,7 +396,7 @@ async def webui_users_delete(id: int) -> JSONResponse:
         return api_error(
             status_code=500,
             code="internal_error",
-            message=str(exc),
+            message="内部错误",
         )
     finally:
         session.close()
@@ -412,7 +412,7 @@ async def webui_users_sync_whitelist(id: int) -> JSONResponse:
         return api_error(
             status_code=500,
             code="internal_error",
-            message=str(exc),
+            message="内部错误",
         )
     finally:
         session.close()
@@ -432,7 +432,7 @@ async def webui_users_sync_whitelist(id: int) -> JSONResponse:
         return api_error(
             status_code=500,
             code="internal_error",
-            message=str(exc),
+            message="内部错误",
         )
 
     if not results:

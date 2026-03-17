@@ -90,7 +90,7 @@ async def webui_settings_put(request: Request) -> JSONResponse:
         return api_error(
             status_code=500,
             code="internal_error",
-            message=str(exc),
+            message="内部错误",
         )
 
     if not _schedule_process_restart():

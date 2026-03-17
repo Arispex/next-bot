@@ -149,7 +149,7 @@ async def webui_servers_list() -> JSONResponse:
         return api_error(
             status_code=500,
             code="internal_error",
-            message=str(exc),
+            message="内部错误",
         )
     finally:
         session.close()
@@ -192,7 +192,7 @@ async def webui_servers_create(request: Request) -> JSONResponse:
         return api_error(
             status_code=500,
             code="internal_error",
-            message=str(exc),
+            message="内部错误",
         )
     finally:
         session.close()
@@ -235,7 +235,7 @@ async def webui_servers_update(server_id: int, request: Request) -> JSONResponse
         return api_error(
             status_code=500,
             code="internal_error",
-            message=str(exc),
+            message="内部错误",
         )
     finally:
         session.close()
@@ -271,7 +271,7 @@ async def webui_servers_delete(server_id: int) -> JSONResponse:
         return api_error(
             status_code=500,
             code="internal_error",
-            message=str(exc),
+            message="内部错误",
         )
     finally:
         session.close()
@@ -287,7 +287,7 @@ async def webui_servers_test(server_id: int) -> JSONResponse:
         return api_error(
             status_code=500,
             code="internal_error",
-            message=str(exc),
+            message="内部错误",
         )
     finally:
         session.close()
@@ -315,7 +315,7 @@ async def webui_servers_test(server_id: int) -> JSONResponse:
         return api_error(
             status_code=500,
             code="internal_error",
-            message=str(exc),
+            message="内部错误",
         )
 
     if is_success(response):
