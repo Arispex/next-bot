@@ -38,7 +38,7 @@ def api_error(
     return JSONResponse(status_code=status_code, content={"error": error})
 
 
-async def read_json_data(
+async def read_json_object(
     request: Request, *, action: str
 ) -> tuple[dict[str, Any] | None, JSONResponse | None]:
     try:
@@ -57,6 +57,17 @@ async def read_json_data(
             message=f"{action}失败，请求体必须是对象",
         )
 
+    return payload, None
+
+
+async def read_json_data(
+    request: Request, *, action: str
+) -> tuple[dict[str, Any] | None, JSONResponse | None]:
+    payload, error_response = await read_json_object(request, action=action)
+    if error_response is not None:
+        return None, error_response
+
+    assert payload is not None
     data = payload.get("data")
     if not isinstance(data, dict):
         return None, api_error(

@@ -16,7 +16,7 @@ from next_bot.tshock_api import (
     is_success,
     request_server_api,
 )
-from server.routes import api_error, api_success, read_json_data
+from server.routes import api_error, api_success, read_json_data, read_json_object
 
 router = APIRouter()
 
@@ -157,7 +157,7 @@ async def webui_servers_list() -> JSONResponse:
 
 @router.post("/webui/api/servers")
 async def webui_servers_create(request: Request) -> JSONResponse:
-    data, error_response = await read_json_data(request, action="创建")
+    data, error_response = await read_json_object(request, action="创建")
     if error_response is not None:
         return error_response
     assert data is not None

@@ -10,7 +10,7 @@ from nonebot.log import logger
 from sqlalchemy import func
 
 from next_bot.db import Group, User, get_session
-from server.routes import api_error, api_success, read_json_data
+from server.routes import api_error, api_success, read_json_data, read_json_object
 
 router = APIRouter()
 
@@ -212,7 +212,7 @@ async def webui_groups_list() -> JSONResponse:
 
 @router.post("/webui/api/groups")
 async def webui_groups_create(request: Request) -> JSONResponse:
-    data, error_response = await read_json_data(request, action="创建")
+    data, error_response = await read_json_object(request, action="创建")
     if error_response is not None:
         return error_response
     assert data is not None

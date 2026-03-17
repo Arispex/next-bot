@@ -516,7 +516,7 @@
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify({ data: payload }),
+        body: JSON.stringify(isEdit ? { data: payload } : payload),
         errorPrefix: isEdit ? "更新失败" : "创建失败",
       });
 
