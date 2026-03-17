@@ -1,0 +1,8 @@
+{"file": ".claude/commands/trellis/finish-work.md", "reason": "Finish work checklist"}
+{"file": ".claude/commands/trellis/check-backend.md", "reason": "Backend check spec"}
+{"file": ".claude/commands/trellis/check-frontend.md", "reason": "Frontend check spec"}
+{"file": "/Users/arispex/CascadeProjects/next-bot/.trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer API contract refactor across backend and frontend"}
+{"file": "/Users/arispex/CascadeProjects/next-bot/.trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Deduplicate repeated frontend API handling patterns"}
+{"file": "/Users/arispex/CascadeProjects/next-bot/server/routes/webui_commands.py", "reason": "Current command config API route and legacy batch contract"}
+{"file": "/Users/arispex/CascadeProjects/next-bot/next_bot/command_config.py", "reason": "Current command config persistence and validation behavior"}
+{"file": "/Users/arispex/CascadeProjects/next-bot/server/webui/static/js/commands.js", "reason": "Frontend command page API handling and per-action save flow"}
