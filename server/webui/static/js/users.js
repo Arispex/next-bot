@@ -507,7 +507,7 @@
 
     try {
       const url = isEdit ? `/webui/api/users/${editingUserDbId}` : "/webui/api/users";
-      const method = isEdit ? "PUT" : "POST";
+      const method = isEdit ? "PATCH" : "POST";
 
       await api.apiRequest(url, {
         method,
