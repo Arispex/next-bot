@@ -245,16 +245,16 @@ async def webui_users_create(request: Request) -> JSONResponse:
     try:
         if session.query(User).filter(User.user_id == validated.user_id).first() is not None:
             return api_error(
-                status_code=422,
-                code="validation_error",
+                status_code=409,
+                code="conflict",
                 message="用户 ID 已存在",
                 details=[{"field": "user_id", "message": "用户 ID 已存在"}],
             )
 
         if session.query(User).filter(User.name == validated.name).first() is not None:
             return api_error(
-                status_code=422,
-                code="validation_error",
+                status_code=409,
+                code="conflict",
                 message="用户名称已被占用",
                 details=[{"field": "name", "message": "用户名称已被占用"}],
             )
@@ -324,8 +324,8 @@ async def webui_users_update(id: int, request: Request) -> JSONResponse:
             is not None
         ):
             return api_error(
-                status_code=422,
-                code="validation_error",
+                status_code=409,
+                code="conflict",
                 message="用户 ID 已存在",
                 details=[{"field": "user_id", "message": "用户 ID 已存在"}],
             )
@@ -337,8 +337,8 @@ async def webui_users_update(id: int, request: Request) -> JSONResponse:
             is not None
         ):
             return api_error(
-                status_code=422,
-                code="validation_error",
+                status_code=409,
+                code="conflict",
                 message="用户名称已被占用",
                 details=[{"field": "name", "message": "用户名称已被占用"}],
             )

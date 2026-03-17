@@ -227,8 +227,8 @@ async def webui_groups_create(request: Request) -> JSONResponse:
         exists = session.query(Group).filter(Group.name == validated.name).first()
         if exists is not None:
             return api_error(
-                status_code=422,
-                code="validation_error",
+                status_code=409,
+                code="conflict",
                 message="身份组已存在",
                 details=[{"field": "name", "message": "身份组已存在"}],
             )
