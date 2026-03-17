@@ -17,7 +17,7 @@ from next_bot.tshock_api import (
     is_success,
     request_server_api,
 )
-from server.routes import api_error, api_success, read_json_data, read_json_object
+from server.routes import api_error, api_success, read_json_object
 
 router = APIRouter()
 
@@ -292,13 +292,13 @@ async def webui_users_create(request: Request) -> JSONResponse:
 
 @router.patch("/webui/api/users/{user_id}")
 async def webui_users_update(user_id: int, request: Request) -> JSONResponse:
-    data, error_response = await read_json_data(request)
+    payload, error_response = await read_json_object(request)
     if error_response is not None:
         return error_response
-    assert data is not None
+    assert payload is not None
 
     try:
-        validated = _validate_payload(data)
+        validated = _validate_payload(payload)
     except UserPayloadValidationError as exc:
         return _validation_error(exc)
 

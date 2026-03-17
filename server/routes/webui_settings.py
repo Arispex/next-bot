@@ -11,7 +11,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from nonebot.log import logger
 
 from server.pages.console_page import render_settings_page
-from server.routes import api_error, api_success, read_json_data
+from server.routes import api_error, api_success, read_json_object
 from server.settings_service import (
     SettingsValidationError,
     get_settings_metadata,
@@ -64,16 +64,14 @@ async def webui_settings_get() -> JSONResponse:
     )
 
 
-@router.put("/webui/api/settings")
+@router.patch("/webui/api/settings")
 async def webui_settings_put(request: Request) -> JSONResponse:
-    data, error_response = await read_json_data(request)
+    payload, error_response = await read_json_object(request)
     if error_response is not None:
         return error_response
 
-    assert data is not None
-
     try:
-        result = save_settings(data)
+        result = save_settings(payload)
     except SettingsValidationError as exc:
         logger.warning(f"保存设置失败：field={exc.field or ''}，reason={exc}")
         details: list[dict[str, Any]] | None = None

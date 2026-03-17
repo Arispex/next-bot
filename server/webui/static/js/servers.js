@@ -517,7 +517,7 @@
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify(isEdit ? { data: payload } : payload),
+        body: JSON.stringify(payload),
         action: isEdit ? "更新" : "创建",
         expectedStatus: isEdit ? 200 : 201,
       });

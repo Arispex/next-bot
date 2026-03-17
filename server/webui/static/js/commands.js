@@ -642,7 +642,7 @@
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      body: JSON.stringify({ data }),
+      body: JSON.stringify(data),
       action: "保存",
       expectedStatus: 200,
     });

@@ -12,7 +12,7 @@ from next_bot.command_config import (
     update_command_config,
 )
 from server.pages.console_page import render_commands_page
-from server.routes import api_error, api_success, read_json_data
+from server.routes import api_error, api_success, read_json_object
 
 router = APIRouter()
 
@@ -38,17 +38,17 @@ async def webui_commands_api_list() -> JSONResponse:
 
 @router.patch("/webui/api/commands/{command_key}")
 async def webui_commands_api_update(command_key: str, request: Request) -> JSONResponse:
-    data, error_response = await read_json_data(request)
+    payload, error_response = await read_json_object(request)
     if error_response is not None:
         return error_response
 
-    assert data is not None
+    assert payload is not None
 
     update_payload: dict[str, Any] = {}
-    if "enabled" in data:
-        update_payload["enabled"] = data.get("enabled")
-    if "param_values" in data:
-        update_payload["param_values"] = data.get("param_values")
+    if "enabled" in payload:
+        update_payload["enabled"] = payload.get("enabled")
+    if "param_values" in payload:
+        update_payload["param_values"] = payload.get("param_values")
 
     if not update_payload:
         return api_error(

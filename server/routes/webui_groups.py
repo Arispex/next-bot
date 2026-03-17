@@ -10,7 +10,7 @@ from nonebot.log import logger
 from sqlalchemy import func
 
 from next_bot.db import Group, User, get_session
-from server.routes import api_error, api_success, read_json_data, read_json_object
+from server.routes import api_error, api_success, read_json_object
 
 router = APIRouter()
 
@@ -270,10 +270,10 @@ async def webui_groups_create(request: Request) -> JSONResponse:
 
 @router.patch("/webui/api/groups/{group_name}")
 async def webui_groups_update(group_name: str, request: Request) -> JSONResponse:
-    data, error_response = await read_json_data(request)
+    payload, error_response = await read_json_object(request)
     if error_response is not None:
         return error_response
-    assert data is not None
+    assert payload is not None
 
     session = get_session()
     try:
@@ -288,7 +288,7 @@ async def webui_groups_update(group_name: str, request: Request) -> JSONResponse
 
         try:
             validated = _validate_update_payload(
-                data,
+                payload,
                 current=group,
                 target_name=group_name,
             )
