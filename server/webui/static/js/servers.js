@@ -547,13 +547,12 @@
     setStatus(`正在删除服务器 #${targetServer.id}...`, "warning");
 
     try {
-      const payload = await api.apiRequest(`/webui/api/servers/${targetServer.id}`, {
+      await api.apiRequest(`/webui/api/servers/${targetServer.id}`, {
         method: "DELETE",
         headers: { Accept: "application/json" },
         action: "删除",
-        expectedStatus: 200,
+        expectedStatus: 204,
       });
-      api.unwrapData(payload);
 
       visibleTokenIds.delete(targetServer.id);
       testResultMap.delete(targetServer.id);

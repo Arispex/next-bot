@@ -389,7 +389,7 @@ async def webui_users_delete(id: int) -> JSONResponse:
         session.delete(user)
         session.commit()
         logger.info(f"删除用户成功：id={id}，user_id={deleted_user_id}，name={deleted_name}")
-        return api_success(data={})
+        return JSONResponse(status_code=204, content=None)
     except Exception as exc:
         session.rollback()
         logger.exception(f"删除用户异常：id={id}，reason={exc}")

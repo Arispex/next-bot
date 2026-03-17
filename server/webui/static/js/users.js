@@ -545,13 +545,12 @@
 
     setStatus(`正在删除用户 #${targetUser.id}...`, "warning");
     try {
-      const payload = await api.apiRequest(`/webui/api/users/${targetUser.id}`, {
+      await api.apiRequest(`/webui/api/users/${targetUser.id}`, {
         method: "DELETE",
         headers: { Accept: "application/json" },
         action: "删除",
-        expectedStatus: 200,
+        expectedStatus: 204,
       });
-      api.unwrapData(payload);
       syncResultMap.delete(targetUser.id);
       closeDeleteModal(true);
       const reloaded = await loadUsers({ clearStatus: false });

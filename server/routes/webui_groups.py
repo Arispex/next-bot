@@ -360,7 +360,7 @@ async def webui_groups_delete(group_name: str) -> JSONResponse:
 
         session.commit()
         logger.info(f"删除身份组成功：name={group_name}")
-        return api_success(data={})
+        return JSONResponse(status_code=204, content=None)
     except Exception as exc:
         session.rollback()
         logger.exception(f"删除身份组异常：name={group_name}，reason={exc}")

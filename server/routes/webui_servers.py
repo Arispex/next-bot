@@ -264,7 +264,7 @@ async def webui_servers_delete(server_id: int) -> JSONResponse:
         )
         session.commit()
         logger.info(f"删除服务器成功：server_id={deleted_id}，name={deleted_name}")
-        return api_success(data={})
+        return JSONResponse(status_code=204, content=None)
     except Exception as exc:
         session.rollback()
         logger.exception(f"删除服务器异常：server_id={server_id}，reason={exc}")

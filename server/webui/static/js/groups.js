@@ -488,13 +488,12 @@
 
     setStatus(`正在删除身份组 ${targetGroup.name}...`, "warning");
     try {
-      const payload = await api.apiRequest(`/webui/api/groups/${encodeURIComponent(targetGroup.name)}`, {
+      await api.apiRequest(`/webui/api/groups/${encodeURIComponent(targetGroup.name)}`, {
         method: "DELETE",
         headers: { Accept: "application/json" },
         action: "删除",
-        expectedStatus: 200,
+        expectedStatus: 204,
       });
-      api.unwrapData(payload);
       closeDeleteModal(true);
       const reloaded = await loadGroups({ clearStatus: false });
       if (reloaded) {
