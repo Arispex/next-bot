@@ -1,3 +1,4 @@
+import json
 import nonebot
 from pathlib import Path
 from nonebot.adapters.console import Adapter as ConsoleAdapter
@@ -29,7 +30,7 @@ DEFAULT_ENV_CONTENT = (
     "\n"
     "COMMAND_START=[\"/\", \"\"]\n"
     "\n"
-    "ONEBOT_WS_URLS=[\"ws://127.0.0.1:3001\"]\n"
+    "# OneBot V11 反向 WS（留空表示不连接 OneBot）\n"
     "ONEBOT_ACCESS_TOKEN=MyOneBotAccessToken\n"
     "\n"
     "OWNER_ID=[\"\"]\n"
@@ -41,6 +42,29 @@ DEFAULT_ENV_CONTENT = (
     "COMMAND_DISABLED_MODE=reply\n"
     "COMMAND_DISABLED_MESSAGE=该命令暂时关闭~\n"
 )
+
+
+def _has_onebot_ws_urls() -> bool:
+    raw_value = getattr(nonebot.get_driver().config, "onebot_ws_urls", None)
+    if raw_value is None:
+        return False
+
+    if isinstance(raw_value, (list, tuple, set)):
+        return any(str(item).strip() for item in raw_value)
+
+    text = str(raw_value).strip()
+    if not text:
+        return False
+
+    if text.startswith("[") and text.endswith("]"):
+        try:
+            parsed = json.loads(text)
+        except json.JSONDecodeError:
+            return bool(text)
+        if isinstance(parsed, list):
+            return any(str(item).strip() for item in parsed)
+
+    return bool(text)
 
 
 def ensure_env_file() -> None:
@@ -56,7 +80,11 @@ nonebot.init()
 
 driver = nonebot.get_driver()
 # driver.register_adapter(ConsoleAdapter)
-driver.register_adapter(OneBotV11Adapter)
+if _has_onebot_ws_urls():
+    driver.register_adapter(OneBotV11Adapter)
+    logger.info("检测到 OneBot WS 配置，已启用 OneBot V11 适配器")
+else:
+    logger.warning("未配置 ONEBOT_WS_URLS，已跳过 OneBot V11 连接")
 
 
 @event_preprocessor

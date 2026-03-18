@@ -32,8 +32,8 @@ COMMAND_START=["/", ""]
 OWNER_ID=["123456789","987654321"]
 GROUP_ID=["123456789"]
 
-# OneBot V11 反向 WS
-ONEBOT_WS_URLS=["ws://127.0.0.1:3001"]
+# OneBot V11 反向 WS（可选；不配置则不会连接 OneBot）
+# ONEBOT_WS_URLS=["ws://127.0.0.1:3001"]
 ONEBOT_ACCESS_TOKEN=your_token
 
 # Web Server（控制台 + 渲染）
