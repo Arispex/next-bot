@@ -13,11 +13,11 @@
   "subtasks": [
     {
       "name": "Fill backend guidelines",
-      "status": "pending"
+      "status": "completed"
     },
     {
       "name": "Add code examples",
-      "status": "pending"
+      "status": "completed"
     }
   ],
   "children": [],
