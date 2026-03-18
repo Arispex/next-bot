@@ -493,8 +493,8 @@
     modalNode.classList.remove("hidden");
   };
 
-  const closeParamModal = () => {
-    if (modalSaving) return;
+  const closeParamModal = (force = false) => {
+    if (modalSaving && !force) return;
     modalNode.classList.add("hidden");
     modalBodyNode.innerHTML = "";
     activeModalCommandKey = "";
@@ -569,7 +569,7 @@
       } else {
         setStatus("参数保存成功，已立即生效；列表刷新失败，请手动刷新页面确认最新状态", "warning");
       }
-      closeParamModal();
+      closeParamModal(true);
     } catch (error) {
       const message = error instanceof Error ? error.message : "保存失败";
       setModalAlert(message, "error");
