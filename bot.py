@@ -30,7 +30,7 @@ DEFAULT_ENV_CONTENT = (
     "\n"
     "COMMAND_START=[\"/\", \"\"]\n"
     "\n"
-    "# OneBot V11 反向 WS（留空表示不连接 OneBot）\n"
+    "ONEBOT_WS_URLS=[\"\"]\n"
     "ONEBOT_ACCESS_TOKEN=MyOneBotAccessToken\n"
     "\n"
     "OWNER_ID=[\"\"]\n"
