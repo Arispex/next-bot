@@ -3,11 +3,11 @@ from nonebot.adapters import Bot, Event, Message
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
-from next_bot.command_config import command_control, raise_command_usage
-from next_bot.db import Server, get_session
-from next_bot.message_parser import parse_command_args_with_fallback
-from next_bot.permissions import require_permission
-from next_bot.tshock_api import (
+from nextbot.command_config import command_control, raise_command_usage
+from nextbot.db import Server, get_session
+from nextbot.message_parser import parse_command_args_with_fallback
+from nextbot.permissions import require_permission
+from nextbot.tshock_api import (
     TShockRequestError,
     get_error_reason,
     is_success,

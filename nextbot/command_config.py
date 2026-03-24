@@ -14,9 +14,9 @@ from typing import Any, NoReturn
 from nonebot import get_driver
 from nonebot.log import logger
 
-from next_bot.db import CommandConfig, get_session
-from next_bot.stats import increment_command_execute_total
-from next_bot.time_utils import db_now_utc_naive
+from nextbot.db import CommandConfig, get_session
+from nextbot.stats import increment_command_execute_total
+from nextbot.time_utils import db_now_utc_naive
 
 _ALLOWED_PARAM_TYPES = {"bool", "int", "float", "string"}
 _DEFAULT_DISABLED_MODE = "reply"

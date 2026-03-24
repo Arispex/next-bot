@@ -6,7 +6,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from nonebot.log import logger
 
-from next_bot.command_config import (
+from nextbot.command_config import (
     CommandConfigValidationError,
     list_command_configs,
     update_command_config,

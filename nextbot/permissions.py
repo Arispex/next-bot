@@ -4,8 +4,8 @@ from typing import Iterable
 
 from nonebot.log import logger
 
-from next_bot.access_control import get_owner_ids
-from next_bot.db import Group, User, get_session
+from nextbot.access_control import get_owner_ids
+from nextbot.db import Group, User, get_session
 
 
 def _split_values(value: str) -> list[str]:

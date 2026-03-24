@@ -5,8 +5,8 @@ import time
 
 from nonebot.log import logger
 
-from next_bot.db import User, get_session
-from next_bot.time_utils import beijing_today_text, seconds_until_next_beijing_midnight
+from nextbot.db import User, get_session
+from nextbot.time_utils import beijing_today_text, seconds_until_next_beijing_midnight
 
 _worker_started = False
 _worker_lock = threading.Lock()

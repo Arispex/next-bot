@@ -8,11 +8,11 @@ from nonebot.exception import IgnoredException
 from nonebot.log import logger
 from nonebot.message import event_preprocessor
 
-from next_bot.command_config import sync_registered_commands_to_db
-from next_bot.signin_reset import start_signin_reset_worker
+from nextbot.command_config import sync_registered_commands_to_db
+from nextbot.signin_reset import start_signin_reset_worker
 from server.web_server import start_web_server
-from next_bot.access_control import get_group_ids, get_owner_ids
-from next_bot.db import (
+from nextbot.access_control import get_group_ids, get_owner_ids
+from nextbot.db import (
     DB_PATH,
     Base,
     ensure_command_config_schema,
@@ -143,6 +143,6 @@ async def _init_database() -> None:
     start_signin_reset_worker()
     start_web_server()
 
-nonebot.load_plugins("next_bot/plugins")
+nonebot.load_plugins("nextbot/plugins")
 
 nonebot.run()

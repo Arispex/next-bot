@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from next_bot.db import User, get_session
+from nextbot.db import User, get_session
 
 from nonebot.log import logger
 

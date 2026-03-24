@@ -7,14 +7,14 @@ from nonebot.adapters.onebot.v11 import MessageSegment as OBV11MessageSegment
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
-from next_bot.command_config import (
+from nextbot.command_config import (
     command_control,
     list_command_configs,
     raise_command_usage,
 )
-from next_bot.message_parser import parse_command_args_with_fallback
-from next_bot.permissions import require_permission
-from next_bot.time_utils import beijing_filename_timestamp
+from nextbot.message_parser import parse_command_args_with_fallback
+from nextbot.permissions import require_permission
+from nextbot.time_utils import beijing_filename_timestamp
 from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
 from server.web_server import create_menu_page
 

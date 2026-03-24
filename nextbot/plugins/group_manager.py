@@ -3,10 +3,10 @@ from nonebot.adapters import Bot, Event, Message
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
-from next_bot.command_config import command_control, raise_command_usage
-from next_bot.db import Group, User, get_session
-from next_bot.message_parser import parse_command_args_with_fallback
-from next_bot.permissions import (
+from nextbot.command_config import command_control, raise_command_usage
+from nextbot.db import Group, User, get_session
+from nextbot.message_parser import parse_command_args_with_fallback
+from nextbot.permissions import (
     add_inherit,
     add_permission,
     remove_inherit,

@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse, Response
 from nonebot.log import logger
 from sqlalchemy import func
 
-from next_bot.db import Group, User, get_session
+from nextbot.db import Group, User, get_session
 from server.routes import (
     api_error,
     api_success,

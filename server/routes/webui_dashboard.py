@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from nonebot.log import logger
 
-from next_bot.stats import get_dashboard_metrics
+from nextbot.stats import get_dashboard_metrics
 from server.routes import api_error, api_success
 
 router = APIRouter()

@@ -28,7 +28,7 @@ dev = [
     "ruff",
 ]
 [tool.nonebot]
-plugin_dirs = ["next_bot/plugins"]
+plugin_dirs = ["nextbot/plugins"]
 builtin_plugins = []
 
 [tool.nonebot.adapters]

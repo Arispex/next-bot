@@ -4,7 +4,7 @@ from nonebot import get_bots
 from sqlalchemy import func
 from sqlalchemy.dialects.sqlite import insert
 
-from next_bot.db import (
+from nextbot.db import (
     CommandConfig,
     Group,
     Server,
@@ -14,7 +14,7 @@ from next_bot.db import (
     get_engine,
     get_session,
 )
-from next_bot.time_utils import beijing_now_text, db_now_utc_naive, format_beijing_datetime
+from nextbot.time_utils import beijing_now_text, db_now_utc_naive, format_beijing_datetime
 
 
 def increment_stat(stat_key: str, delta: int = 1) -> None:

@@ -5,7 +5,7 @@ from typing import Any
 
 import httpx
 
-from next_bot.db import Server
+from nextbot.db import Server
 
 
 class TShockRequestError(Exception):

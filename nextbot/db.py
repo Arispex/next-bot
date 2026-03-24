@@ -8,7 +8,7 @@ from sqlalchemy import Boolean, DateTime, Integer, String, Text
 from sqlalchemy.engine import Engine, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
-from next_bot.time_utils import db_now_utc_naive
+from nextbot.time_utils import db_now_utc_naive
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DB_PATH = BASE_DIR / "app.db"

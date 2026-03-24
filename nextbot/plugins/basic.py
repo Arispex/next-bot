@@ -11,20 +11,20 @@ from nonebot.params import CommandArg
 
 from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
 from server.web_server import create_inventory_page, create_progress_page
-from next_bot.command_config import (
+from nextbot.command_config import (
     command_control,
     get_current_param,
     raise_command_usage,
 )
-from next_bot.db import Server, User, get_session
-from next_bot.message_parser import (
+from nextbot.db import Server, User, get_session
+from nextbot.message_parser import (
     parse_command_args_with_fallback,
     parse_command_text_with_fallback,
     resolve_user_id_arg_with_fallback,
 )
-from next_bot.permissions import require_permission
-from next_bot.time_utils import beijing_filename_timestamp
-from next_bot.tshock_api import (
+from nextbot.permissions import require_permission
+from nextbot.time_utils import beijing_filename_timestamp
+from nextbot.tshock_api import (
     TShockRequestError,
     get_error_reason,
     is_success,

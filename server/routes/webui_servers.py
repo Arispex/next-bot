@@ -9,8 +9,8 @@ from fastapi.responses import JSONResponse, Response
 from nonebot.log import logger
 from sqlalchemy import func
 
-from next_bot.db import Server, get_session
-from next_bot.tshock_api import (
+from nextbot.db import Server, get_session
+from nextbot.tshock_api import (
     TShockRequestError,
     get_error_reason,
     is_success,

@@ -4,16 +4,16 @@ from nonebot import on_command
 from nonebot.adapters import Bot, Event, Message
 from nonebot.log import logger
 from nonebot.params import CommandArg
-from next_bot.command_config import command_control, raise_command_usage
-from next_bot.message_parser import (
+from nextbot.command_config import command_control, raise_command_usage
+from nextbot.message_parser import (
     parse_command_args_with_fallback,
     resolve_user_id_arg_with_fallback,
 )
-from next_bot.permissions import require_permission
-from next_bot.time_utils import format_beijing_datetime
+from nextbot.permissions import require_permission
+from nextbot.time_utils import format_beijing_datetime
 
-from next_bot.db import Server, User, get_session
-from next_bot.tshock_api import (
+from nextbot.db import Server, User, get_session
+from nextbot.tshock_api import (
     TShockRequestError,
     get_error_reason,
     is_success,

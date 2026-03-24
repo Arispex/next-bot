@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from next_bot.time_utils import beijing_now_text
+from nextbot.time_utils import beijing_now_text
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 TEMPLATE_PATH = BASE_DIR / "server" / "templates" / "menu.html"
