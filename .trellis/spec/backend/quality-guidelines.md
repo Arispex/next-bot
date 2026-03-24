@@ -34,7 +34,7 @@ Current code style strongly prefers:
 - `server/settings_service.py` — typed helpers, normalization, atomic file write.
 - `server/routes/webui_groups.py` — dataclass payload + field validators + API envelope usage.
 - `server/routes/webui_users.py` — typed CRUD route flow with validation helpers.
-- `next_bot/command_config.py` — dataclasses, validation, and runtime cache logic.
+- `nextbot/command_config.py` — dataclasses, validation, and runtime cache logic.
 
 ---
 
@@ -79,14 +79,14 @@ If you add behavior that affects Web UI APIs or bot commands, manual end-to-end 
 ## Code Review Checklist
 
 Reviewers should check:
-- Does the code match the existing module layout (`next_bot/` vs `server/`)?
+- Does the code match the existing module layout (`nextbot/` vs `server/`)?
 - Are request/response envelopes consistent with `server/routes/__init__.py`?
 - Are validation rules explicit and close to the route/domain code that uses them?
 - Are DB sessions always closed?
 - Is `rollback()` present for failed writes?
 - Are unexpected exceptions logged and converted to sanitized `500 internal_error` responses?
 - Are logs useful and free of sensitive data?
-- If changing config/schema/bootstrap logic, does startup behavior in `bot.py` and `next_bot/db.py` still make sense?
+- If changing config/schema/bootstrap logic, does startup behavior in `bot.py` and `nextbot/db.py` still make sense?
 
 ---
 

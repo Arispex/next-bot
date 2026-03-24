@@ -9,9 +9,9 @@
 This project uses SQLite with SQLAlchemy 2.x declarative models.
 
 - Database file: `app.db`
-- ORM/models: `next_bot/db.py`
+- ORM/models: `nextbot/db.py`
 - Session pattern: `session = get_session()` with manual `try/finally` close
-- Schema bootstrap and lightweight schema patching also live in `next_bot/db.py`
+- Schema bootstrap and lightweight schema patching also live in `nextbot/db.py`
 
 There is currently **no Alembic or formal migration framework** in the repo.
 
@@ -19,7 +19,7 @@ There is currently **no Alembic or formal migration framework** in the repo.
 
 ## ORM and Session Pattern
 
-- Models inherit from `Base(DeclarativeBase)` in `next_bot/db.py`.
+- Models inherit from `Base(DeclarativeBase)` in `nextbot/db.py`.
 - Sessions are created with `get_session()`.
 - Route and runtime code usually manages session lifecycle manually:
   - open session
@@ -29,7 +29,7 @@ There is currently **no Alembic or formal migration framework** in the repo.
   - always `close()` in `finally`
 
 ### Examples
-- `next_bot/db.py` — model definitions, engine creation, and `get_session()`.
+- `nextbot/db.py` — model definitions, engine creation, and `get_session()`.
 - `server/routes/webui_users.py` — typical CRUD transaction pattern.
 - `server/routes/webui_groups.py` — validation + DB write + rollback pattern.
 - `server/routes/webui_servers.py` — create/update/delete flows using explicit commit/rollback.
@@ -51,8 +51,8 @@ There is currently **no Alembic or formal migration framework** in the repo.
 ### Examples
 - `server/routes/webui_users.py` — list, create, update, delete queries.
 - `server/routes/webui_groups.py` — grouped count query via `func.count` and CRUD queries.
-- `next_bot/stats.py` — SQLite `insert(...).on_conflict_do_update(...)` upsert pattern.
-- `next_bot/permissions.py` — permission resolution using direct group/user lookups.
+- `nextbot/stats.py` — SQLite `insert(...).on_conflict_do_update(...)` upsert pattern.
+- `nextbot/permissions.py` — permission resolution using direct group/user lookups.
 
 ---
 
@@ -65,9 +65,9 @@ This project currently uses **bootstrap helpers + raw SQLite schema patching**, 
 - Default seed data is created by helper functions such as `ensure_default_groups()` and `ensure_default_stats()`.
 
 ### Examples
-- `next_bot/db.py:101-107` style flow — `init_db()` bootstraps tables and defaults.
-- `next_bot/db.py:157-174` — `ensure_command_config_schema()` adds a missing column with raw SQLite.
-- `next_bot/db.py:177-207` — `ensure_user_signin_schema()` adds new columns with raw SQLite.
+- `nextbot/db.py:101-107` style flow — `init_db()` bootstraps tables and defaults.
+- `nextbot/db.py:157-174` — `ensure_command_config_schema()` adds a missing column with raw SQLite.
+- `nextbot/db.py:177-207` — `ensure_user_signin_schema()` adds new columns with raw SQLite.
 - `bot.py` — startup path runs `create_all(...)` and the `ensure_*` helpers.
 
 ### Guidance
@@ -98,9 +98,9 @@ This project currently uses **bootstrap helpers + raw SQLite schema patching**, 
   - `CommandConfig.param_values_json`
 
 ### Examples
-- `next_bot/db.py` — all table and column naming conventions.
-- `next_bot/command_config.py` — JSON text columns converted into runtime dict structures.
-- `next_bot/permissions.py` — comma-separated permission/inheritance parsing.
+- `nextbot/db.py` — all table and column naming conventions.
+- `nextbot/command_config.py` — JSON text columns converted into runtime dict structures.
+- `nextbot/permissions.py` — comma-separated permission/inheritance parsing.
 
 ---
 

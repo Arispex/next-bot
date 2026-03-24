@@ -44,7 +44,7 @@ Examples:
 - `server/routes/webui_dashboard.py` — dashboard load failure
 - `server/routes/webui_settings.py` — settings save or restart failure
 - `server/routes/webui_users.py` — unexpected CRUD exceptions
-- `next_bot/signin_reset.py` — background worker failure
+- `nextbot/signin_reset.py` — background worker failure
 
 ---
 
@@ -85,7 +85,7 @@ Log these kinds of events:
 - `bot.py` — DB initialization and command sync
 - `server/routes/webui_settings.py` — save + restart scheduling
 - `server/routes/webui_servers.py` — external server connectivity checks
-- `next_bot/signin_reset.py` — scheduled reset worker status
+- `nextbot/signin_reset.py` — scheduled reset worker status
 
 ---
 

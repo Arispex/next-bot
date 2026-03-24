@@ -51,8 +51,8 @@ Common pattern:
 - `server/routes/webui_groups.py` — `GroupPayloadValidationError`
 - `server/routes/webui_servers.py` — `ServerPayloadValidationError`
 - `server/settings_service.py` — `SettingsValidationError`
-- `next_bot/command_config.py` — `CommandConfigValidationError`
-- `next_bot/tshock_api.py` — `TShockRequestError` for outbound HTTP failures
+- `nextbot/command_config.py` — `CommandConfigValidationError`
+- `nextbot/tshock_api.py` — `TShockRequestError` for outbound HTTP failures
 
 ---
 
