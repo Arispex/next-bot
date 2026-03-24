@@ -47,6 +47,29 @@ PROGRESS_SCREENSHOT_OPTIONS = ScreenshotOptions(
     viewport_height=700,
     full_page=True,
 )
+_PROGRESS_NAME_MAP: dict[str, str] = {
+    "kingSlime": "史莱姆王",
+    "eyeOfCthulhu": "克苏鲁之眼",
+    "eaterOfWorldsOrBrainOfCthulhu": "世界吞噬者/克苏鲁之脑",
+    "queenBee": "蜂后",
+    "skeletron": "骷髅王",
+    "deerclops": "独眼鹿怪",
+    "wallOfFlesh": "血肉墙",
+    "queenSlime": "史莱姆王后",
+    "theTwins": "双子魔眼",
+    "theDestroyer": "毁灭者",
+    "skeletronPrime": "机械骷髅王",
+    "plantera": "世纪之花",
+    "golem": "石巨人",
+    "dukeFishron": "猪龙鱼公爵",
+    "empressOfLight": "光之女皇",
+    "lunaticCultist": "邪教徒",
+    "solarPillar": "日耀柱",
+    "nebulaPillar": "星云柱",
+    "vortexPillar": "漩涡柱",
+    "stardustPillar": "星尘柱",
+    "moonLord": "月亮领主",
+}
 def _parse_execute_arg_text(text: str) -> tuple[int, str] | None:
     if not text:
         return None
@@ -668,7 +691,7 @@ async def handle_world_progress(
     try:
         response = await request_server_api(
             server,
-            "/v2/world/progress",
+            "/nextbot/world/progress",
         )
     except TShockRequestError:
         await bot.send(event, "查询失败，无法连接服务器")
@@ -678,26 +701,19 @@ async def handle_world_progress(
         await bot.send(event, f"查询失败，{get_error_reason(response)}")
         return
 
-    progress = response.payload.get("response")
-    if not isinstance(progress, dict):
-        await bot.send(event, "查询失败，返回数据格式错误")
-        return
-
-    normalized_progress: dict[str, object] = {}
-    for key, value in progress.items():
-        name = str(key).strip()
-        if not name:
-            continue
-        normalized_progress[name] = value
-
-    if not normalized_progress:
+    progress = {
+        _PROGRESS_NAME_MAP.get(k, k): v
+        for k, v in response.payload.items()
+        if isinstance(v, bool)
+    }
+    if not progress:
         await bot.send(event, "查询失败，返回数据格式错误")
         return
 
     page_url = create_progress_page(
         server_id=server.id,
         server_name=server.name,
-        progress=normalized_progress,
+        progress=progress,
     )
     logger.info(
         "世界进度渲染地址："
