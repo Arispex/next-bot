@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 2
-- **Last Active**: 2026-03-18
+- **Total Sessions**: 3
+- **Last Active**: 2026-03-24
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~122 | Active |
+| `journal-1.md` | ~164 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits |
 |---|------|-------|---------|
+| 3 | 2026-03-24 | 迁移背包接口到 NextBotAdapter API | `d486f59` |
 | 2 | 2026-03-18 | Disable implicit OneBot startup connection | `c9f1628` |
 | 1 | 2026-03-18 | Refine WebUI API semantics and pagination | `a7bb49d`, `46d921c`, `608f1ec`, `d0adcf5`, `1c782a4` |
 <!-- @@@/auto:session-history -->

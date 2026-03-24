@@ -120,3 +120,45 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 3: 迁移背包接口到 NextBotAdapter API
+
+**Date**: 2026-03-24
+**Task**: 迁移背包接口到 NextBotAdapter API
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+将"用户背包"和"我的背包"命令从旧 TShock 原生接口迁移到新 NextBotAdapter 接口。
+
+**变更内容**：
+- 背包接口：`/v2/users/inventory` → `/nextbot/users/{user}/inventory`，响应从 `response[]` 改为 `items[]`，字段 `netID`/`prefix` 改为 `netId`/`prefixId`，新增 `slot` 字段
+- 属性接口：`/v2/users/info` → `/nextbot/users/{user}/stats`，响应从中文字段改为英文字段（`health`/`maxHealth`/`mana`/`maxMana`/`questsCompleted`/`deathsPve`/`deathsPvp`）
+- `_normalize_slots` 改为按 `slot` 字段建 map 索引，支持稀疏 items
+
+**修改文件**：
+- `nextbot/plugins/basic.py`
+- `server/pages/inventory_page.py`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d486f59` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
