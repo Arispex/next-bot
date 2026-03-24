@@ -194,3 +194,35 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 5: 迁移白名单接口到 NextBotAdapter API
+
+**Date**: 2026-03-24
+**Task**: 迁移白名单接口到 NextBotAdapter API
+
+### Summary
+
+将白名单同步从 /v3/server/rawcmd?cmd=/bwl add {name} 迁移到 /nextbot/whitelist/add/{user}。仅修改 nextbot/plugins/user_manager.py 中 _sync_whitelist_to_all_servers 的一处 API 调用。
+
+### Main Changes
+
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9058538` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

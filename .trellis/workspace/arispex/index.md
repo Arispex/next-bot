@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 4
+- **Total Sessions**: 5
 - **Last Active**: 2026-03-24
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~196 | Active |
+| `journal-1.md` | ~228 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits |
 |---|------|-------|---------|
+| 5 | 2026-03-24 | 迁移白名单接口到 NextBotAdapter API | `9058538` |
 | 4 | 2026-03-24 | 迁移进度接口到 NextBotAdapter API | `e6f9634` |
 | 3 | 2026-03-24 | 迁移背包接口到 NextBotAdapter API | `d486f59` |
 | 2 | 2026-03-18 | Disable implicit OneBot startup connection | `c9f1628` |
