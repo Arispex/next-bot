@@ -299,3 +299,35 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 8: 背包命令新增 send_link 参数
+
+**Date**: 2026-03-24
+**Task**: 背包命令新增 send_link 参数
+
+### Summary
+
+为「用户背包」和「我的背包」命令新增 send_link 参数（默认 False），控制是否在截图前发送背包页面链接。修改 nextbot/plugins/basic.py。
+
+### Main Changes
+
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `58c446b` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

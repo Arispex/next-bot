@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 7
+- **Total Sessions**: 8
 - **Last Active**: 2026-03-24
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~301 | Active |
+| `journal-1.md` | ~333 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits |
 |---|------|-------|---------|
+| 8 | 2026-03-24 | 背包命令新增 send_link 参数 | `58c446b` |
 | 7 | 2026-03-24 | 新增下载地图命令 | `4ecd5f5` |
 | 6 | 2026-03-24 | 新增查看地图命令 | `339f743` |
 | 5 | 2026-03-24 | 迁移白名单接口到 NextBotAdapter API | `9058538` |
