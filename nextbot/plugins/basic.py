@@ -393,6 +393,13 @@ async def handle_self_kick(
             "required": False,
             "default": True,
         },
+        "send_link": {
+            "type": "bool",
+            "label": "发送链接",
+            "description": "开启后在截图前额外发送背包页面链接",
+            "required": False,
+            "default": False,
+        },
     },
 )
 @require_permission("basic.inventory.user")
@@ -495,7 +502,8 @@ async def handle_user_inventory(
         f"server_id={server.id} target_user_id={target_user.user_id} "
         f"internal_url={page_url} public_url={public_page_url}"
     )
-    await bot.send(event, f"用户背包链接：{public_page_url}")
+    if bool(get_current_param("send_link", False)):
+        await bot.send(event, f"用户背包链接：{public_page_url}")
     screenshot_path = Path("/tmp") / (
         f"inventory-{server.id}-{target_user.user_id}-{beijing_filename_timestamp()}.png"
     )
@@ -544,6 +552,13 @@ async def handle_user_inventory(
             "description": "关闭后隐藏物品格左上角的索引编号",
             "required": False,
             "default": True,
+        },
+        "send_link": {
+            "type": "bool",
+            "label": "发送链接",
+            "description": "开启后在截图前额外发送背包页面链接",
+            "required": False,
+            "default": False,
         },
     },
 )
@@ -631,7 +646,8 @@ async def handle_my_inventory(
         f"server_id={server.id} user_id={user.user_id} "
         f"internal_url={page_url} public_url={public_page_url}"
     )
-    await bot.send(event, f"我的背包链接：{public_page_url}")
+    if bool(get_current_param("send_link", False)):
+        await bot.send(event, f"我的背包链接：{public_page_url}")
 
     screenshot_path = Path("/tmp") / (
         f"inventory-{server.id}-{user.user_id}-{beijing_filename_timestamp()}.png"
