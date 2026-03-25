@@ -1003,3 +1003,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 27: 搜索命令 & guest 默认权限补全
+
+**Date**: 2026-03-25
+**Task**: 搜索命令 & guest 默认权限补全
+
+### Summary
+
+新增搜索命令功能；补全 guest 默认权限缺少的 economy.transfer、leaderboard.coins/signin/streak
+
+### Main Changes
+
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d33dd39` | (see git log) |
+| `fb02090` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
