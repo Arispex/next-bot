@@ -331,3 +331,46 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 9: 重设计进度页面 Terraria 暗色主题
+
+**Date**: 2026-03-25
+**Task**: 重设计进度页面 Terraria 暗色主题
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+重新设计进度功能截图渲染页面，引入 boss 图片，打造 Terraria 风格高质感视觉。
+
+**主要变更**：
+1. 重命名 21 张 boss 图片为 camelCase apiKey 格式（删除 Brain of Cthulhu，保留 Eater of Worlds）
+2. `server/routes/render.py` 新增 `/assets/imgs/boss/{filename}` 静态路由
+3. `server/templates/progress.html` 完全重设计：暗色石砖背景、boss 卡片含图片、金色高亮已击败、顶部进度条
+
+**修改文件**：
+- `server/assets/imgs/boss/`（重命名 21 个文件）
+- `server/routes/render.py`
+- `server/templates/progress.html`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `05790ea` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
