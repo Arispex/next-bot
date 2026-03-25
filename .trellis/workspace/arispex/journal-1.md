@@ -413,3 +413,35 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 11: economy 插件新增转账功能
+
+**Date**: 2026-03-25
+**Task**: economy 插件新增转账功能
+
+### Summary
+
+在 economy 插件新增「转账」命令。支持用户 ID/@用户/用户名称三种目标指定方式，完整校验：数量必须为正整数、不能转给自己、余额不足拒绝。DB 单次 commit 原子更新双方金币。成功消息显示转账对象名称（用户 ID）和当前余额。仅修改 nextbot/plugins/economy.py。
+
+### Main Changes
+
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `281cbe9` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
