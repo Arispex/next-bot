@@ -41,6 +41,7 @@ def create_inventory_page(
     show_stats: bool,
     show_index: bool,
     slots: list[dict[str, Any]],
+    theme: str = "light",
 ) -> str:
     payload = inventory_page.build_payload(
         user_id=user_id,
@@ -55,6 +56,7 @@ def create_inventory_page(
         show_stats=show_stats,
         show_index=show_index,
         slots=slots,
+        theme=theme,
     )
     token = create_page("inventory", payload)
     settings = get_server_settings()

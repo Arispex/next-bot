@@ -1,149 +1,173 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NextBot - 用户背包</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body {
-      background: linear-gradient(135deg, #e8f0fe 0%, #f1f5f9 40%, #e2e8f0 100%);
+    /* ── Light theme ────────────────────────────────────────── */
+    [data-theme="light"] body {
+      background: linear-gradient(135deg, #f0f4ff 0%, #f8fafc 40%, #e2e8f0 100%);
     }
-
-    .header-bg {
+    [data-theme="light"] .main-card {
+      background: white;
+      border-color: #e2e8f0;
+      box-shadow: 0 25px 60px rgba(30,64,175,0.12), 0 4px 16px rgba(0,0,0,0.06);
+    }
+    [data-theme="light"] .page-header {
       background: linear-gradient(120deg, #1e3a8a 0%, #1d4ed8 45%, #1e40af 100%);
     }
-
-    .meta-chip {
+    [data-theme="light"] .meta-chip {
       background: rgba(255,255,255,0.14);
       border: 1px solid rgba(255,255,255,0.18);
-      backdrop-filter: blur(4px);
     }
+    [data-theme="light"] .meta-label { color: rgba(255,255,255,0.6); }
+    [data-theme="light"] .meta-value { color: white; }
+    [data-theme="light"] .stat-chip-life   { background: rgba(254,202,202,0.18); border: 1px solid rgba(252,165,165,0.35); }
+    [data-theme="light"] .stat-chip-mana   { background: rgba(191,219,254,0.18); border: 1px solid rgba(147,197,253,0.35); }
+    [data-theme="light"] .stat-chip-fish   { background: rgba(167,243,208,0.18); border: 1px solid rgba(110,231,183,0.35); }
+    [data-theme="light"] .stat-chip-death  { background: rgba(221,214,254,0.18); border: 1px solid rgba(196,181,253,0.35); }
+    [data-theme="light"] .stat-label-life  { color: rgba(254,202,202,0.8); }
+    [data-theme="light"] .stat-label-mana  { color: rgba(191,219,254,0.8); }
+    [data-theme="light"] .stat-label-fish  { color: rgba(167,243,208,0.8); }
+    [data-theme="light"] .stat-label-death { color: rgba(221,214,254,0.8); }
+    [data-theme="light"] .stat-value-life  { color: #fecaca; }
+    [data-theme="light"] .stat-value-mana  { color: #bfdbfe; }
+    [data-theme="light"] .stat-value-fish  { color: #a7f3d0; }
+    [data-theme="light"] .stat-value-death { color: #ddd6fe; }
+    [data-theme="light"] .stats-bar   { background: linear-gradient(to right, rgba(239,246,255,0.6), #f8fafc); border-color: #f1f5f9; }
+    [data-theme="light"] .stat-badge  { background: white; border: 1px solid #e2e8f0; color: #475569; }
+    [data-theme="light"] .stat-badge b{ color: #1e293b; }
+    [data-theme="light"] .section-card{ background: white; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 8px rgba(30,64,175,0.04); }
+    [data-theme="light"] .section-head{ background: linear-gradient(90deg, #f8fafc, #f1f5f9); border-color: #e2e8f0; }
+    [data-theme="light"] .section-title { color: #334155; }
+    [data-theme="light"] .section-badge { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
+    [data-theme="light"] .cell-occupied { background: linear-gradient(145deg, #eff6ff, #f8fafc); border: 1px solid #bfdbfe; box-shadow: inset 0 1px 0 rgba(255,255,255,0.8); }
+    [data-theme="light"] .cell-occupied:hover { border-color: #60a5fa; box-shadow: 0 0 0 2px rgba(96,165,250,0.2); }
+    [data-theme="light"] .cell-empty   { background: #f1f5f9; border: 1px solid #e2e8f0; }
+    [data-theme="light"] .slot-index   { color: #94a3b8; }
+    [data-theme="light"] .stack-tag    { background: rgba(15,23,42,0.82); border: 1px solid rgba(255,255,255,0.15); color: #f8fafc; }
+    [data-theme="light"] .item-hint    { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+    [data-theme="light"] .footer-text  { color: #94a3b8; }
 
-    .stat-chip-life   { background: rgba(254,202,202,0.18); border: 1px solid rgba(252,165,165,0.35); }
-    .stat-chip-mana   { background: rgba(191,219,254,0.18); border: 1px solid rgba(147,197,253,0.35); }
-    .stat-chip-fish   { background: rgba(167,243,208,0.18); border: 1px solid rgba(110,231,183,0.35); }
-    .stat-chip-death  { background: rgba(221,214,254,0.18); border: 1px solid rgba(196,181,253,0.35); }
-
-    .cell-occupied {
-      background: linear-gradient(145deg, #eff6ff 0%, #f8fafc 100%);
-      border: 1px solid #bfdbfe;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+    /* ── Dark theme ─────────────────────────────────────────── */
+    [data-theme="dark"] body {
+      background-color: #0d0d0f;
+      background-image:
+        radial-gradient(ellipse at 15% 0%, rgba(40,80,160,0.14) 0%, transparent 50%),
+        radial-gradient(ellipse at 85% 100%, rgba(40,20,80,0.18) 0%, transparent 50%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%23111114'/%3E%3Crect x='0' y='0' width='32' height='32' fill='%2312121a' opacity='0.5'/%3E%3Crect x='32' y='32' width='32' height='32' fill='%2312121a' opacity='0.5'/%3E%3C/svg%3E");
     }
-    .cell-occupied:hover {
-      border-color: #60a5fa;
-      box-shadow: 0 0 0 2px rgba(96,165,250,0.2), inset 0 1px 0 rgba(255,255,255,0.8);
+    [data-theme="dark"] .main-card {
+      background: linear-gradient(180deg, #141418 0%, #0f0f13 100%);
+      border-color: rgba(60,65,100,0.35);
+      box-shadow: 0 0 60px rgba(0,0,0,0.8), 0 0 30px rgba(60,80,160,0.06);
     }
-    .cell-empty {
-      background: #f1f5f9;
-      border: 1px solid #e2e8f0;
+    [data-theme="dark"] .page-header {
+      background: linear-gradient(135deg, rgba(20,25,45,0.95) 0%, rgba(15,18,35,0.95) 100%);
+      border-color: rgba(60,65,100,0.3);
     }
-
-    .section-card {
-      background: white;
-      border: 1px solid #e2e8f0;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 8px rgba(30,64,175,0.04);
+    [data-theme="dark"] .meta-chip {
+      background: rgba(20,22,40,0.7);
+      border: 1px solid rgba(60,65,100,0.35);
     }
-    .section-head {
-      background: linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%);
-      border-bottom: 1px solid #e2e8f0;
-    }
-    .section-badge {
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
-      color: #1d4ed8;
-    }
-
-    .stat-bar-badge {
-      background: white;
-      border: 1px solid #e2e8f0;
-      color: #475569;
-    }
-    .stat-bar-badge b { color: #1e293b; }
-
-    .stack-tag {
-      background: rgba(15,23,42,0.82);
-      border: 1px solid rgba(255,255,255,0.15);
-      color: #f8fafc;
-    }
-
-    .item-hint {
-      background: #0f172a;
-      border: 1px solid #334155;
-      color: #e2e8f0;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-    }
+    [data-theme="dark"] .meta-label { color: #475569; }
+    [data-theme="dark"] .meta-value { color: #e2e8f0; }
+    [data-theme="dark"] .stat-chip-life   { background: rgba(248,113,113,0.06); border: 1px solid rgba(248,113,113,0.2); }
+    [data-theme="dark"] .stat-chip-mana   { background: rgba(96,165,250,0.06);  border: 1px solid rgba(96,165,250,0.2);  }
+    [data-theme="dark"] .stat-chip-fish   { background: rgba(52,211,153,0.06);  border: 1px solid rgba(52,211,153,0.2);  }
+    [data-theme="dark"] .stat-chip-death  { background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.2); }
+    [data-theme="dark"] .stat-label-life  { color: rgba(248,113,113,0.6); }
+    [data-theme="dark"] .stat-label-mana  { color: rgba(96,165,250,0.6);  }
+    [data-theme="dark"] .stat-label-fish  { color: rgba(52,211,153,0.6);  }
+    [data-theme="dark"] .stat-label-death { color: rgba(167,139,250,0.6); }
+    [data-theme="dark"] .stat-value-life  { color: #f87171; }
+    [data-theme="dark"] .stat-value-mana  { color: #60a5fa; }
+    [data-theme="dark"] .stat-value-fish  { color: #34d399; }
+    [data-theme="dark"] .stat-value-death { color: #a78bfa; }
+    [data-theme="dark"] .stats-bar   { background: rgba(16,16,22,0.8); border-color: rgba(60,65,100,0.25); }
+    [data-theme="dark"] .stat-badge  { background: rgba(20,20,30,0.8); border: 1px solid rgba(60,65,100,0.45); color: #9ca3af; }
+    [data-theme="dark"] .stat-badge b{ color: #c4c8e8; }
+    [data-theme="dark"] .section-card{ background: linear-gradient(160deg, rgba(18,18,26,0.98) 0%, rgba(14,14,20,0.98) 100%); border: 1px solid rgba(60,65,100,0.4); box-shadow: none; }
+    [data-theme="dark"] .section-head{ background: linear-gradient(90deg, rgba(25,25,40,0.95), rgba(20,20,32,0.95)); border-color: rgba(60,65,100,0.35); }
+    [data-theme="dark"] .section-title { color: #cbd5e1; }
+    [data-theme="dark"] .section-badge { background: rgba(30,35,60,0.8); border: 1px solid rgba(80,90,150,0.4); color: #8892c8; }
+    [data-theme="dark"] .cell-occupied { background: linear-gradient(145deg, #1a1a24, #141420); border: 1px solid rgba(80,90,130,0.55); box-shadow: inset 0 0 8px rgba(80,100,200,0.08); }
+    [data-theme="dark"] .cell-occupied:hover { border-color: rgba(140,160,255,0.7); box-shadow: inset 0 0 12px rgba(100,120,255,0.12), 0 0 8px rgba(100,120,255,0.15); }
+    [data-theme="dark"] .cell-empty   { background: rgba(14,14,18,0.6); border: 1px solid rgba(40,40,55,0.4); }
+    [data-theme="dark"] .slot-index   { color: #475569; }
+    [data-theme="dark"] .stack-tag    { background: rgba(10,10,16,0.92); border: 1px solid rgba(60,65,100,0.5); color: #e2e8f0; }
+    [data-theme="dark"] .item-hint    { background: linear-gradient(135deg, rgba(20,20,35,0.98), rgba(15,15,28,0.98)); border: 1px solid rgba(100,110,200,0.5); color: #e2e8f0; box-shadow: 0 4px 20px rgba(0,0,0,0.6), 0 0 12px rgba(80,100,200,0.2); }
+    [data-theme="dark"] .footer-text  { color: #1f2937; }
   </style>
 </head>
-<body class="min-h-screen p-5 text-slate-900">
-  <main class="mx-auto max-w-[2100px] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl"
-        style="box-shadow: 0 25px 60px rgba(30,64,175,0.12), 0 4px 16px rgba(0,0,0,0.06);">
+<body class="min-h-screen p-5">
+  <main class="main-card mx-auto max-w-[2100px] overflow-hidden rounded-3xl border">
 
     <!-- Header -->
-    <header class="header-bg relative overflow-hidden px-7 py-6 text-white">
-      <div class="absolute -left-10 -top-12 h-48 w-48 rounded-full bg-white/10 blur-3xl"></div>
-      <div class="absolute -right-12 top-0 h-44 w-44 rounded-full bg-cyan-300/15 blur-3xl"></div>
-      <div class="absolute bottom-0 left-1/2 h-px w-3/4 -translate-x-1/2 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+    <header class="page-header relative overflow-hidden px-7 py-6">
+      <div class="absolute -left-8 -top-8 h-48 w-48 rounded-full opacity-15"
+           style="background: radial-gradient(circle, rgba(80,120,220,0.6) 0%, transparent 70%);"></div>
+      <div class="absolute -right-8 top-0 h-40 w-40 rounded-full opacity-10"
+           style="background: radial-gradient(circle, rgba(120,60,200,0.6) 0%, transparent 70%);"></div>
 
       <div class="relative">
-        <h1 class="text-3xl font-extrabold tracking-wider drop-shadow-sm">用户背包</h1>
+        <h1 class="meta-value text-3xl font-extrabold tracking-wider drop-shadow-sm">用户背包</h1>
 
-        <!-- 基础信息 -->
         <div class="mt-4 grid grid-cols-2 gap-2 md:grid-cols-5">
           <div class="meta-chip rounded-xl px-3 py-2">
-            <div class="text-[10px] font-semibold uppercase tracking-widest text-blue-200">用户 ID</div>
-            <div id="meta-user-id" class="truncate font-bold"></div>
+            <div class="meta-label text-[10px] font-semibold uppercase tracking-widest">用户 ID</div>
+            <div id="meta-user-id" class="meta-value truncate font-bold"></div>
           </div>
           <div class="meta-chip rounded-xl px-3 py-2">
-            <div class="text-[10px] font-semibold uppercase tracking-widest text-blue-200">用户名称</div>
-            <div id="meta-user-name" class="truncate font-bold"></div>
+            <div class="meta-label text-[10px] font-semibold uppercase tracking-widest">用户名称</div>
+            <div id="meta-user-name" class="meta-value truncate font-bold"></div>
           </div>
           <div class="meta-chip rounded-xl px-3 py-2">
-            <div class="text-[10px] font-semibold uppercase tracking-widest text-blue-200">服务器 ID</div>
-            <div id="meta-server-id" class="truncate font-bold"></div>
+            <div class="meta-label text-[10px] font-semibold uppercase tracking-widest">服务器 ID</div>
+            <div id="meta-server-id" class="meta-value truncate font-bold"></div>
           </div>
           <div class="meta-chip rounded-xl px-3 py-2">
-            <div class="text-[10px] font-semibold uppercase tracking-widest text-blue-200">服务器名称</div>
-            <div id="meta-server-name" class="truncate font-bold"></div>
+            <div class="meta-label text-[10px] font-semibold uppercase tracking-widest">服务器名称</div>
+            <div id="meta-server-name" class="meta-value truncate font-bold"></div>
           </div>
           <div class="meta-chip rounded-xl px-3 py-2">
-            <div class="text-[10px] font-semibold uppercase tracking-widest text-blue-200">生成时间</div>
-            <div id="meta-generated-at" class="truncate text-sm font-semibold text-blue-100"></div>
+            <div class="meta-label text-[10px] font-semibold uppercase tracking-widest">生成时间</div>
+            <div id="meta-generated-at" class="meta-value truncate text-sm font-medium opacity-80"></div>
           </div>
         </div>
 
-        <!-- 角色属性 -->
-        <div class="mt-2 grid grid-cols-2 gap-2 md:grid-cols-5">
+        <div id="stats-header" class="mt-2 grid grid-cols-2 gap-2 md:grid-cols-5">
           <div class="stat-chip-life rounded-xl px-3 py-2">
-            <div class="text-[10px] font-semibold uppercase tracking-widest text-red-200">生命值</div>
-            <div id="meta-life" class="truncate font-bold text-red-100"></div>
+            <div class="stat-label-life text-[10px] font-semibold uppercase tracking-widest">生命值</div>
+            <div id="meta-life" class="stat-value-life truncate font-bold"></div>
           </div>
           <div class="stat-chip-mana rounded-xl px-3 py-2">
-            <div class="text-[10px] font-semibold uppercase tracking-widest text-blue-200">魔力值</div>
-            <div id="meta-mana" class="truncate font-bold text-blue-100"></div>
+            <div class="stat-label-mana text-[10px] font-semibold uppercase tracking-widest">魔力值</div>
+            <div id="meta-mana" class="stat-value-mana truncate font-bold"></div>
           </div>
           <div class="stat-chip-fish rounded-xl px-3 py-2">
-            <div class="text-[10px] font-semibold uppercase tracking-widest text-emerald-200">渔夫任务数</div>
-            <div id="meta-fishing-tasks" class="truncate font-bold text-emerald-100"></div>
+            <div class="stat-label-fish text-[10px] font-semibold uppercase tracking-widest">渔夫任务数</div>
+            <div id="meta-fishing-tasks" class="stat-value-fish truncate font-bold"></div>
           </div>
           <div class="stat-chip-death rounded-xl px-3 py-2">
-            <div class="text-[10px] font-semibold uppercase tracking-widest text-purple-200">PVE 死亡</div>
-            <div id="meta-pve-deaths" class="truncate font-bold text-purple-100"></div>
+            <div class="stat-label-death text-[10px] font-semibold uppercase tracking-widest">PVE 死亡</div>
+            <div id="meta-pve-deaths" class="stat-value-death truncate font-bold"></div>
           </div>
           <div class="stat-chip-death rounded-xl px-3 py-2">
-            <div class="text-[10px] font-semibold uppercase tracking-widest text-purple-200">PVP 死亡</div>
-            <div id="meta-pvp-deaths" class="truncate font-bold text-purple-100"></div>
+            <div class="stat-label-death text-[10px] font-semibold uppercase tracking-widest">PVP 死亡</div>
+            <div id="meta-pvp-deaths" class="stat-value-death truncate font-bold"></div>
           </div>
         </div>
       </div>
     </header>
 
-    <!-- Stats bar -->
-    <section id="stats-section" class="border-b border-slate-100 bg-gradient-to-r from-blue-50/60 to-slate-50 px-6 py-3">
+    <section id="stats-section" class="stats-bar border-b px-6 py-3">
       <div class="flex flex-wrap items-center gap-2 text-sm">
-        <span class="stat-bar-badge rounded-full px-3 py-1 text-xs shadow-sm">显示格数：<b id="meta-total">0</b></span>
-        <span class="stat-bar-badge rounded-full px-3 py-1 text-xs shadow-sm">已占用：<b id="meta-used">0</b></span>
-        <span class="stat-bar-badge rounded-full px-3 py-1 text-xs shadow-sm">空格：<b id="meta-empty">0</b></span>
+        <span class="stat-badge rounded-full px-3 py-1 text-xs">显示格数：<b id="meta-total">0</b></span>
+        <span class="stat-badge rounded-full px-3 py-1 text-xs">已占用：<b id="meta-used">0</b></span>
+        <span class="stat-badge rounded-full px-3 py-1 text-xs">空格：<b id="meta-empty">0</b></span>
       </div>
     </section>
 
@@ -151,7 +175,7 @@
       <div id="section-rows" class="space-y-5"></div>
     </section>
 
-    <div class="px-6 pb-4 text-right text-xs font-medium tracking-widest text-slate-300">
+    <div class="footer-text px-6 pb-4 text-right text-xs font-medium tracking-widest">
       Powered by NextBot
     </div>
   </main>
@@ -159,6 +183,9 @@
   <script id="inventory-data" type="application/json">__INVENTORY_DATA_JSON__</script>
   <script>
     const data = JSON.parse(document.getElementById("inventory-data").textContent);
+    const theme = String(data.theme || "light");
+    document.documentElement.setAttribute("data-theme", theme);
+
     document.getElementById("meta-user-id").textContent = data.user_id || "";
     document.getElementById("meta-user-name").textContent = data.user_name || "";
     document.getElementById("meta-server-id").textContent = data.server_id || "";
@@ -175,10 +202,10 @@
     const showIndex = Boolean(data.show_index ?? true);
     const sectionRows = document.getElementById("section-rows");
     const statsSection = document.getElementById("stats-section");
+    const statsHeader = document.getElementById("stats-header");
     const itemNameMap = new Map();
-    if (statsSection && !showStats) {
-      statsSection.classList.add("hidden");
-    }
+    if (statsSection && !showStats) statsSection.classList.add("hidden");
+    if (statsHeader && !showStats) statsHeader.classList.add("hidden");
 
     const prefixNameMap = new Map();
     let activeHintEl = null;
@@ -195,9 +222,7 @@
             itemList.forEach((entry) => {
               const id = Number(entry?.id);
               const name = String(entry?.name || "").trim();
-              if (id > 0 && name) {
-                itemNameMap.set(id, name);
-              }
+              if (id > 0 && name) itemNameMap.set(id, name);
             });
           }
         }
@@ -207,15 +232,11 @@
             prefixList.forEach((entry) => {
               const id = Number(entry?.id);
               const name = String(entry?.name || "").trim();
-              if (id > 0 && name) {
-                prefixNameMap.set(id, name);
-              }
+              if (id > 0 && name) prefixNameMap.set(id, name);
             });
           }
         }
-      } catch (_) {
-        // 字典加载失败时回退为显示 ID，不阻塞页面渲染
-      }
+      } catch (_) {}
     }
 
     function range(start, end) {
@@ -225,21 +246,21 @@
     }
 
     const sections = [
-      { id: "main", title: "主背包", indices: range(0, 49), cols: 10 },
-      { id: "ammo_1", title: "货币", indices: range(50, 53), cols: 1 },
-      { id: "ammo_2", title: "弹药", indices: range(54, 57), cols: 1 },
-      { id: "loadout_1", title: "第一套装备/饰品/染料", indices: range(59, 88), cols: 3 },
-      { id: "misc_equip", title: "饰品", indices: range(89, 93), cols: 1 },
-      { id: "misc_dye", title: "染料", indices: range(94, 98), cols: 1 },
-      { id: "piggy", title: "猪猪存钱罐", indices: range(99, 138), cols: 10 },
-      { id: "safe", title: "保险箱", indices: range(139, 178), cols: 10 },
-      { id: "trash", title: "垃圾桶", indices: [179], cols: 1 },
-      { id: "forge", title: "护卫熔炉", indices: range(180, 219), cols: 10 },
-      { id: "void", title: "虚空袋", indices: range(220, 259), cols: 10 },
-      { id: "loadout_2", title: "第二套装备/饰品/染料", indices: range(290, 319), cols: 3 },
-      { id: "loadout_3", title: "第三套装备/饰品/染料", indices: range(320, 349), cols: 3 }
+      { id: "main",       title: "主背包",              indices: range(0, 49),    cols: 10 },
+      { id: "ammo_1",     title: "货币",                indices: range(50, 53),   cols: 1  },
+      { id: "ammo_2",     title: "弹药",                indices: range(54, 57),   cols: 1  },
+      { id: "loadout_1",  title: "第一套装备/饰品/染料", indices: range(59, 88),   cols: 3  },
+      { id: "misc_equip", title: "饰品",                indices: range(89, 93),   cols: 1  },
+      { id: "misc_dye",   title: "染料",                indices: range(94, 98),   cols: 1  },
+      { id: "piggy",      title: "猪猪存钱罐",           indices: range(99, 138),  cols: 10 },
+      { id: "safe",       title: "保险箱",              indices: range(139, 178), cols: 10 },
+      { id: "trash",      title: "垃圾桶",              indices: [179],           cols: 1  },
+      { id: "forge",      title: "护卫熔炉",            indices: range(180, 219), cols: 10 },
+      { id: "void",       title: "虚空袋",              indices: range(220, 259), cols: 10 },
+      { id: "loadout_2",  title: "第二套装备/饰品/染料", indices: range(290, 319), cols: 3  },
+      { id: "loadout_3",  title: "第三套装备/饰品/染料", indices: range(320, 349), cols: 3  },
     ];
-    const sectionById = Object.fromEntries(sections.map((section) => [section.id, section]));
+    const sectionById = Object.fromEntries(sections.map(s => [s.id, s]));
     const sectionRowsConfig = [
       ["main", "piggy", "safe"],
       ["loadout_1", "loadout_2", "loadout_3", "misc_equip_stack", "misc_dye", "ammo_1", "ammo_2", "forge_stack"]
@@ -247,40 +268,32 @@
 
     function getSlot(index) {
       const raw = slots[index];
-      const netId = Number(raw?.net_id || 0);
+      const netId    = Number(raw?.net_id || 0);
       const prefixId = Number(raw?.prefix_id || raw?.prefix || 0);
-      const stack = Number(raw?.stack || 0);
-      return {
-        index,
-        netId: netId > 0 ? netId : 0,
-        prefixId: prefixId > 0 ? prefixId : 0,
-        stack: stack > 0 ? stack : 0
-      };
+      const stack    = Number(raw?.stack || 0);
+      return { index, netId: netId > 0 ? netId : 0, prefixId: prefixId > 0 ? prefixId : 0, stack: stack > 0 ? stack : 0 };
     }
 
     function clearActiveHint() {
-      if (activeHintEl) {
-        activeHintEl.remove();
-        activeHintEl = null;
-      }
+      if (activeHintEl) { activeHintEl.remove(); activeHintEl = null; }
     }
 
     function buildItemHint(slot) {
       if (slot.netId <= 0) return "";
-      const itemName = itemNameMap.get(slot.netId) || `物品ID:${slot.netId}`;
+      const itemName   = itemNameMap.get(slot.netId)   || `物品ID:${slot.netId}`;
       const prefixName = slot.prefixId > 0 ? (prefixNameMap.get(slot.prefixId) || `前缀ID:${slot.prefixId}`) : "";
       return prefixName ? `${prefixName} ${itemName}` : itemName;
     }
 
     function createCell(slot) {
-      const cell = document.createElement("div");
       const occupied = slot.netId > 0;
+      const cell = document.createElement("div");
       cell.className = "group relative h-[52px] w-[52px] rounded-lg transition-all duration-150 "
         + (occupied ? "cell-occupied" : "cell-empty");
 
       if (showIndex) {
         const idx = document.createElement("span");
-        idx.className = "absolute left-1 top-0.5 z-10 text-[9px] font-medium text-slate-400";
+        idx.className = "slot-index absolute left-1 top-0.5 z-10 text-[9px] font-medium";
         idx.textContent = String(slot.index);
         cell.appendChild(idx);
       }
@@ -319,36 +332,29 @@
 
     function createSectionCard(section) {
       const sectionSlots = section.indices.map(getSlot);
-      const used = sectionSlots.filter((slot) => slot.netId > 0).length;
+      const used = sectionSlots.filter(s => s.netId > 0).length;
 
       const card = document.createElement("article");
-      card.className = "section-card inline-block w-fit overflow-hidden rounded-2xl";
+      card.className = "section-card inline-block w-fit overflow-hidden rounded-xl";
 
       const head = document.createElement("header");
-      head.className = "section-head flex items-center justify-between px-4 py-2.5";
-
-      const titleWrap = document.createElement("div");
+      head.className = "section-head flex items-center justify-between border-b px-4 py-2.5";
       const title = document.createElement("h2");
-      title.className = "text-sm font-semibold text-slate-700";
+      title.className = "section-title text-sm font-semibold tracking-wide";
       title.textContent = section.title;
-      titleWrap.appendChild(title);
-
       const badge = document.createElement("span");
-      badge.className = "section-badge rounded-full px-2.5 py-0.5 text-xs font-semibold";
+      badge.className = "section-badge rounded-full px-2 py-0.5 text-xs font-semibold";
       badge.textContent = `${used}/${sectionSlots.length}`;
-
-      head.appendChild(titleWrap);
+      head.appendChild(title);
       head.appendChild(badge);
 
       const body = document.createElement("div");
       body.className = "overflow-x-auto p-3";
-
       const grid = document.createElement("div");
       grid.className = "grid gap-1.5";
       grid.style.gridTemplateColumns = `repeat(${section.cols}, 52px)`;
       grid.style.minWidth = `${section.cols * 52 + Math.max(section.cols - 1, 0) * 6}px`;
-
-      sectionSlots.forEach((slot) => grid.appendChild(createCell(slot)));
+      sectionSlots.forEach(slot => grid.appendChild(createCell(slot)));
       body.appendChild(grid);
 
       card.appendChild(head);
@@ -359,36 +365,36 @@
     async function init() {
       await loadNameDicts();
 
-      let usedTotal = 0;
-      let total = 0;
+      let usedTotal = 0, total = 0;
       sectionRowsConfig.forEach((rowIds) => {
         const row = document.createElement("div");
         row.className = "overflow-x-auto";
         const rowInner = document.createElement("div");
         rowInner.className = "mx-auto flex w-max items-start gap-4 px-2";
+
         rowIds.forEach((id) => {
           if (id === "forge_stack") {
-            const stackWrap = document.createElement("div");
-            stackWrap.className = "flex flex-col gap-4";
-            const forgeCard = createSectionCard(sectionById.forge);
-            const voidCard = createSectionCard(sectionById.void);
-            stackWrap.appendChild(forgeCard.card);
-            stackWrap.appendChild(voidCard.card);
-            rowInner.appendChild(stackWrap);
-            usedTotal += forgeCard.used + voidCard.used;
-            total += forgeCard.total + voidCard.total;
+            const wrap = document.createElement("div");
+            wrap.className = "flex flex-col gap-4";
+            const f = createSectionCard(sectionById.forge);
+            const v = createSectionCard(sectionById.void);
+            wrap.appendChild(f.card);
+            wrap.appendChild(v.card);
+            rowInner.appendChild(wrap);
+            usedTotal += f.used + v.used;
+            total += f.total + v.total;
             return;
           }
           if (id === "misc_equip_stack") {
-            const stackWrap = document.createElement("div");
-            stackWrap.className = "flex flex-col gap-4";
-            const miscEquipCard = createSectionCard(sectionById.misc_equip);
-            const trashCard = createSectionCard(sectionById.trash);
-            stackWrap.appendChild(miscEquipCard.card);
-            stackWrap.appendChild(trashCard.card);
-            rowInner.appendChild(stackWrap);
-            usedTotal += miscEquipCard.used + trashCard.used;
-            total += miscEquipCard.total + trashCard.total;
+            const wrap = document.createElement("div");
+            wrap.className = "flex flex-col gap-4";
+            const e = createSectionCard(sectionById.misc_equip);
+            const t = createSectionCard(sectionById.trash);
+            wrap.appendChild(e.card);
+            wrap.appendChild(t.card);
+            rowInner.appendChild(wrap);
+            usedTotal += e.used + t.used;
+            total += e.total + t.total;
             return;
           }
           const section = sectionById[id];
@@ -398,6 +404,7 @@
           usedTotal += used;
           total += sectionTotal;
         });
+
         row.appendChild(rowInner);
         sectionRows.appendChild(row);
       });

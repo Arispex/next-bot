@@ -497,6 +497,7 @@ async def handle_user_inventory(
         show_stats=bool(get_current_param("show_stats", True)),
         show_index=bool(get_current_param("show_index", True)),
         slots=[item for item in inventory if isinstance(item, dict)],
+        theme=resolve_render_theme(),
     )
     public_page_url = _to_public_render_url(page_url)
     logger.info(
@@ -641,6 +642,7 @@ async def handle_my_inventory(
         show_stats=bool(get_current_param("show_stats", True)),
         show_index=bool(get_current_param("show_index", True)),
         slots=[item for item in inventory if isinstance(item, dict)],
+        theme=resolve_render_theme(),
     )
     public_page_url = _to_public_render_url(page_url)
     logger.info(
