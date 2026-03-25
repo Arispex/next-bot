@@ -783,3 +783,44 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 21: 进度页面图片主题适配 + render_utils 公共模块
+
+**Date**: 2026-03-25
+**Task**: 进度页面图片主题适配 + render_utils 公共模块
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+为世界进度截图渲染新增亮色主题支持，同时重构主题解析逻辑为公共模块。
+
+**重构**：将 `_resolve_theme` 从 `leaderboard.py` 提取为 `nextbot/render_utils.py::resolve_render_theme()`，两个插件统一复用。
+
+**进度页亮色主题**：蓝色渐变 header（与背包页同系）、绿色系已击败卡片、灰色未击败卡片、boss 图片亮色滤镜。暗色主题保持原 Terraria 石砖风格。
+
+**链路**：config render_theme → resolve_render_theme() → create_progress_page(theme=) → build_payload(theme=) → HTML data-theme 属性 → CSS [data-theme] 选择器双主题。
+
+**修改文件**：`render_utils.py`（新建）、`leaderboard.py`、`basic.py`、`progress_page.py`、`web_server.py`、`progress.html`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8904b88` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
