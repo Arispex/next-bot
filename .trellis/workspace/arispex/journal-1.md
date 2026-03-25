@@ -971,3 +971,35 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 26: 用户信息展示累计签到和连续签到
+
+**Date**: 2026-03-25
+**Task**: 用户信息展示累计签到和连续签到
+
+### Summary
+
+我的信息/用户信息命令新增累计签到次数（sign_total）和连续签到天数（sign_streak）字段展示
+
+### Main Changes
+
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2f8cade` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
