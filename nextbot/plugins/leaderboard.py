@@ -25,6 +25,7 @@ from server.web_server import create_leaderboard_page
 
 coins_leaderboard_matcher = on_command("金币排行榜")
 streak_leaderboard_matcher = on_command("连续签到排行榜")
+signin_leaderboard_matcher = on_command("签到排行榜")
 
 LEADERBOARD_SCREENSHOT_OPTIONS = ScreenshotOptions(
     viewport_width=900,
@@ -249,6 +250,83 @@ async def handle_streak_leaderboard(
         entries=entries,
         total_pages=total_pages,
         file_prefix="leaderboard-streak",
+        self_entry=self_entry,
+        theme=resolve_render_theme(),
+    )
+
+
+@signin_leaderboard_matcher.handle()
+@command_control(
+    command_key="leaderboard.signin",
+    display_name="签到排行榜",
+    permission="leaderboard.signin",
+    description="查看累计签到次数排行榜",
+    usage="签到排行榜 [页数]",
+    params={
+        "limit": {
+            "type": "int",
+            "label": "每页名次",
+            "description": "每页显示的名次数",
+            "required": False,
+            "default": 10,
+            "min": 1,
+            "max": 50,
+        },
+    },
+)
+@require_permission("leaderboard.signin")
+async def handle_signin_leaderboard(
+    bot: Bot, event: Event, arg: Message = CommandArg()
+) -> None:
+    args = parse_command_args_with_fallback(event, arg, "签到排行榜")
+    if len(args) > 1:
+        raise_command_usage()
+
+    page = _parse_page_arg(args, "签到排行榜")
+    if page is None:
+        await bot.send(event, "查询失败，页数必须为正整数")
+        return
+
+    limit = max(1, min(int(get_current_param("limit", 10)), 50))
+
+    caller_id = event.get_user_id()
+    session = get_session()
+    try:
+        total_count = session.query(User).count()
+        total_pages = max(1, math.ceil(total_count / limit))
+        if page > total_pages:
+            await bot.send(event, f"查询失败，超出总页数（共 {total_pages} 页）")
+            return
+        offset = (page - 1) * limit
+        users = (
+            session.query(User)
+            .order_by(User.sign_total.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+        entries = [
+            {"rank": offset + i + 1, "name": u.name, "user_id": u.user_id, "value": int(u.sign_total or 0)}
+            for i, u in enumerate(users)
+        ]
+        caller = session.query(User).filter(User.user_id == caller_id).first()
+        self_entry = None
+        if caller is not None:
+            caller_total = int(caller.sign_total or 0)
+            caller_rank = session.query(User).filter(User.sign_total > caller_total).count() + 1
+            self_entry = {"rank": caller_rank, "name": caller.name, "value": caller_total}
+    finally:
+        session.close()
+
+    await _render_and_send(
+        bot, event,
+        title="签到排行榜",
+        value_label="次",
+        page=page,
+        limit=limit,
+        entries=entries,
+        total_pages=total_pages,
+        file_prefix="leaderboard-signin",
         self_entry=self_entry,
         theme=resolve_render_theme(),
     )
