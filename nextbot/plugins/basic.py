@@ -24,6 +24,7 @@ from nextbot.message_parser import (
     resolve_user_id_arg_with_fallback,
 )
 from nextbot.permissions import require_permission
+from nextbot.render_utils import resolve_render_theme
 from nextbot.time_utils import beijing_filename_timestamp
 from nextbot.tshock_api import (
     TShockRequestError,
@@ -734,6 +735,7 @@ async def handle_world_progress(
         server_id=server.id,
         server_name=server.name,
         progress=progress,
+        theme=resolve_render_theme(),
     )
     logger.info(
         "世界进度渲染地址："

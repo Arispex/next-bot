@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,60 +7,91 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap');
-
-    body {
-      background-color: #0d0d0f;
-      background-image:
-        radial-gradient(ellipse at 20% 0%, rgba(120, 60, 20, 0.18) 0%, transparent 55%),
-        radial-gradient(ellipse at 80% 100%, rgba(40, 20, 80, 0.22) 0%, transparent 55%),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%23111114'/%3E%3Crect x='0' y='0' width='32' height='32' fill='%2312121a' opacity='0.5'/%3E%3Crect x='32' y='32' width='32' height='32' fill='%2312121a' opacity='0.5'/%3E%3C/svg%3E");
-    }
-
     .title-font { font-family: 'Cinzel', serif; }
 
-    .card-defeated {
-      background: linear-gradient(135deg, rgba(30,20,5,0.95) 0%, rgba(45,30,8,0.95) 100%);
-      border-color: rgba(212, 160, 40, 0.55);
-      box-shadow: 0 0 18px rgba(212,160,40,0.12), inset 0 0 20px rgba(212,160,40,0.04);
+    /* ── Dark theme ─────────────────────────────────────────── */
+    [data-theme="dark"] body {
+      background-color: #0d0d0f;
+      background-image:
+        radial-gradient(ellipse at 20% 0%, rgba(120,60,20,0.18) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 100%, rgba(40,20,80,0.22) 0%, transparent 55%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%23111114'/%3E%3Crect x='0' y='0' width='32' height='32' fill='%2312121a' opacity='0.5'/%3E%3Crect x='32' y='32' width='32' height='32' fill='%2312121a' opacity='0.5'/%3E%3C/svg%3E");
     }
-    .card-defeated:hover { border-color: rgba(212,160,40,0.85); }
-    .card-undefeated {
-      background: linear-gradient(135deg, rgba(14,14,18,0.95) 0%, rgba(18,18,24,0.95) 100%);
-      border-color: rgba(60,60,80,0.45);
+    [data-theme="dark"] .main-card {
+      background: linear-gradient(180deg, #141418 0%, #0f0f13 100%);
+      border-color: rgba(80,60,20,0.4);
+      box-shadow: 0 0 60px rgba(0,0,0,0.8), 0 0 30px rgba(180,120,20,0.08);
     }
-
-    .badge-defeated {
-      background: linear-gradient(90deg, #b8860b, #d4a017);
-      color: #fff8e1;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-      box-shadow: 0 0 8px rgba(212,160,23,0.4);
-    }
-    .badge-undefeated {
-      background: rgba(40,40,55,0.8);
-      color: #6b7280;
-      border: 1px solid rgba(75,75,100,0.4);
-    }
-
-    .img-defeated { filter: drop-shadow(0 0 8px rgba(212,160,23,0.5)); }
-    .img-undefeated { filter: grayscale(85%) brightness(0.45); }
-
-    .progress-bar-fill {
-      background: linear-gradient(90deg, #b8860b 0%, #d4a017 60%, #f0c030 100%);
-      box-shadow: 0 0 10px rgba(212,160,23,0.5);
-      transition: width 0.6s ease;
-    }
-
-    .header-glow {
+    [data-theme="dark"] .page-header {
+      border-color: rgba(80,60,20,0.35);
       background: linear-gradient(135deg, rgba(180,120,20,0.12) 0%, transparent 60%);
     }
+    [data-theme="dark"] .header-title { color: rgba(253,230,138,0.9); text-shadow: 0 0 20px rgba(212,160,23,0.4); }
+    [data-theme="dark"] .meta-id   { color: #78716c; }
+    [data-theme="dark"] .meta-sep  { color: #44403c; }
+    [data-theme="dark"] .meta-name { color: #d6d3d1; }
+    [data-theme="dark"] .meta-time { color: #57534e; }
+    [data-theme="dark"] .defeated-label { color: #78716c; }
+    [data-theme="dark"] .defeated-count { color: #d4a017; text-shadow: 0 0 16px rgba(212,160,23,0.5); }
+    [data-theme="dark"] .defeated-sep   { color: #78716c; }
+    [data-theme="dark"] .defeated-total { color: #78716c; }
+    [data-theme="dark"] .progress-track { background: rgba(255,255,255,0.06); }
+    [data-theme="dark"] .progress-fill  { background: linear-gradient(90deg, #b8860b, #d4a017, #f0c030); box-shadow: 0 0 10px rgba(212,160,23,0.5); }
+    [data-theme="dark"] .card-defeated  { background: linear-gradient(135deg, rgba(30,20,5,0.95), rgba(45,30,8,0.95)); border-color: rgba(212,160,40,0.55); box-shadow: 0 0 18px rgba(212,160,40,0.12); }
+    [data-theme="dark"] .card-undefeated{ background: linear-gradient(135deg, rgba(14,14,18,0.95), rgba(18,18,24,0.95)); border-color: rgba(60,60,80,0.45); }
+    [data-theme="dark"] .badge-defeated { background: linear-gradient(90deg, #b8860b, #d4a017); color: #fff8e1; text-shadow: 0 1px 2px rgba(0,0,0,0.5); box-shadow: 0 0 8px rgba(212,160,23,0.4); }
+    [data-theme="dark"] .badge-undefeated{ background: rgba(40,40,55,0.8); color: #6b7280; border: 1px solid rgba(75,75,100,0.4); }
+    [data-theme="dark"] .name-defeated  { color: rgba(253,230,138,1); }
+    [data-theme="dark"] .name-undefeated{ color: #78716c; }
+    [data-theme="dark"] .img-defeated   { filter: drop-shadow(0 0 8px rgba(212,160,23,0.5)); }
+    [data-theme="dark"] .img-undefeated { filter: grayscale(85%) brightness(0.45); }
+    [data-theme="dark"] .placeholder-defeated  { background: rgba(120,69,0,0.3); color: #d97706; }
+    [data-theme="dark"] .placeholder-undefeated{ background: rgba(40,40,50,0.5); color: #44403c; }
+    [data-theme="dark"] .footer-text { color: #1c1917; }
+
+    /* ── Light theme ────────────────────────────────────────── */
+    [data-theme="light"] body {
+      background: linear-gradient(160deg, #f0f4ff 0%, #f8fafc 40%, #eef2f7 100%);
+    }
+    [data-theme="light"] .main-card {
+      background: white;
+      border-color: #e2e8f0;
+      box-shadow: 0 25px 60px rgba(30,50,120,0.10), 0 4px 16px rgba(0,0,0,0.05);
+    }
+    [data-theme="light"] .page-header {
+      border-color: #f1f5f9;
+      background: linear-gradient(120deg, #1e3a8a 0%, #1d4ed8 45%, #1e40af 100%);
+    }
+    [data-theme="light"] .header-title { color: white; text-shadow: none; }
+    [data-theme="light"] .meta-id   { color: rgba(255,255,255,0.7); }
+    [data-theme="light"] .meta-sep  { color: rgba(255,255,255,0.3); }
+    [data-theme="light"] .meta-name { color: white; }
+    [data-theme="light"] .meta-time { color: rgba(255,255,255,0.55); }
+    [data-theme="light"] .defeated-label { color: rgba(255,255,255,0.7); }
+    [data-theme="light"] .defeated-count { color: white; text-shadow: none; }
+    [data-theme="light"] .defeated-sep   { color: rgba(255,255,255,0.4); }
+    [data-theme="light"] .defeated-total { color: rgba(255,255,255,0.6); }
+    [data-theme="light"] .progress-track { background: rgba(255,255,255,0.2); }
+    [data-theme="light"] .progress-fill  { background: linear-gradient(90deg, #34d399, #10b981); box-shadow: none; }
+    [data-theme="light"] .card-defeated  { background: linear-gradient(135deg, #f0fdf4, #dcfce7); border-color: #86efac; box-shadow: 0 2px 8px rgba(34,197,94,0.1); }
+    [data-theme="light"] .card-undefeated{ background: #f8fafc; border-color: #e2e8f0; }
+    [data-theme="light"] .badge-defeated { background: linear-gradient(90deg, #16a34a, #22c55e); color: white; text-shadow: none; box-shadow: none; }
+    [data-theme="light"] .badge-undefeated{ background: #f1f5f9; color: #94a3b8; border: 1px solid #e2e8f0; }
+    [data-theme="light"] .name-defeated  { color: #15803d; }
+    [data-theme="light"] .name-undefeated{ color: #94a3b8; }
+    [data-theme="light"] .img-defeated   { filter: none; }
+    [data-theme="light"] .img-undefeated { filter: grayscale(60%) brightness(0.75) opacity(0.7); }
+    [data-theme="light"] .placeholder-defeated  { background: #dcfce7; color: #16a34a; }
+    [data-theme="light"] .placeholder-undefeated{ background: #f1f5f9; color: #cbd5e1; }
+    [data-theme="light"] .footer-text { color: #cbd5e1; }
+
+    .progress-fill { transition: width 0.6s ease; }
   </style>
 </head>
 <body class="min-h-screen p-5">
-  <main class="mx-auto max-w-[1700px] overflow-hidden rounded-2xl border border-[rgba(80,60,20,0.4)] shadow-2xl"
-        style="background: linear-gradient(180deg, #141418 0%, #0f0f13 100%); box-shadow: 0 0 60px rgba(0,0,0,0.8), 0 0 30px rgba(180,120,20,0.08);">
+  <main class="main-card mx-auto max-w-[1700px] overflow-hidden rounded-2xl border shadow-2xl">
 
-    <!-- Header -->
-    <header class="relative overflow-hidden border-b border-[rgba(80,60,20,0.35)] px-7 py-6 header-glow">
+    <header class="page-header relative overflow-hidden px-7 py-6">
       <div class="absolute -left-8 -top-8 h-48 w-48 rounded-full opacity-20"
            style="background: radial-gradient(circle, rgba(180,120,20,0.6) 0%, transparent 70%);"></div>
       <div class="absolute -right-8 top-0 h-40 w-40 rounded-full opacity-10"
@@ -68,77 +99,73 @@
 
       <div class="relative flex items-start justify-between gap-6">
         <div>
-          <h1 class="title-font text-3xl font-black tracking-widest text-amber-200/90"
-              style="text-shadow: 0 0 20px rgba(212,160,23,0.4);">
-            世界进度
-          </h1>
-          <div class="mt-1 flex items-center gap-3 text-sm text-stone-400">
-            <span id="meta-server-id" class="font-mono"></span>
-            <span class="text-stone-600">·</span>
-            <span id="meta-server-name" class="font-semibold text-stone-300"></span>
-            <span class="text-stone-600">·</span>
-            <span id="meta-generated-at" class="text-xs text-stone-500"></span>
+          <h1 class="title-font header-title text-3xl font-black tracking-widest">世界进度</h1>
+          <div class="mt-1 flex items-center gap-3 text-sm">
+            <span id="meta-server-id" class="meta-id font-mono"></span>
+            <span class="meta-sep">·</span>
+            <span id="meta-server-name" class="meta-name font-semibold"></span>
+            <span class="meta-sep">·</span>
+            <span id="meta-generated-at" class="meta-time text-xs"></span>
           </div>
         </div>
-
         <div class="shrink-0 text-right">
-          <div class="text-xs font-medium uppercase tracking-widest text-stone-500">已击败</div>
-          <div class="title-font text-4xl font-black" style="color: #d4a017; text-shadow: 0 0 16px rgba(212,160,23,0.5);">
-            <span id="meta-defeated-count">0</span>
-            <span class="text-2xl text-stone-500">/</span>
-            <span id="meta-total-count" class="text-2xl text-stone-400">0</span>
+          <div class="defeated-label text-xs font-medium uppercase tracking-widest">已击败</div>
+          <div class="title-font text-4xl font-black">
+            <span id="meta-defeated-count" class="defeated-count">0</span>
+            <span class="defeated-sep text-2xl">/</span>
+            <span id="meta-total-count" class="defeated-total text-2xl">0</span>
           </div>
         </div>
       </div>
 
-      <!-- Progress bar -->
       <div class="relative mt-4">
-        <div class="h-2 w-full overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
-          <div id="progress-bar" class="progress-bar-fill h-2 rounded-full" style="width:0%"></div>
+        <div class="progress-track h-2 w-full overflow-hidden rounded-full">
+          <div id="progress-bar" class="progress-fill h-2 rounded-full" style="width:0%"></div>
         </div>
       </div>
     </header>
 
-    <!-- Grid -->
     <section class="p-5">
       <div id="progress-grid" class="grid gap-3"
            style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));"></div>
     </section>
 
-    <div class="px-6 pb-4 text-right text-xs font-medium tracking-widest text-stone-700">
+    <div class="footer-text px-6 pb-4 text-right text-xs font-medium tracking-widest">
       Powered by NextBot
     </div>
   </main>
 
   <script id="progress-data" type="application/json">__PROGRESS_DATA_JSON__</script>
   <script>
-    // Chinese name → { key: apiKey, ext: fileExt }
     const BOSS_IMG_MAP = {
-      "史莱姆王":           { key: "kingSlime",                          ext: "gif"  },
-      "克苏鲁之眼":         { key: "eyeOfCthulhu",                       ext: "gif"  },
-      "世界吞噬者/克苏鲁之脑": { key: "eaterOfWorldsOrBrainOfCthulhu",  ext: "webp" },
-      "蜂后":               { key: "queenBee",                           ext: "gif"  },
-      "骷髅王":             { key: "skeletron",                          ext: "webp" },
-      "独眼鹿怪":           { key: "deerclops",                          ext: "png"  },
-      "血肉墙":             { key: "wallOfFlesh",                        ext: "gif"  },
-      "史莱姆王后":         { key: "queenSlime",                         ext: "webp" },
-      "双子魔眼":           { key: "theTwins",                           ext: "gif"  },
-      "毁灭者":             { key: "theDestroyer",                       ext: "webp" },
-      "机械骷髅王":         { key: "skeletronPrime",                     ext: "gif"  },
-      "世纪之花":           { key: "plantera",                           ext: "gif"  },
-      "石巨人":             { key: "golem",                              ext: "webp" },
-      "猪龙鱼公爵":         { key: "dukeFishron",                        ext: "gif"  },
-      "光之女皇":           { key: "empressOfLight",                     ext: "gif"  },
-      "邪教徒":             { key: "lunaticCultist",                     ext: "gif"  },
-      "日耀柱":             { key: "solarPillar",                        ext: "webp" },
-      "星云柱":             { key: "nebulaPillar",                       ext: "webp" },
-      "漩涡柱":             { key: "vortexPillar",                       ext: "webp" },
-      "星尘柱":             { key: "stardustPillar",                     ext: "webp" },
-      "月亮领主":           { key: "moonLord",                           ext: "gif"  },
+      "史莱姆王":              { key: "kingSlime",                       ext: "gif"  },
+      "克苏鲁之眼":            { key: "eyeOfCthulhu",                    ext: "gif"  },
+      "世界吞噬者/克苏鲁之脑": { key: "eaterOfWorldsOrBrainOfCthulhu",   ext: "webp" },
+      "蜂后":                  { key: "queenBee",                        ext: "gif"  },
+      "骷髅王":                { key: "skeletron",                       ext: "webp" },
+      "独眼鹿怪":              { key: "deerclops",                       ext: "png"  },
+      "血肉墙":                { key: "wallOfFlesh",                     ext: "gif"  },
+      "史莱姆王后":            { key: "queenSlime",                      ext: "webp" },
+      "双子魔眼":              { key: "theTwins",                        ext: "gif"  },
+      "毁灭者":                { key: "theDestroyer",                    ext: "webp" },
+      "机械骷髅王":            { key: "skeletronPrime",                  ext: "gif"  },
+      "世纪之花":              { key: "plantera",                        ext: "gif"  },
+      "石巨人":                { key: "golem",                           ext: "webp" },
+      "猪龙鱼公爵":            { key: "dukeFishron",                     ext: "gif"  },
+      "光之女皇":              { key: "empressOfLight",                  ext: "gif"  },
+      "邪教徒":                { key: "lunaticCultist",                  ext: "gif"  },
+      "日耀柱":                { key: "solarPillar",                     ext: "webp" },
+      "星云柱":                { key: "nebulaPillar",                    ext: "webp" },
+      "漩涡柱":                { key: "vortexPillar",                    ext: "webp" },
+      "星尘柱":                { key: "stardustPillar",                  ext: "webp" },
+      "月亮领主":              { key: "moonLord",                        ext: "gif"  },
     };
 
     const data = JSON.parse(document.getElementById("progress-data").textContent);
     const progress = Array.isArray(data.progress) ? data.progress : [];
+    const theme = String(data.theme || "dark");
+
+    document.documentElement.setAttribute("data-theme", theme);
 
     document.getElementById("meta-server-id").textContent = `#${data.server_id || ""}`;
     document.getElementById("meta-server-name").textContent = data.server_name || "";
@@ -159,10 +186,9 @@
       const imgInfo = BOSS_IMG_MAP[name];
 
       const card = document.createElement("article");
-      card.className = "card rounded-xl border p-3 transition-all duration-200 flex flex-col items-center gap-2 "
+      card.className = "card rounded-xl border p-3 flex flex-col items-center gap-2 "
         + (isDefeated ? "card-defeated" : "card-undefeated");
 
-      // Image
       const imgWrap = document.createElement("div");
       imgWrap.className = "relative flex h-20 w-full items-center justify-center";
 
@@ -170,23 +196,22 @@
         const img = document.createElement("img");
         img.src = `/assets/imgs/boss/${imgInfo.key}.${imgInfo.ext}`;
         img.alt = name;
-        img.className = "max-h-20 max-w-[140px] object-contain " + (isDefeated ? "img-defeated" : "img-undefeated");
+        img.className = "max-h-20 max-w-[140px] object-contain "
+          + (isDefeated ? "img-defeated" : "img-undefeated");
         imgWrap.appendChild(img);
       } else {
         const placeholder = document.createElement("div");
         placeholder.className = "flex h-16 w-16 items-center justify-center rounded-full text-2xl "
-          + (isDefeated ? "bg-amber-900/30 text-amber-400" : "bg-stone-800/50 text-stone-600");
+          + (isDefeated ? "placeholder-defeated" : "placeholder-undefeated");
         placeholder.textContent = "?";
         imgWrap.appendChild(placeholder);
       }
 
-      // Name
       const nameEl = document.createElement("div");
       nameEl.className = "text-center text-sm font-semibold leading-tight "
-        + (isDefeated ? "text-amber-200" : "text-stone-500");
+        + (isDefeated ? "name-defeated" : "name-undefeated");
       nameEl.textContent = name;
 
-      // Badge
       const badge = document.createElement("span");
       badge.className = "rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-wide "
         + (isDefeated ? "badge-defeated" : "badge-undefeated");

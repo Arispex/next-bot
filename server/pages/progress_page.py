@@ -43,6 +43,7 @@ def build_payload(
     server_id: int,
     server_name: str,
     progress: dict[str, Any],
+    theme: str = "dark",
 ) -> dict[str, Any]:
     normalized = _normalize_progress(progress)
     defeated_count = sum(1 for item in normalized if item["defeated"])
@@ -53,6 +54,7 @@ def build_payload(
         "progress": normalized,
         "total_count": len(normalized),
         "defeated_count": defeated_count,
+        "theme": str(theme).strip() if str(theme).strip() in {"dark", "light"} else "dark",
     }
 
 
@@ -65,6 +67,7 @@ def render(payload: dict[str, Any]) -> bytes:
         "progress": payload.get("progress", []),
         "total_count": payload.get("total_count", 0),
         "defeated_count": payload.get("defeated_count", 0),
+        "theme": str(payload.get("theme", "dark")),
     }
     data_json = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     content = template.replace("__PROGRESS_DATA_JSON__", data_json)

@@ -66,11 +66,13 @@ def create_progress_page(
     server_id: int,
     server_name: str,
     progress: dict[str, Any],
+    theme: str = "dark",
 ) -> str:
     payload = progress_page.build_payload(
         server_id=server_id,
         server_name=server_name,
         progress=progress,
+        theme=theme,
     )
     token = create_page("progress", payload)
     settings = get_server_settings()
