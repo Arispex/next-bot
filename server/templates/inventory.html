@@ -202,10 +202,8 @@
     const showIndex = Boolean(data.show_index ?? true);
     const sectionRows = document.getElementById("section-rows");
     const statsSection = document.getElementById("stats-section");
-    const statsHeader = document.getElementById("stats-header");
     const itemNameMap = new Map();
     if (statsSection && !showStats) statsSection.classList.add("hidden");
-    if (statsHeader && !showStats) statsHeader.classList.add("hidden");
 
     const prefixNameMap = new Map();
     let activeHintEl = null;
