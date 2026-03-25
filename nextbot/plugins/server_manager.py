@@ -22,6 +22,7 @@ test_matcher = on_command("测试连通性")
 @add_matcher.handle()
 @command_control(
     command_key="server.add",
+    admin=True,
     display_name="添加服务器",
     permission="server.add",
     description="新增服务器",
@@ -61,6 +62,7 @@ async def handle_add_server(
 @delete_matcher.handle()
 @command_control(
     command_key="server.delete",
+    admin=True,
     display_name="删除服务器",
     permission="server.delete",
     description="删除服务器",
@@ -142,6 +144,7 @@ async def handle_list_servers(
 @test_matcher.handle()
 @command_control(
     command_key="server.test",
+    admin=True,
     display_name="测试连通性",
     permission="server.test",
     description="测试服务器 REST API 连通性",

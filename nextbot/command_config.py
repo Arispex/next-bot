@@ -33,6 +33,7 @@ class RegisteredCommand:
     handler_name: str
     permission: str
     default_enabled: bool
+    admin: bool
     param_schema: dict[str, dict[str, Any]]
     meta_hash: str
 
@@ -47,6 +48,7 @@ class RuntimeCommandState:
     handler_name: str
     permission: str
     enabled: bool
+    admin: bool
     param_schema: dict[str, dict[str, Any]]
     param_values: dict[str, Any]
     is_registered: bool
@@ -296,6 +298,7 @@ def _build_meta_hash(
     module_path: str,
     handler_name: str,
     permission: str,
+    admin: bool,
     param_schema: dict[str, dict[str, Any]],
 ) -> str:
     payload = {
@@ -306,6 +309,7 @@ def _build_meta_hash(
         "module_path": module_path,
         "handler_name": handler_name,
         "permission": permission,
+        "admin": admin,
         "param_schema": param_schema,
     }
     return hashlib.sha256(_json_dumps(payload).encode("utf-8")).hexdigest()
@@ -367,6 +371,7 @@ def _to_runtime_state(row: CommandConfig) -> RuntimeCommandState:
         schema=schema,
         old_values=_parse_json_object(row.param_values_json),
     )
+    registered = _registry.get(row.command_key)
     return RuntimeCommandState(
         command_key=row.command_key,
         display_name=row.display_name,
@@ -376,6 +381,7 @@ def _to_runtime_state(row: CommandConfig) -> RuntimeCommandState:
         handler_name=row.handler_name,
         permission=row.permission,
         enabled=bool(row.enabled),
+        admin=bool(registered.admin) if registered else False,
         param_schema=schema,
         param_values=values,
         is_registered=bool(row.is_registered),
@@ -427,6 +433,7 @@ def _get_runtime_state(command_key: str) -> RuntimeCommandState:
             handler_name="",
             permission="",
             enabled=True,
+            admin=False,
             param_schema={},
             param_values={},
             is_registered=False,
@@ -441,6 +448,7 @@ def _get_runtime_state(command_key: str) -> RuntimeCommandState:
         handler_name=registered.handler_name,
         permission=registered.permission,
         enabled=registered.default_enabled,
+        admin=registered.admin,
         param_schema=registered.param_schema,
         param_values=_build_default_param_values(registered.param_schema),
         is_registered=True,
@@ -495,6 +503,7 @@ def _serialize_runtime_state(item: RuntimeCommandState) -> dict[str, Any]:
         "handler_name": item.handler_name,
         "permission": item.permission,
         "enabled": item.enabled,
+        "admin": item.admin,
         "param_schema": _clone_dict(item.param_schema),
         "param_values": _clone_dict(item.param_values),
         "is_registered": item.is_registered,
@@ -703,6 +712,7 @@ def command_control(
     description: str = "",
     usage: str = "",
     default_enabled: bool = True,
+    admin: bool = False,
     params: dict[str, dict[str, Any]] | None = None,
 ):
     normalized_key = str(command_key).strip()
@@ -713,6 +723,7 @@ def command_control(
     normalized_permission = str(permission).strip()
     normalized_description = str(description).strip()
     normalized_usage = str(usage).strip()
+    normalized_admin = bool(admin)
     normalized_schema = _normalize_param_schema(params)
 
     def decorator(func):
@@ -726,6 +737,7 @@ def command_control(
             module_path=module_path,
             handler_name=handler_name,
             permission=normalized_permission,
+            admin=normalized_admin,
             param_schema=normalized_schema,
         )
 
@@ -738,6 +750,7 @@ def command_control(
             handler_name=handler_name,
             permission=normalized_permission,
             default_enabled=bool(default_enabled),
+            admin=normalized_admin,
             param_schema=_clone_dict(normalized_schema),
             meta_hash=meta_hash,
         )

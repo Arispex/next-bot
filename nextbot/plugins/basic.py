@@ -268,6 +268,7 @@ async def handle_online(
 @command_control(
     command_key="basic.execute",
     display_name="执行",
+    admin=True,
     permission="basic.execute",
     description="在指定服务器执行指令",
     usage="执行 <服务器 ID> <命令>",
@@ -771,6 +772,7 @@ async def handle_world_progress(
 @command_control(
     command_key="basic.map_image",
     display_name="查看地图",
+    admin=True,
     permission="basic.map_image",
     description="生成当前世界地图图片",
     usage="查看地图 <服务器 ID>",
@@ -828,6 +830,7 @@ async def handle_map_image(
 @command_control(
     command_key="basic.download_map",
     display_name="下载地图",
+    admin=True,
     permission="basic.download_map",
     description="下载当前世界的 .wld 文件",
     usage="下载地图 <服务器 ID>",

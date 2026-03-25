@@ -24,6 +24,7 @@ remove_perm_matcher = on_command("删除身份组权限")
 @list_matcher.handle()
 @command_control(
     command_key="group.list",
+    admin=True,
     display_name="身份组列表",
     permission="group.list",
     description="显示所有身份组",
@@ -62,6 +63,7 @@ async def handle_list_groups(
 @add_matcher.handle()
 @command_control(
     command_key="group.add",
+    admin=True,
     display_name="添加身份组",
     permission="group.add",
     description="新增身份组",
@@ -95,6 +97,7 @@ async def handle_add_group(
 @delete_matcher.handle()
 @command_control(
     command_key="group.delete",
+    admin=True,
     display_name="删除身份组",
     permission="group.delete",
     description="删除身份组",
@@ -142,6 +145,7 @@ async def handle_delete_group(
 @inherit_matcher.handle()
 @command_control(
     command_key="group.inherit.add",
+    admin=True,
     display_name="继承身份组",
     permission="group.inherit.add",
     description="设置身份组继承关系",
@@ -180,6 +184,7 @@ async def handle_inherit_group(
 @clear_inherit_matcher.handle()
 @command_control(
     command_key="group.inherit.clear",
+    admin=True,
     display_name="取消继承身份组",
     permission="group.inherit.clear",
     description="清空身份组继承关系",
@@ -213,6 +218,7 @@ async def handle_clear_inherit_group(
 @add_perm_matcher.handle()
 @command_control(
     command_key="group.permission.add",
+    admin=True,
     display_name="添加身份组权限",
     permission="group.permission.add",
     description="为身份组添加权限",
@@ -246,6 +252,7 @@ async def handle_add_group_perm(
 @remove_perm_matcher.handle()
 @command_control(
     command_key="group.permission.remove",
+    admin=True,
     display_name="删除身份组权限",
     permission="group.permission.remove",
     description="从身份组移除权限",

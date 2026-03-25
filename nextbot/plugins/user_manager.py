@@ -289,6 +289,7 @@ async def handle_self_info(
     permission="user.coins.add",
     description="为指定用户增加金币",
     usage="添加金币 <用户 ID/@用户/用户名称> <数量>",
+    admin=True,
 )
 @require_permission("user.coins.add")
 async def handle_add_coins(
@@ -347,6 +348,7 @@ async def handle_add_coins(
     permission="user.coins.remove",
     description="为指定用户扣减金币",
     usage="扣除金币 <用户 ID/@用户/用户名称> <数量>",
+    admin=True,
 )
 @require_permission("user.coins.remove")
 async def handle_remove_coins(
