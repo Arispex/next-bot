@@ -16,6 +16,7 @@
   const webServerPublicBaseUrlInput = document.getElementById("field-web-server-public-base-url");
   const commandDisabledModeInput = document.getElementById("field-command-disabled-mode");
   const commandDisabledMessageInput = document.getElementById("field-command-disabled-message");
+  const renderThemeInput = document.getElementById("field-render-theme");
   const tokenToggleButton = document.getElementById("token-toggle-btn");
 
   const requiredNodesReady = Boolean(
@@ -35,6 +36,7 @@
     webServerPublicBaseUrlInput &&
     commandDisabledModeInput &&
     commandDisabledMessageInput &&
+    renderThemeInput &&
     tokenToggleButton
   );
   if (!requiredNodesReady) {
@@ -54,6 +56,12 @@
     web_server_public_base_url: "Web 服务对外地址",
     command_disabled_mode: "命令关闭模式",
     command_disabled_message: "命令关闭提示语",
+    render_theme: "图片主题",
+  };
+  const RENDER_THEME_LABELS = {
+    auto: "跟随时间",
+    light: "亮色",
+    dark: "暗色",
   };
   const MODE_LABELS = {
     reply: "回复提示",
@@ -263,6 +271,7 @@
       web_server_public_base_url: parsedBaseUrl.toString().replace(/\/$/, ""),
       command_disabled_mode: commandDisabledMode,
       command_disabled_message: commandDisabledMessage,
+      render_theme: renderThemeInput.value,
     };
   };
 
@@ -278,6 +287,7 @@
     webServerPublicBaseUrlInput.value = String(data.web_server_public_base_url ?? "");
     commandDisabledModeInput.value = String(data.command_disabled_mode ?? "reply");
     commandDisabledMessageInput.value = String(data.command_disabled_message ?? "");
+    renderThemeInput.value = String(data.render_theme ?? "auto");
     updateArrayPreviews();
   };
 

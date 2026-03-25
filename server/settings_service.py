@@ -45,6 +45,7 @@ _FIELD_SPECS: tuple[FieldSpec, ...] = (
     FieldSpec("web_server_public_base_url", "WEB_SERVER_PUBLIC_BASE_URL"),
     FieldSpec("command_disabled_mode", "COMMAND_DISABLED_MODE"),
     FieldSpec("command_disabled_message", "COMMAND_DISABLED_MESSAGE"),
+    FieldSpec("render_theme", "RENDER_THEME"),
 )
 
 _FIELD_BY_NAME: dict[str, FieldSpec] = {item.field: item for item in _FIELD_SPECS}
@@ -55,6 +56,7 @@ _SINGLE_LINE_STRING_FIELDS = {
     "web_server_public_base_url",
     "command_disabled_mode",
     "command_disabled_message",
+    "render_theme",
 }
 
 
@@ -236,6 +238,14 @@ def _normalize_field(field: str, value: Any) -> Any:
         return mode
     if field == "command_disabled_message":
         return _coerce_string(value, field=field)
+    if field == "render_theme":
+        theme = _coerce_string(value, field=field).lower()
+        if theme not in {"dark", "light", "auto"}:
+            raise SettingsValidationError(
+                "render_theme 仅支持 dark、light 或 auto",
+                field=field,
+            )
+        return theme
     raise SettingsValidationError("不支持的配置项", field=field)
 
 
@@ -288,6 +298,8 @@ def _load_value_from_config(field: str, config: Any) -> Any:
         raw_value = "reply"
     if field == "command_disabled_message" and raw_value is None:
         raw_value = "该命令暂时关闭"
+    if field == "render_theme" and raw_value is None:
+        raw_value = "auto"
     return _normalize_field(field, raw_value if raw_value is not None else "")
 
 
