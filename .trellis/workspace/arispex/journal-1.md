@@ -633,3 +633,47 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 17: 排行榜翻页功能
+
+**Date**: 2026-03-25
+**Task**: 排行榜翻页功能
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+为金币排行榜和连续签到排行榜新增翻页支持。
+
+**功能变化**：
+- 命令新增可选 `[页数]` 参数，默认第 1 页
+- 页数无效或超出范围时返回对应错误提示
+- DB 查询加 offset/limit 实现分页，查询总数计算 total_pages
+- 仅第 1 页显示颁奖台大卡片，其余页全部走列表样式
+- 页码 "第 X 页 / 共 Y 页" 居中显示在底部
+
+**重构**：抽取 `_render_and_send` 共用函数消除两个命令的重复代码
+
+**修改文件**：`leaderboard.py`、`leaderboard_page.py`、`leaderboard.html`、`web_server.py`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c239b71` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
