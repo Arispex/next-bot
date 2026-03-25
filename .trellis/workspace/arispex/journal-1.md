@@ -495,3 +495,45 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 13: 新增排行榜插件 - 金币排行榜
+
+**Date**: 2026-03-25
+**Task**: 新增排行榜插件 - 金币排行榜
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+新建排行榜插件，首个功能为金币排行榜，以网页渲染截图方式发送。
+
+**新增文件**：
+- `nextbot/plugins/leaderboard.py`：「金币排行榜」命令，DB 按金币降序取前 N 名（可配置 limit=1~50，默认 10）
+- `server/pages/leaderboard_page.py`：build_payload + render，传递 rank/name/user_id/coins
+- `server/templates/leaderboard.html`：颁奖台风格暗色设计，前三名大卡片（金/银/铜专属配色 + 巨大排名背景装饰），4 名之后紧凑列表，用户名后显示（用户 ID）
+
+**修改文件**：
+- `server/web_server.py`：新增 `create_leaderboard_page`
+- `server/routes/render.py`：注册 `/render/leaderboard/{token}` 路由
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `aef9f35` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
