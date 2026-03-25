@@ -3,106 +3,198 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NextBot WebUI - 世界进度</title>
+  <title>NextBot - 世界进度</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: "#eff6ff",
-              100: "#dbeafe",
-              500: "#3b82f6",
-              600: "#2563eb",
-              700: "#1d4ed8",
-              800: "#1e40af"
-            }
-          }
-        }
-      }
-    };
-  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap');
+
+    body {
+      background-color: #0d0d0f;
+      background-image:
+        radial-gradient(ellipse at 20% 0%, rgba(120, 60, 20, 0.18) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 100%, rgba(40, 20, 80, 0.22) 0%, transparent 55%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%23111114'/%3E%3Crect x='0' y='0' width='32' height='32' fill='%2312121a' opacity='0.5'/%3E%3Crect x='32' y='32' width='32' height='32' fill='%2312121a' opacity='0.5'/%3E%3C/svg%3E");
+    }
+
+    .title-font { font-family: 'Cinzel', serif; }
+
+    .card-defeated {
+      background: linear-gradient(135deg, rgba(30,20,5,0.95) 0%, rgba(45,30,8,0.95) 100%);
+      border-color: rgba(212, 160, 40, 0.55);
+      box-shadow: 0 0 18px rgba(212,160,40,0.12), inset 0 0 20px rgba(212,160,40,0.04);
+    }
+    .card-defeated:hover { border-color: rgba(212,160,40,0.85); }
+    .card-undefeated {
+      background: linear-gradient(135deg, rgba(14,14,18,0.95) 0%, rgba(18,18,24,0.95) 100%);
+      border-color: rgba(60,60,80,0.45);
+    }
+
+    .badge-defeated {
+      background: linear-gradient(90deg, #b8860b, #d4a017);
+      color: #fff8e1;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+      box-shadow: 0 0 8px rgba(212,160,23,0.4);
+    }
+    .badge-undefeated {
+      background: rgba(40,40,55,0.8);
+      color: #6b7280;
+      border: 1px solid rgba(75,75,100,0.4);
+    }
+
+    .img-defeated { filter: drop-shadow(0 0 8px rgba(212,160,23,0.5)); }
+    .img-undefeated { filter: grayscale(85%) brightness(0.45); }
+
+    .progress-bar-fill {
+      background: linear-gradient(90deg, #b8860b 0%, #d4a017 60%, #f0c030 100%);
+      box-shadow: 0 0 10px rgba(212,160,23,0.5);
+      transition: width 0.6s ease;
+    }
+
+    .header-glow {
+      background: linear-gradient(135deg, rgba(180,120,20,0.12) 0%, transparent 60%);
+    }
+  </style>
 </head>
-<body class="min-h-screen bg-[radial-gradient(circle_at_top,#dbeafe_0%,#f8fafc_35%,#e2e8f0_100%)] p-5 text-slate-900">
-  <main class="mx-auto max-w-[1900px] overflow-hidden rounded-3xl border border-slate-200 bg-white/90 shadow-2xl shadow-blue-200/60 backdrop-blur">
-    <header class="relative overflow-hidden bg-gradient-to-r from-brand-700 via-brand-600 to-brand-800 px-6 py-5 text-white">
-      <div class="absolute -left-10 -top-12 h-40 w-40 rounded-full bg-white/15 blur-2xl"></div>
-      <div class="absolute -right-16 top-0 h-44 w-44 rounded-full bg-cyan-200/20 blur-3xl"></div>
-      <div class="relative">
-        <h1 class="text-3xl font-bold tracking-wide">世界进度</h1>
-        <div class="mt-4 grid grid-cols-3 gap-2 text-sm md:grid-cols-5">
-          <div class="rounded-lg bg-white/15 px-3 py-2">
-            <div class="text-[11px] text-blue-100">服务器 ID</div>
-            <div id="meta-server-id" class="truncate font-semibold"></div>
+<body class="min-h-screen p-5">
+  <main class="mx-auto max-w-[1700px] overflow-hidden rounded-2xl border border-[rgba(80,60,20,0.4)] shadow-2xl"
+        style="background: linear-gradient(180deg, #141418 0%, #0f0f13 100%); box-shadow: 0 0 60px rgba(0,0,0,0.8), 0 0 30px rgba(180,120,20,0.08);">
+
+    <!-- Header -->
+    <header class="relative overflow-hidden border-b border-[rgba(80,60,20,0.35)] px-7 py-6 header-glow">
+      <div class="absolute -left-8 -top-8 h-48 w-48 rounded-full opacity-20"
+           style="background: radial-gradient(circle, rgba(180,120,20,0.6) 0%, transparent 70%);"></div>
+      <div class="absolute -right-8 top-0 h-40 w-40 rounded-full opacity-10"
+           style="background: radial-gradient(circle, rgba(120,60,180,0.6) 0%, transparent 70%);"></div>
+
+      <div class="relative flex items-start justify-between gap-6">
+        <div>
+          <h1 class="title-font text-3xl font-black tracking-widest text-amber-200/90"
+              style="text-shadow: 0 0 20px rgba(212,160,23,0.4);">
+            世界进度
+          </h1>
+          <div class="mt-1 flex items-center gap-3 text-sm text-stone-400">
+            <span id="meta-server-id" class="font-mono"></span>
+            <span class="text-stone-600">·</span>
+            <span id="meta-server-name" class="font-semibold text-stone-300"></span>
+            <span class="text-stone-600">·</span>
+            <span id="meta-generated-at" class="text-xs text-stone-500"></span>
           </div>
-          <div class="rounded-lg bg-white/15 px-3 py-2 md:col-span-2">
-            <div class="text-[11px] text-blue-100">服务器名称</div>
-            <div id="meta-server-name" class="truncate font-semibold"></div>
+        </div>
+
+        <div class="shrink-0 text-right">
+          <div class="text-xs font-medium uppercase tracking-widest text-stone-500">已击败</div>
+          <div class="title-font text-4xl font-black" style="color: #d4a017; text-shadow: 0 0 16px rgba(212,160,23,0.5);">
+            <span id="meta-defeated-count">0</span>
+            <span class="text-2xl text-stone-500">/</span>
+            <span id="meta-total-count" class="text-2xl text-stone-400">0</span>
           </div>
-          <div class="rounded-lg bg-white/15 px-3 py-2">
-            <div class="text-[11px] text-blue-100">已击败</div>
-            <div id="meta-defeated" class="truncate font-semibold"></div>
-          </div>
-          <div class="rounded-lg bg-white/15 px-3 py-2">
-            <div class="text-[11px] text-blue-100">生成时间</div>
-            <div id="meta-generated-at" class="truncate font-semibold"></div>
-          </div>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="relative mt-4">
+        <div class="h-2 w-full overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
+          <div id="progress-bar" class="progress-bar-fill h-2 rounded-full" style="width:0%"></div>
         </div>
       </div>
     </header>
 
-    <section class="p-4">
-      <div
-        id="progress-grid"
-        class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"
-      ></div>
+    <!-- Grid -->
+    <section class="p-5">
+      <div id="progress-grid" class="grid gap-3"
+           style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));"></div>
     </section>
 
-    <div class="px-6 pb-4 text-right text-xs font-medium tracking-wide text-slate-400">
+    <div class="px-6 pb-4 text-right text-xs font-medium tracking-widest text-stone-700">
       Powered by NextBot
     </div>
   </main>
 
   <script id="progress-data" type="application/json">__PROGRESS_DATA_JSON__</script>
   <script>
+    // Chinese name → { key: apiKey, ext: fileExt }
+    const BOSS_IMG_MAP = {
+      "史莱姆王":           { key: "kingSlime",                          ext: "gif"  },
+      "克苏鲁之眼":         { key: "eyeOfCthulhu",                       ext: "gif"  },
+      "世界吞噬者/克苏鲁之脑": { key: "eaterOfWorldsOrBrainOfCthulhu",  ext: "webp" },
+      "蜂后":               { key: "queenBee",                           ext: "gif"  },
+      "骷髅王":             { key: "skeletron",                          ext: "webp" },
+      "独眼鹿怪":           { key: "deerclops",                          ext: "png"  },
+      "血肉墙":             { key: "wallOfFlesh",                        ext: "gif"  },
+      "史莱姆王后":         { key: "queenSlime",                         ext: "webp" },
+      "双子魔眼":           { key: "theTwins",                           ext: "gif"  },
+      "毁灭者":             { key: "theDestroyer",                       ext: "webp" },
+      "机械骷髅王":         { key: "skeletronPrime",                     ext: "gif"  },
+      "世纪之花":           { key: "plantera",                           ext: "gif"  },
+      "石巨人":             { key: "golem",                              ext: "webp" },
+      "猪龙鱼公爵":         { key: "dukeFishron",                        ext: "gif"  },
+      "光之女皇":           { key: "empressOfLight",                     ext: "gif"  },
+      "邪教徒":             { key: "lunaticCultist",                     ext: "gif"  },
+      "日耀柱":             { key: "solarPillar",                        ext: "webp" },
+      "星云柱":             { key: "nebulaPillar",                       ext: "webp" },
+      "漩涡柱":             { key: "vortexPillar",                       ext: "webp" },
+      "星尘柱":             { key: "stardustPillar",                     ext: "webp" },
+      "月亮领主":           { key: "moonLord",                           ext: "gif"  },
+    };
+
     const data = JSON.parse(document.getElementById("progress-data").textContent);
     const progress = Array.isArray(data.progress) ? data.progress : [];
 
-    document.getElementById("meta-server-id").textContent = data.server_id || "";
+    document.getElementById("meta-server-id").textContent = `#${data.server_id || ""}`;
     document.getElementById("meta-server-name").textContent = data.server_name || "";
     document.getElementById("meta-generated-at").textContent = data.generated_at || "";
-    document.getElementById("meta-defeated").textContent =
-      `${Number(data.defeated_count || 0)}/${Number(data.total_count || 0)}`;
+
+    const total = Number(data.total_count || 0);
+    const defeated = Number(data.defeated_count || 0);
+    document.getElementById("meta-defeated-count").textContent = defeated;
+    document.getElementById("meta-total-count").textContent = total;
+    if (total > 0) {
+      document.getElementById("progress-bar").style.width = `${Math.round(defeated / total * 100)}%`;
+    }
 
     const grid = document.getElementById("progress-grid");
     progress.forEach((item) => {
-      const defeated = Boolean(item?.defeated);
+      const isDefeated = Boolean(item?.defeated);
+      const name = String(item?.name || "未知");
+      const imgInfo = BOSS_IMG_MAP[name];
+
       const card = document.createElement("article");
-      card.className =
-        "rounded-2xl border px-4 py-3 shadow-sm transition-colors " +
-        (defeated
-          ? "border-emerald-200 bg-emerald-50"
-          : "border-slate-200 bg-slate-50");
+      card.className = "card rounded-xl border p-3 transition-all duration-200 flex flex-col items-center gap-2 "
+        + (isDefeated ? "card-defeated" : "card-undefeated");
 
-      const head = document.createElement("div");
-      head.className = "flex items-center justify-between gap-2";
+      // Image
+      const imgWrap = document.createElement("div");
+      imgWrap.className = "relative flex h-20 w-full items-center justify-center";
 
-      const name = document.createElement("h2");
-      name.className = "text-base font-semibold text-slate-900";
-      name.textContent = String(item?.name || "未知目标");
+      if (imgInfo) {
+        const img = document.createElement("img");
+        img.src = `/assets/imgs/boss/${imgInfo.key}.${imgInfo.ext}`;
+        img.alt = name;
+        img.className = "max-h-20 max-w-[140px] object-contain " + (isDefeated ? "img-defeated" : "img-undefeated");
+        imgWrap.appendChild(img);
+      } else {
+        const placeholder = document.createElement("div");
+        placeholder.className = "flex h-16 w-16 items-center justify-center rounded-full text-2xl "
+          + (isDefeated ? "bg-amber-900/30 text-amber-400" : "bg-stone-800/50 text-stone-600");
+        placeholder.textContent = "?";
+        imgWrap.appendChild(placeholder);
+      }
 
+      // Name
+      const nameEl = document.createElement("div");
+      nameEl.className = "text-center text-sm font-semibold leading-tight "
+        + (isDefeated ? "text-amber-200" : "text-stone-500");
+      nameEl.textContent = name;
+
+      // Badge
       const badge = document.createElement("span");
-      badge.className =
-        "rounded-full border px-2.5 py-1 text-xs font-semibold " +
-        (defeated
-          ? "border-emerald-200 bg-white text-emerald-700"
-          : "border-slate-200 bg-white text-slate-600");
-      badge.textContent = defeated ? "已击败" : "未击败";
+      badge.className = "rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-wide "
+        + (isDefeated ? "badge-defeated" : "badge-undefeated");
+      badge.textContent = isDefeated ? "✓ 已击败" : "未击败";
 
-      head.appendChild(name);
-      head.appendChild(badge);
-      card.appendChild(head);
+      card.appendChild(imgWrap);
+      card.appendChild(nameEl);
+      card.appendChild(badge);
       grid.appendChild(card);
     });
   </script>

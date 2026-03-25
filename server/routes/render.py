@@ -15,6 +15,7 @@ router = APIRouter()
 SERVER_DIR = Path(__file__).resolve().parent.parent
 ITEMS_DIR = SERVER_DIR / "assets" / "items"
 DICTS_DIR = SERVER_DIR / "assets" / "dicts"
+BOSS_IMGS_DIR = SERVER_DIR / "assets" / "imgs" / "boss"
 
 
 def _render_page(
@@ -69,4 +70,10 @@ async def get_item_asset(file_path: str) -> FileResponse:
 @router.get("/assets/dicts/{file_path:path}")
 async def get_dict_asset(file_path: str) -> FileResponse:
     resolved_path = _resolve_static_file(DICTS_DIR, file_path)
+    return FileResponse(path=resolved_path)
+
+
+@router.get("/assets/imgs/boss/{file_path:path}")
+async def get_boss_img_asset(file_path: str) -> FileResponse:
+    resolved_path = _resolve_static_file(BOSS_IMGS_DIR, file_path)
     return FileResponse(path=resolved_path)
