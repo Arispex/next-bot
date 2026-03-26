@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 30
-- **Last Active**: 2026-03-26
+- **Total Sessions**: 31
+- **Last Active**: 2026-03-27
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1135 | Active |
+| `journal-1.md` | ~1167 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits |
 |---|------|-------|---------|
+| 31 | 2026-03-27 | 在线时长排行榜 | `194bbaa` |
 | 30 | 2026-03-26 | 死亡/渔夫任务排行榜 | `44de5ae`, `4d7de26` |
 | 29 | 2026-03-26 | 死亡排行榜 | `44de5ae` |
 | 28 | 2026-03-25 | WebUI 用户签到字段展示与编辑 | `450d72b` |
