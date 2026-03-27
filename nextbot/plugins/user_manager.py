@@ -1,7 +1,10 @@
+import base64
 import re
+from pathlib import Path
 
 from nonebot import on_command
 from nonebot.adapters import Bot, Event, Message
+from nonebot.adapters.onebot.v11 import MessageSegment as OBV11MessageSegment
 from nonebot.log import logger
 from nonebot.params import CommandArg
 from nextbot.command_config import command_control, raise_command_usage
@@ -10,14 +13,23 @@ from nextbot.message_parser import (
     resolve_user_id_arg_with_fallback,
 )
 from nextbot.permissions import require_permission
-from nextbot.time_utils import format_beijing_datetime
+from nextbot.render_utils import resolve_render_theme
+from nextbot.time_utils import beijing_filename_timestamp, format_beijing_datetime
+from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
+from server.web_server import create_user_info_page
 
-from nextbot.db import Server, User, get_session
+from nextbot.db import Server, User, UserSignRecord, get_session
 from nextbot.tshock_api import (
     TShockRequestError,
     get_error_reason,
     is_success,
     request_server_api,
+)
+
+USER_INFO_SCREENSHOT_OPTIONS = ScreenshotOptions(
+    viewport_width=820,
+    viewport_height=600,
+    full_page=True,
 )
 
 add_matcher = on_command("注册账号")
@@ -184,12 +196,67 @@ async def handle_sync_whitelist(
     await bot.send(event, "\n".join(lines))
 
 
+def _get_sign_dates(user_id: str, days: int) -> list[str]:
+    session = get_session()
+    try:
+        records = (
+            session.query(UserSignRecord)
+            .filter(UserSignRecord.user_id == user_id)
+            .order_by(UserSignRecord.sign_date.desc())
+            .limit(days)
+            .all()
+        )
+        return [r.sign_date for r in records]
+    finally:
+        session.close()
+
+
+async def _render_and_send_user_info(bot: Bot, event: Event, user: User, days: int) -> None:
+    sign_dates = _get_sign_dates(user.user_id, days)
+    created_at = format_beijing_datetime(user.created_at)
+    page_url = create_user_info_page(
+        user_id=user.user_id,
+        user_name=user.name,
+        coins=int(user.coins or 0),
+        sign_streak=int(user.sign_streak or 0),
+        sign_total=int(user.sign_total or 0),
+        permissions=str(user.permissions or ""),
+        group=str(user.group or ""),
+        created_at=created_at,
+        sign_dates=sign_dates,
+        days=days,
+        theme=resolve_render_theme(),
+    )
+    logger.info(
+        f"用户信息渲染地址：user_id={user.user_id} name={user.name} "
+        f"days={days} sign_dates_count={len(sign_dates)} internal_url={page_url}"
+    )
+    screenshot_path = Path("/tmp") / f"user-info-{user.user_id}-{beijing_filename_timestamp()}.png"
+    try:
+        await screenshot_url(page_url, screenshot_path, options=USER_INFO_SCREENSHOT_OPTIONS)
+    except RenderScreenshotError as exc:
+        await bot.send(event, f"查询失败，{exc}")
+        return
+
+    logger.info(f"用户信息截图成功：user_id={user.user_id} file={screenshot_path}")
+    if bot.adapter.get_name() == "OneBot V11":
+        try:
+            raw = screenshot_path.read_bytes()
+            image_uri = f"base64://{base64.b64encode(raw).decode('ascii')}"
+        except OSError:
+            await bot.send(event, "查询失败，读取截图文件失败")
+            return
+        await bot.send(event, OBV11MessageSegment.image(file=image_uri))
+        return
+    await bot.send(event, f"截图成功，文件：{screenshot_path}")
+
+
 @info_matcher.handle()
 @command_control(
     command_key="user.info.user",
     display_name="用户信息",
     permission="user.info.user",
-    description="查询指定用户信息",
+    description="查询指定用户信息并生成截图",
     usage="用户信息 <用户 ID/@用户/用户名称>",
 )
 @require_permission("user.info.user")
@@ -227,20 +294,7 @@ async def handle_user_info(
         await bot.send(event, "查询失败，用户不存在")
         return
 
-    created_at = format_beijing_datetime(user.created_at)
-    message = "\n".join(
-        [
-            f"用户 ID：{user.user_id}",
-            f"用户名称：{user.name}",
-            f"金币：{user.coins}",
-            f"累计签到：{int(user.sign_total or 0)} 次",
-            f"连续签到：{int(user.sign_streak or 0)} 天",
-            f"权限：{user.permissions or '无'}",
-            f"身份组：{user.group}",
-            f"创建时间：{created_at}",
-        ]
-    )
-    await bot.send(event, message)
+    await _render_and_send_user_info(bot, event, user, 365)
 
 
 @self_info_matcher.handle()
@@ -248,7 +302,7 @@ async def handle_user_info(
     command_key="user.info.self",
     display_name="我的信息",
     permission="user.info.self",
-    description="查询当前用户信息",
+    description="查询当前用户信息并生成截图",
     usage="我的信息",
 )
 @require_permission("user.info.self")
@@ -270,20 +324,7 @@ async def handle_self_info(
         await bot.send(event, "查询失败，未注册账号")
         return
 
-    created_at = format_beijing_datetime(user.created_at)
-    message = "\n".join(
-        [
-            f"用户 ID：{user.user_id}",
-            f"用户名称：{user.name}",
-            f"金币：{user.coins}",
-            f"累计签到：{int(user.sign_total or 0)} 次",
-            f"连续签到：{int(user.sign_streak or 0)} 天",
-            f"权限：{user.permissions or '无'}",
-            f"身份组：{user.group}",
-            f"创建时间：{created_at}",
-        ]
-    )
-    await bot.send(event, message)
+    await _render_and_send_user_info(bot, event, user, 365)
 
 
 @add_coins_matcher.handle()

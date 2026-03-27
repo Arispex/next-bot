@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NextBot - 用户信息</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* ── Light theme ────────────────────────────────────────── */
+    [data-theme="light"] body { background: linear-gradient(160deg, #f0f4ff 0%, #f8fafc 40%, #eef2f7 100%); }
+    [data-theme="light"] .main-card    { background: white; border-color: #e2e8f0; box-shadow: 0 20px 60px rgba(30,64,175,0.10), 0 4px 16px rgba(0,0,0,0.05); }
+    [data-theme="light"] .avatar-ring  { border-color: #e2e8f0; box-shadow: 0 4px 12px rgba(30,64,175,0.12); }
+    [data-theme="light"] .user-name    { color: #0f172a; }
+    [data-theme="light"] .user-id      { color: #94a3b8; }
+    [data-theme="light"] .group-badge  { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
+    [data-theme="light"] .reg-time     { color: #94a3b8; }
+    [data-theme="light"] .divider      { background: #f1f5f9; }
+    [data-theme="light"] .stat-card    { background: #f8fafc; border: 1px solid #e2e8f0; }
+    [data-theme="light"] .stat-label   { color: #94a3b8; }
+    [data-theme="light"] .stat-value   { color: #0f172a; }
+    [data-theme="light"] .perm-badge   { background: #f1f5f9; border: 1px solid #e2e8f0; color: #475569; }
+    [data-theme="light"] .perm-none    { color: #cbd5e1; }
+    [data-theme="light"] .wall-wrap    { background: #f8fafc; border: 1px solid #e2e8f0; }
+    [data-theme="light"] .wall-title   { color: #334155; }
+    [data-theme="light"] .month-label  { color: #94a3b8; }
+    [data-theme="light"] .day-empty    { background: #e2e8f0; }
+    [data-theme="light"] .day-signed   { background: #22c55e; }
+    [data-theme="light"] .day-outside  { background: transparent; }
+    [data-theme="light"] .footer-text  { color: #cbd5e1; }
+
+    /* ── Dark theme ─────────────────────────────────────────── */
+    [data-theme="dark"] body {
+      background-color: #0d0d0f;
+      background-image:
+        radial-gradient(ellipse at 15% 0%, rgba(60,40,120,0.18) 0%, transparent 55%),
+        radial-gradient(ellipse at 85% 100%, rgba(20,40,100,0.22) 0%, transparent 55%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%23111114'/%3E%3Crect x='0' y='0' width='32' height='32' fill='%2312121a' opacity='0.5'/%3E%3Crect x='32' y='32' width='32' height='32' fill='%2312121a' opacity='0.5'/%3E%3C/svg%3E");
+    }
+    [data-theme="dark"] .main-card    { background: rgba(18,18,26,0.96); border-color: rgba(60,65,100,0.35); box-shadow: 0 0 60px rgba(0,0,0,0.8); }
+    [data-theme="dark"] .avatar-ring  { border-color: rgba(60,65,100,0.5); box-shadow: 0 4px 16px rgba(0,0,0,0.6); }
+    [data-theme="dark"] .user-name    { color: #e2e8f0; }
+    [data-theme="dark"] .user-id      { color: #475569; }
+    [data-theme="dark"] .group-badge  { background: rgba(30,35,70,0.8); border: 1px solid rgba(80,90,160,0.45); color: #818cf8; }
+    [data-theme="dark"] .reg-time     { color: #334155; }
+    [data-theme="dark"] .divider      { background: rgba(60,65,100,0.25); }
+    [data-theme="dark"] .stat-card    { background: rgba(20,20,30,0.8); border: 1px solid rgba(60,65,100,0.35); }
+    [data-theme="dark"] .stat-label   { color: #475569; }
+    [data-theme="dark"] .stat-value   { color: #e2e8f0; }
+    [data-theme="dark"] .perm-badge   { background: rgba(30,35,70,0.7); border: 1px solid rgba(60,65,100,0.4); color: #818cf8; }
+    [data-theme="dark"] .perm-none    { color: #334155; }
+    [data-theme="dark"] .wall-wrap    { background: rgba(16,16,24,0.8); border: 1px solid rgba(60,65,100,0.3); }
+    [data-theme="dark"] .wall-title   { color: #94a3b8; }
+    [data-theme="dark"] .month-label  { color: #334155; }
+    [data-theme="dark"] .day-empty    { background: rgba(40,40,60,0.6); }
+    [data-theme="dark"] .day-signed   { background: #6366f1; }
+    [data-theme="dark"] .day-outside  { background: transparent; }
+    [data-theme="dark"] .footer-text  { color: #1e293b; }
+  </style>
+</head>
+<body class="min-h-screen px-6 py-8">
+
+  <main class="main-card mx-auto max-w-[820px] overflow-hidden rounded-3xl border">
+
+    <!-- Header -->
+    <section class="px-8 py-7">
+      <div class="flex items-center gap-6">
+        <img id="user-avatar" class="avatar-ring h-20 w-20 shrink-0 rounded-full border-2 object-cover" alt="avatar" />
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <h1 id="user-name" class="user-name text-2xl font-bold tracking-tight"></h1>
+            <span id="group-badge" class="group-badge rounded-full px-2.5 py-0.5 text-xs font-semibold"></span>
+          </div>
+          <div id="user-id" class="user-id mt-1 text-sm font-mono"></div>
+          <div id="reg-time" class="reg-time mt-1 text-xs"></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider mx-8 h-px"></div>
+
+    <!-- Stats -->
+    <section class="grid grid-cols-4 gap-3 px-8 py-5">
+      <div class="stat-card rounded-2xl px-4 py-3 text-center">
+        <div class="stat-label text-[10px] font-semibold uppercase tracking-widest">金币</div>
+        <div id="stat-coins" class="stat-value mt-1 text-xl font-black tabular-nums"></div>
+      </div>
+      <div class="stat-card rounded-2xl px-4 py-3 text-center">
+        <div class="stat-label text-[10px] font-semibold uppercase tracking-widest">累计签到</div>
+        <div id="stat-sign-total" class="stat-value mt-1 text-xl font-black tabular-nums"></div>
+      </div>
+      <div class="stat-card rounded-2xl px-4 py-3 text-center">
+        <div class="stat-label text-[10px] font-semibold uppercase tracking-widest">连续签到</div>
+        <div id="stat-sign-streak" class="stat-value mt-1 text-xl font-black tabular-nums"></div>
+      </div>
+      <div class="stat-card rounded-2xl px-4 py-3">
+        <div class="stat-label text-[10px] font-semibold uppercase tracking-widest">权限</div>
+        <div id="stat-permissions" class="mt-1.5 flex flex-wrap gap-1"></div>
+      </div>
+    </section>
+
+    <div class="divider mx-8 h-px"></div>
+
+    <!-- Contribution Wall -->
+    <section class="px-8 py-5">
+      <div class="wall-wrap rounded-2xl px-5 py-4">
+        <div class="wall-title mb-3 text-xs font-semibold uppercase tracking-widest">签到记录</div>
+        <div class="flex gap-2">
+          <!-- Day labels -->
+          <div id="wall-day-labels" class="flex shrink-0 flex-col text-[10px]"></div>
+          <!-- Month labels + grid -->
+          <div class="flex min-w-0 flex-1 flex-col gap-[2px]">
+            <div id="wall-months" class="text-[10px]"></div>
+            <div id="wall-grid"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer-text px-8 pb-5 text-right text-xs tracking-widest">Powered by NextBot</div>
+  </main>
+
+  <script id="user-info-data" type="application/json">__USER_INFO_DATA_JSON__</script>
+  <script>
+    const data = JSON.parse(document.getElementById("user-info-data").textContent);
+    document.documentElement.setAttribute("data-theme", data.theme || "light");
+
+    document.getElementById("user-avatar").src =
+      `http://q1.qlogo.cn/g?b=qq&nk=${encodeURIComponent(data.user_id || "")}&s=100`;
+    document.getElementById("user-name").textContent = data.user_name || "—";
+    document.getElementById("user-id").textContent = `QQ：${data.user_id || ""}`;
+    document.getElementById("group-badge").textContent = data.group || "guest";
+    document.getElementById("reg-time").textContent = `注册时间：${data.created_at || ""}`;
+
+    document.getElementById("stat-coins").textContent = Number(data.coins || 0).toLocaleString("zh-CN");
+    document.getElementById("stat-sign-total").textContent = `${data.sign_total ?? 0} 次`;
+    document.getElementById("stat-sign-streak").textContent = `${data.sign_streak ?? 0} 天`;
+
+    // Permissions
+    const permWrap = document.getElementById("stat-permissions");
+    const perms = String(data.permissions || "").split(",").map(s => s.trim()).filter(Boolean);
+    if (perms.length) {
+      perms.forEach(p => {
+        const b = document.createElement("span");
+        b.className = "perm-badge rounded-full px-2 py-0.5 text-[10px] font-medium";
+        b.textContent = p;
+        permWrap.appendChild(b);
+      });
+    } else {
+      const none = document.createElement("span");
+      none.className = "perm-none text-xs";
+      none.textContent = "无";
+      permWrap.appendChild(none);
+    }
+
+    // Contribution wall
+    const signSet = new Set(Array.isArray(data.sign_dates) ? data.sign_dates : []);
+    const days = Math.max(7, Math.min(Number(data.days || 90), 365));
+
+    const toDateStr = (d) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    };
+
+    // today in local time
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = toDateStr(today);
+
+    // range start
+    const rangeStart = new Date(today);
+    rangeStart.setDate(rangeStart.getDate() - (days - 1));
+
+    // align to Monday
+    const dow = (rangeStart.getDay() + 6) % 7; // 0=Mon
+    const wallStart = new Date(rangeStart);
+    wallStart.setDate(wallStart.getDate() - dow);
+
+    // build weeks
+    const weeks = [];
+    const monthCols = {}; // colIndex -> month label
+    const seenMonths = new Set();
+    let cur = new Date(wallStart);
+    let col = 0;
+    while (cur <= today) {
+      const week = [];
+      for (let r = 0; r < 7; r++) {
+        const ds = toDateStr(cur);
+        const inRange = cur >= rangeStart && cur <= today;
+        if (r === 0) {
+          const monthKey = `${cur.getFullYear()}-${cur.getMonth()}`;
+          if (!seenMonths.has(monthKey)) {
+            seenMonths.add(monthKey);
+            monthCols[col] = `${cur.getMonth() + 1}月`;
+          }
+        }
+        week.push({ ds, signed: signSet.has(ds), inRange });
+        const next = new Date(cur);
+        next.setDate(next.getDate() + 1);
+        cur = next;
+      }
+      weeks.push(week);
+      col++;
+    }
+
+    const gap = 2;
+    const cellH = 11; // fixed row height px
+    const numCols = weeks.length;
+
+    // Month labels row — fixed height so spacer can align exactly
+    const monthsEl = document.getElementById("wall-months");
+    monthsEl.style.display = "grid";
+    monthsEl.style.gridTemplateColumns = `repeat(${numCols}, 1fr)`;
+    monthsEl.style.gap = `${gap}px`;
+    monthsEl.style.height = `${cellH}px`;
+    monthsEl.style.lineHeight = `${cellH}px`;
+    monthsEl.style.overflow = "visible";
+    weeks.forEach((_, ci) => {
+      const span = document.createElement("span");
+      span.className = "month-label";
+      span.style.whiteSpace = "nowrap";
+      span.style.overflow = "visible";
+      span.textContent = monthCols[ci] || "";
+      monthsEl.appendChild(span);
+    });
+
+    // Day labels (一, 三, 五 on rows 0, 2, 4 = Mon, Wed, Fri)
+    const dayLabelsEl = document.getElementById("wall-day-labels");
+    const DAY_LABELS = ["周一", "", "周三", "", "周五", "", "周日"];
+    // spacer = month row height + gap between months and grid
+    const topSpacer = document.createElement("div");
+    topSpacer.style.height = `${cellH + gap}px`;
+    dayLabelsEl.appendChild(topSpacer);
+    DAY_LABELS.forEach((label, i) => {
+      const span = document.createElement("span");
+      span.className = "month-label";
+      span.style.height = `${cellH}px`;
+      span.style.lineHeight = `${cellH}px`;
+      span.style.display = "block";
+      span.style.whiteSpace = "nowrap";
+      if (i > 0) span.style.marginTop = `${gap}px`;
+      span.textContent = label;
+      dayLabelsEl.appendChild(span);
+    });
+
+    // Grid — CSS grid, column-major flow, 1fr columns fill width
+    const gridEl = document.getElementById("wall-grid");
+    gridEl.style.display = "grid";
+    gridEl.style.gridTemplateRows = `repeat(7, ${cellH}px)`;
+    gridEl.style.gridTemplateColumns = `repeat(${numCols}, 1fr)`;
+    gridEl.style.gridAutoFlow = "column";
+    gridEl.style.gap = `${gap}px`;
+
+    weeks.forEach(week => {
+      week.forEach(({ ds, signed, inRange }) => {
+        const cell = document.createElement("div");
+        cell.style.borderRadius = "2px";
+        cell.className = !inRange ? "day-outside" : signed ? "day-signed" : "day-empty";
+        if (inRange) cell.title = `${ds}${signed ? " ✓" : ""}`;
+        gridEl.appendChild(cell);
+      });
+    });
+  </script>
+</body>
+</html>

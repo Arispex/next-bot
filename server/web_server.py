@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from nonebot.log import logger
 
 from server.page_store import create_page
-from server.pages import inventory_page, leaderboard_page, menu_page, progress_page
+from server.pages import inventory_page, leaderboard_page, menu_page, progress_page, user_info_page
 from server.routes.render import router as render_router
 from server.routes.webui_commands import router as webui_commands_router
 from server.routes.webui_dashboard import router as webui_dashboard_router
@@ -105,6 +105,38 @@ def create_leaderboard_page(
     token = create_page("leaderboard", payload)
     settings = get_server_settings()
     return f"{_build_internal_base_url(settings)}/render/leaderboard/{token}"
+
+
+def create_user_info_page(
+    *,
+    user_id: str,
+    user_name: str,
+    coins: int,
+    sign_streak: int,
+    sign_total: int,
+    permissions: str,
+    group: str,
+    created_at: str,
+    sign_dates: list[str],
+    days: int = 90,
+    theme: str = "light",
+) -> str:
+    payload = user_info_page.build_payload(
+        user_id=user_id,
+        user_name=user_name,
+        coins=coins,
+        sign_streak=sign_streak,
+        sign_total=sign_total,
+        permissions=permissions,
+        group=group,
+        created_at=created_at,
+        sign_dates=sign_dates,
+        days=days,
+        theme=theme,
+    )
+    token = create_page("user_info", payload)
+    settings = get_server_settings()
+    return f"{_build_internal_base_url(settings)}/render/user_info/{token}"
 
 
 def create_menu_page(
