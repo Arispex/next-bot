@@ -80,6 +80,18 @@ class CommandConfig(Base):
     )
 
 
+class UserSignRecord(Base):
+    __tablename__ = "user_sign_record"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(String, nullable=False)
+    sign_date: Mapped[str] = mapped_column(String, nullable=False)
+    streak: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=db_now_utc_naive
+    )
+
+
 class SystemStat(Base):
     __tablename__ = "system_stat"
 
@@ -104,6 +116,7 @@ def init_db() -> None:
     Base.metadata.create_all(engine)
     ensure_command_config_schema()
     ensure_user_signin_schema()
+    ensure_sign_record_schema()
     ensure_default_groups()
     ensure_default_stats()
 
@@ -209,5 +222,27 @@ def ensure_user_signin_schema() -> None:
             changed = True
         if changed:
             conn.commit()
+    finally:
+        conn.close()
+
+
+def ensure_sign_record_schema() -> None:
+    if not DB_PATH.exists():
+        return
+
+    conn = sqlite3.connect(str(DB_PATH))
+    try:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS "user_sign_record" (
+                "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                "user_id" TEXT NOT NULL,
+                "sign_date" TEXT NOT NULL,
+                "streak" INTEGER NOT NULL DEFAULT 1,
+                "created_at" DATETIME NOT NULL
+            )
+            """
+        )
+        conn.commit()
     finally:
         conn.close()

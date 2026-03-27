@@ -14,7 +14,7 @@ from nextbot.command_config import (
     get_current_param,
     raise_command_usage,
 )
-from nextbot.db import User, get_session
+from nextbot.db import User, UserSignRecord, get_session
 from nextbot.message_parser import parse_command_args_with_fallback, resolve_user_id_arg_with_fallback
 from nextbot.permissions import require_permission
 from nextbot.time_utils import beijing_today_text
@@ -157,6 +157,11 @@ async def handle_sign(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
         user.last_sign_date = today_text
         user.sign_streak = streak_result.next_streak
         user.sign_total = int(user.sign_total or 0) + 1
+        session.add(UserSignRecord(
+            user_id=user_id,
+            sign_date=today_text,
+            streak=streak_result.next_streak,
+        ))
         session.commit()
 
         logger.info(
