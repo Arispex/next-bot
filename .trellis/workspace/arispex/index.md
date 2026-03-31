@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 37
+- **Total Sessions**: 38
 - **Last Active**: 2026-03-31
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1370 | Active |
+| `journal-1.md` | ~1419 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits |
 |---|------|-------|---------|
+| 38 | 2026-03-31 | 命令 admin 字段可配置化 | `b2971f1` |
 | 37 | 2026-03-31 | 贡献墙算法修复 & 同步白名单优化 | `520fd79`, `a726135` |
 | 36 | 2026-03-27 | 管理员列表 | `8648fac` |
 | 35 | 2026-03-27 | 用户信息图片渲染 | `ff16fe8` |
