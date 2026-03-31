@@ -187,7 +187,8 @@
       const week = [];
       for (let r = 0; r < 7; r++) {
         const ds = toDateStr(cur);
-        const inRange = cur >= rangeStart && cur <= today;
+        const afterToday = cur > today;
+        const inRange = cur >= rangeStart && !afterToday;
         if (r === 0) {
           const monthKey = `${cur.getFullYear()}-${cur.getMonth()}`;
           if (!seenMonths.has(monthKey)) {
@@ -195,7 +196,7 @@
             monthCols[col] = `${cur.getMonth() + 1}月`;
           }
         }
-        week.push({ ds, signed: signSet.has(ds), inRange });
+        week.push({ ds, signed: signSet.has(ds), inRange, afterToday });
         const next = new Date(cur);
         next.setDate(next.getDate() + 1);
         cur = next;
@@ -253,10 +254,13 @@
     gridEl.style.gap = `${gap}px`;
 
     weeks.forEach(week => {
-      week.forEach(({ ds, signed, inRange }) => {
+      week.forEach(({ ds, signed, inRange, afterToday }) => {
+        // 不渲染今天之后的格子，让 grid 行自然空缺（与 GitHub 行为一致）
+        if (afterToday) return;
         const cell = document.createElement("div");
         cell.style.borderRadius = "2px";
-        cell.className = !inRange ? "day-outside" : signed ? "day-signed" : "day-empty";
+        // rangeStart 之前的格子显示为灰色空格（而非透明），与 GitHub 一致
+        cell.className = inRange ? (signed ? "day-signed" : "day-empty") : "day-empty";
         if (inRange) cell.title = `${ds}${signed ? " ✓" : ""}`;
         gridEl.appendChild(cell);
       });
