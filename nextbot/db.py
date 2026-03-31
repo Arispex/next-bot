@@ -3,6 +3,7 @@ from __future__ import annotations
 import sqlite3
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, Integer, String, Text
 from sqlalchemy.engine import Engine, create_engine
@@ -68,6 +69,7 @@ class CommandConfig(Base):
     handler_name: Mapped[str] = mapped_column(String, nullable=False, default="")
     permission: Mapped[str] = mapped_column(String, nullable=False, default="")
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    admin: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True, default=None)
     param_schema_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
     param_values_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
     is_registered: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
@@ -179,10 +181,18 @@ def ensure_command_config_schema() -> None:
             return
 
         columns = {str(row[1]) for row in rows}
+        changed = False
         if "usage" not in columns:
             conn.execute(
                 'ALTER TABLE "command_config" ADD COLUMN "usage" TEXT NOT NULL DEFAULT ""'
             )
+            changed = True
+        if "admin" not in columns:
+            conn.execute(
+                'ALTER TABLE "command_config" ADD COLUMN "admin" INTEGER'
+            )
+            changed = True
+        if changed:
             conn.commit()
     finally:
         conn.close()

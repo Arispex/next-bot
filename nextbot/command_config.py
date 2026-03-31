@@ -298,7 +298,6 @@ def _build_meta_hash(
     module_path: str,
     handler_name: str,
     permission: str,
-    admin: bool,
     param_schema: dict[str, dict[str, Any]],
 ) -> str:
     payload = {
@@ -309,7 +308,6 @@ def _build_meta_hash(
         "module_path": module_path,
         "handler_name": handler_name,
         "permission": permission,
-        "admin": admin,
         "param_schema": param_schema,
     }
     return hashlib.sha256(_json_dumps(payload).encode("utf-8")).hexdigest()
@@ -372,6 +370,13 @@ def _to_runtime_state(row: CommandConfig) -> RuntimeCommandState:
         old_values=_parse_json_object(row.param_values_json),
     )
     registered = _registry.get(row.command_key)
+    admin_db = row.admin
+    if admin_db is not None:
+        admin_value = bool(admin_db)
+    elif registered is not None:
+        admin_value = bool(registered.admin)
+    else:
+        admin_value = False
     return RuntimeCommandState(
         command_key=row.command_key,
         display_name=row.display_name,
@@ -381,7 +386,7 @@ def _to_runtime_state(row: CommandConfig) -> RuntimeCommandState:
         handler_name=row.handler_name,
         permission=row.permission,
         enabled=bool(row.enabled),
-        admin=bool(registered.admin) if registered else False,
+        admin=admin_value,
         param_schema=schema,
         param_values=values,
         is_registered=bool(row.is_registered),
@@ -542,6 +547,7 @@ def update_command_config(
     command_key: str,
     *,
     enabled: Any = None,
+    admin: Any = None,
     param_values: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     normalized_key = str(command_key).strip()
@@ -556,6 +562,16 @@ def update_command_config(
             raise CommandConfigValidationError(
                 "参数校验失败",
                 errors=[{"field": "enabled", "message": str(exc)}],
+            ) from exc
+
+    normalized_admin: bool | None = None
+    if admin is not None:
+        try:
+            normalized_admin = _coerce_bool(admin)
+        except CommandConfigValidationError as exc:
+            raise CommandConfigValidationError(
+                "参数校验失败",
+                errors=[{"field": "admin", "message": str(exc)}],
             ) from exc
 
     normalized_params: dict[str, Any] | None = None
@@ -623,6 +639,8 @@ def update_command_config(
 
         if normalized_enabled is not None:
             row.enabled = normalized_enabled
+        if normalized_admin is not None:
+            row.admin = normalized_admin
         row.param_values_json = _json_dumps(current_values)
         row.updated_at = now
         session.commit()
@@ -663,6 +681,7 @@ def sync_registered_commands_to_db() -> None:
                     handler_name=command.handler_name,
                     permission=command.permission,
                     enabled=command.default_enabled,
+                    admin=command.admin,
                     param_schema_json=schema_json,
                     param_values_json=_json_dumps(_build_default_param_values(schema)),
                     is_registered=True,
@@ -688,6 +707,8 @@ def sync_registered_commands_to_db() -> None:
             row.meta_hash = command.meta_hash
             row.last_synced_at = now
             row.updated_at = now
+            if row.admin is None:
+                row.admin = command.admin
 
         for row in rows:
             if row.command_key in touched_keys:
@@ -737,7 +758,6 @@ def command_control(
             module_path=module_path,
             handler_name=handler_name,
             permission=normalized_permission,
-            admin=normalized_admin,
             param_schema=normalized_schema,
         )
 

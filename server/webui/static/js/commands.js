@@ -346,6 +346,55 @@
       switchNode.appendChild(switchText);
       statusCell.appendChild(switchNode);
 
+      const adminCell = document.createElement("td");
+      const adminSwitch = document.createElement("label");
+      adminSwitch.className = "switch";
+
+      const adminInput = document.createElement("input");
+      adminInput.type = "checkbox";
+      adminInput.checked = Boolean(command.admin);
+
+      const adminTrack = document.createElement("span");
+      adminTrack.className = "switch-track";
+
+      const adminText = document.createElement("span");
+      adminText.textContent = adminInput.checked ? "显示" : "隐藏";
+
+      adminInput.addEventListener("change", async () => {
+        const nextAdmin = Boolean(adminInput.checked);
+        const previousAdmin = !nextAdmin;
+
+        command.admin = nextAdmin;
+        adminText.textContent = nextAdmin ? "显示" : "隐藏";
+        adminInput.disabled = true;
+        setStatus("正在保存...", "info");
+
+        try {
+          const { reloaded } = await saveSingleCommand({
+            commandKey: command.command_key,
+            admin: nextAdmin,
+          });
+          if (reloaded) {
+            setStatus("保存成功", "success");
+          } else {
+            setStatus("保存成功，已立即生效；列表刷新失败，请手动刷新页面确认最新状态", "warning");
+          }
+        } catch (error) {
+          command.admin = previousAdmin;
+          adminInput.checked = previousAdmin;
+          adminText.textContent = previousAdmin ? "显示" : "隐藏";
+          const message = error instanceof Error ? error.message : "保存失败";
+          setStatus(message, "error");
+        } finally {
+          adminInput.disabled = false;
+        }
+      });
+
+      adminSwitch.appendChild(adminInput);
+      adminSwitch.appendChild(adminTrack);
+      adminSwitch.appendChild(adminText);
+      adminCell.appendChild(adminSwitch);
+
       const schema = command.param_schema && typeof command.param_schema === "object"
         ? command.param_schema
         : {};
@@ -368,6 +417,7 @@
       row.appendChild(usageCell);
       row.appendChild(permissionCell);
       row.appendChild(statusCell);
+      row.appendChild(adminCell);
       row.appendChild(actionCell);
       tableBodyNode.appendChild(row);
     }
@@ -639,11 +689,14 @@
     }
   };
 
-  const saveSingleCommand = async ({ commandKey, enabled, paramValues }) => {
+  const saveSingleCommand = async ({ commandKey, enabled, admin, paramValues }) => {
     const data = {};
 
     if (enabled !== undefined) {
       data.enabled = Boolean(enabled);
+    }
+    if (admin !== undefined) {
+      data.admin = Boolean(admin);
     }
     if (paramValues !== undefined) {
       data.param_values = cloneValue(paramValues || {});

@@ -89,6 +89,8 @@ async def webui_commands_api_update(command_key: str, request: Request) -> JSONR
     update_payload: dict[str, Any] = {}
     if "enabled" in payload:
         update_payload["enabled"] = payload.get("enabled")
+    if "admin" in payload:
+        update_payload["admin"] = payload.get("admin")
     if "param_values" in payload:
         update_payload["param_values"] = payload.get("param_values")
 
@@ -96,7 +98,7 @@ async def webui_commands_api_update(command_key: str, request: Request) -> JSONR
         return api_error(
             status_code=400,
             code="invalid_request_body",
-            message="至少需要提供 enabled 或 param_values",
+            message="至少需要提供 enabled、admin 或 param_values",
         )
 
     try:
