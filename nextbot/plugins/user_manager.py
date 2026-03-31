@@ -76,6 +76,34 @@ async def _sync_whitelist_to_all_servers(
 
     results: list[tuple[Server, bool, str]] = []
     for server in servers:
+        # 先查询白名单，判断用户名是否已存在
+        try:
+            wl_response = await request_server_api(server, "/nextbot/whitelist")
+        except TShockRequestError:
+            logger.info(
+                f"白名单同步失败：server_id={server.id} user_id={user_id} name={name} reason=无法连接服务器"
+            )
+            results.append((server, False, "无法连接服务器"))
+            continue
+
+        if not is_success(wl_response):
+            reason = get_error_reason(wl_response)
+            logger.info(
+                f"白名单查询失败：server_id={server.id} user_id={user_id} name={name} "
+                f"http_status={wl_response.http_status} api_status={wl_response.api_status} reason={reason}"
+            )
+            results.append((server, False, reason))
+            continue
+
+        existing_users = wl_response.payload.get("users", [])
+        if name in existing_users:
+            logger.info(
+                f"白名单已存在：server_id={server.id} user_id={user_id} name={name}"
+            )
+            results.append((server, True, "already"))
+            continue
+
+        # 添加白名单
         try:
             response = await request_server_api(
                 server,
@@ -185,7 +213,9 @@ async def handle_sync_whitelist(
 
     lines: list[str] = []
     for server, success, reason in results:
-        if success:
+        if success and reason == "already":
+            lines.append(f"{server.id}.{server.name}：已在白名单中")
+        elif success:
             lines.append(f"{server.id}.{server.name}：同步成功")
         else:
             lines.append(f"{server.id}.{server.name}：同步失败，{reason}")
