@@ -358,14 +358,14 @@
       adminTrack.className = "switch-track";
 
       const adminText = document.createElement("span");
-      adminText.textContent = adminInput.checked ? "显示" : "隐藏";
+      adminText.textContent = adminInput.checked ? "管理菜单" : "普通菜单";
 
       adminInput.addEventListener("change", async () => {
         const nextAdmin = Boolean(adminInput.checked);
         const previousAdmin = !nextAdmin;
 
         command.admin = nextAdmin;
-        adminText.textContent = nextAdmin ? "显示" : "隐藏";
+        adminText.textContent = nextAdmin ? "管理菜单" : "普通菜单";
         adminInput.disabled = true;
         setStatus("正在保存...", "info");
 
@@ -382,7 +382,7 @@
         } catch (error) {
           command.admin = previousAdmin;
           adminInput.checked = previousAdmin;
-          adminText.textContent = previousAdmin ? "显示" : "隐藏";
+          adminText.textContent = previousAdmin ? "管理菜单" : "普通菜单";
           const message = error instanceof Error ? error.message : "保存失败";
           setStatus(message, "error");
         } finally {
