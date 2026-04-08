@@ -89,9 +89,12 @@ def _verify_session_cookie(cookie_value: str, secret: str) -> bool:
 
 def _is_authenticated(request: Request, settings: WebServerSettings) -> bool:
     cookie_value = request.cookies.get(settings.cookie_name, "")
-    if not cookie_value:
-        return False
-    return _verify_session_cookie(cookie_value, settings.session_secret)
+    if cookie_value and _verify_session_cookie(cookie_value, settings.session_secret):
+        return True
+    query_token = request.query_params.get("token", "").strip()
+    return bool(
+        query_token and hmac.compare_digest(query_token, settings.webui_token)
+    )
 
 
 def _set_session_cookie(response: Response, settings: WebServerSettings) -> None:
