@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 40
+- **Total Sessions**: 41
 - **Last Active**: 2026-04-08
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1516 | Active |
+| `journal-1.md` | ~1564 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits |
 |---|------|-------|---------|
+| 41 | 2026-04-08 | 服务器插件配置编辑器 + NextBot 连通性验证 + 归属菜单文案 | `b7bfd68`, `853c8d7`, `3302ada` |
 | 40 | 2026-04-08 | WebUI 支持 query 参数 token 鉴权 | `2c390ea` |
 | 39 | 2026-04-08 | 按主题重组 plugins 目录 | `aabafda` |
 | 38 | 2026-03-31 | 命令 admin 字段可配置化 | `b2971f1` |
