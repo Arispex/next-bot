@@ -31,6 +31,15 @@
   const deleteModalCancelButton = document.getElementById("delete-modal-cancel-btn");
   const deleteModalConfirmButton = document.getElementById("delete-modal-confirm-btn");
 
+  const pluginConfigModalNode = document.getElementById("plugin-config-modal");
+  const pluginConfigModalTitleNode = document.getElementById("plugin-config-modal-title");
+  const pluginConfigModalAlertNode = document.getElementById("plugin-config-modal-alert");
+  const pluginConfigModalAlertMessageNode = document.getElementById("plugin-config-modal-alert-message");
+  const pluginConfigModalBodyNode = document.getElementById("plugin-config-modal-body");
+  const pluginConfigModalCloseButton = document.getElementById("plugin-config-modal-close-btn");
+  const pluginConfigModalCancelButton = document.getElementById("plugin-config-modal-cancel-btn");
+  const pluginConfigModalSaveButton = document.getElementById("plugin-config-modal-save-btn");
+
   const nameInput = document.getElementById("field-name");
   const ipInput = document.getElementById("field-ip");
   const gamePortInput = document.getElementById("field-game-port");
@@ -64,6 +73,14 @@
       deleteModalCloseButton &&
       deleteModalCancelButton &&
       deleteModalConfirmButton &&
+      pluginConfigModalNode &&
+      pluginConfigModalTitleNode &&
+      pluginConfigModalAlertNode &&
+      pluginConfigModalAlertMessageNode &&
+      pluginConfigModalBodyNode &&
+      pluginConfigModalCloseButton &&
+      pluginConfigModalCancelButton &&
+      pluginConfigModalSaveButton &&
       nameInput &&
       ipInput &&
       gamePortInput &&
@@ -90,6 +107,43 @@
       <path d="M1 1l22 22"></path>
     </svg>
   `;
+
+  const PLUGIN_CONFIG_SCHEMA = [
+    {
+      section: "NextBot 服务",
+      items: [
+        { path: "nextbot.baseUrl", label: "NextBot 服务地址", type: "text", placeholder: "https://example.com" },
+        { path: "nextbot.token", label: "NextBot Token", type: "password" },
+      ],
+    },
+    {
+      section: "白名单",
+      items: [
+        { path: "whitelist.enabled", label: "启用白名单", type: "bool" },
+        { path: "whitelist.caseSensitive", label: "区分大小写", type: "bool" },
+        { path: "whitelist.denyMessage", label: "白名单拒绝提示", type: "text" },
+      ],
+    },
+    {
+      section: "登入确认",
+      items: [
+        { path: "loginConfirmation.enabled", label: "启用登入确认", type: "bool" },
+        { path: "loginConfirmation.detectUuid", label: "检测 UUID 变化", type: "bool" },
+        { path: "loginConfirmation.detectIp", label: "检测 IP 变化", type: "bool" },
+        { path: "loginConfirmation.emptyUuidMessage", label: "UUID 为空提示", type: "text" },
+        { path: "loginConfirmation.changeDetectedMessage", label: "信息变化提示", type: "text" },
+        { path: "loginConfirmation.deviceMismatchMessage", label: "设备不匹配提示", type: "text" },
+        { path: "loginConfirmation.pendingExistsMessage", label: "待确认重复提示", type: "text" },
+      ],
+    },
+  ];
+
+  let pluginConfigServerId = null;
+  let pluginConfigServerName = "";
+  let pluginConfigOriginal = {};
+  let pluginConfigInputs = new Map();
+  let pluginConfigLoading = false;
+  let pluginConfigSaving = false;
 
   let serverStates = [];
   let modalMode = "create";
@@ -321,6 +375,14 @@
         void testServerConnectivity(server.id);
       });
 
+      const pluginConfigButton = document.createElement("button");
+      pluginConfigButton.type = "button";
+      pluginConfigButton.className = "btn action-btn";
+      pluginConfigButton.textContent = "插件配置";
+      pluginConfigButton.addEventListener("click", () => {
+        void openPluginConfigModal(server);
+      });
+
       const deleteButton = document.createElement("button");
       deleteButton.type = "button";
       deleteButton.className = "btn action-btn action-btn-danger";
@@ -331,6 +393,7 @@
 
       actions.appendChild(editButton);
       actions.appendChild(testButton);
+      actions.appendChild(pluginConfigButton);
       actions.appendChild(deleteButton);
       actionCell.appendChild(actions);
 
@@ -596,6 +659,215 @@
     }
   };
 
+  const setPluginConfigModalAlert = (message = "", type = "info") => {
+    const text = String(message || "").trim();
+    if (!text) {
+      pluginConfigModalAlertNode.className = "alert hidden modal-alert";
+      pluginConfigModalAlertMessageNode.textContent = "";
+      return;
+    }
+    const normalizedType = ["success", "error", "warning", "info"].includes(type)
+      ? type
+      : "info";
+    pluginConfigModalAlertNode.className = `alert ${normalizedType} modal-alert`;
+    pluginConfigModalAlertMessageNode.textContent = text;
+  };
+
+  const getByPath = (obj, path) => {
+    if (!obj || typeof obj !== "object") {
+      return undefined;
+    }
+    const parts = String(path).split(".");
+    let current = obj;
+    for (const part of parts) {
+      if (current === null || current === undefined || typeof current !== "object") {
+        return undefined;
+      }
+      current = current[part];
+    }
+    return current;
+  };
+
+  const renderPluginConfigForm = (config) => {
+    pluginConfigModalBodyNode.innerHTML = "";
+    pluginConfigInputs = new Map();
+
+    for (const section of PLUGIN_CONFIG_SCHEMA) {
+      const visibleItems = section.items.filter(
+        (item) => getByPath(config, item.path) !== undefined,
+      );
+      if (!visibleItems.length) {
+        continue;
+      }
+
+      const group = document.createElement("div");
+      group.className = "form-section";
+
+      const heading = document.createElement("h4");
+      heading.className = "form-section-title";
+      heading.textContent = section.section;
+      group.appendChild(heading);
+
+      for (const item of visibleItems) {
+        const value = getByPath(config, item.path);
+        const formItem = document.createElement("label");
+        formItem.className = item.type === "bool" ? "form-item form-item-bool" : "form-item";
+
+        const labelText = document.createElement("span");
+        labelText.className = "form-label";
+        labelText.textContent = item.label;
+        formItem.appendChild(labelText);
+
+        let input;
+        if (item.type === "bool") {
+          input = document.createElement("input");
+          input.type = "checkbox";
+          input.className = "form-checkbox";
+          input.checked = Boolean(value);
+        } else {
+          input = document.createElement("input");
+          input.className = "input";
+          input.type = item.type === "password" ? "password" : "text";
+          if (item.placeholder) {
+            input.placeholder = item.placeholder;
+          }
+          input.value = String(value ?? "");
+        }
+
+        formItem.appendChild(input);
+        group.appendChild(formItem);
+        pluginConfigInputs.set(item.path, { input, type: item.type });
+      }
+
+      pluginConfigModalBodyNode.appendChild(group);
+    }
+
+    if (!pluginConfigInputs.size) {
+      const emptyNote = document.createElement("p");
+      emptyNote.className = "confirm-modal-text";
+      emptyNote.textContent = "该服务器未返回可编辑的配置字段";
+      pluginConfigModalBodyNode.appendChild(emptyNote);
+    }
+  };
+
+  const openPluginConfigModal = async (server) => {
+    pluginConfigServerId = server.id;
+    pluginConfigServerName = server.name;
+    pluginConfigOriginal = {};
+    pluginConfigInputs = new Map();
+    pluginConfigLoading = true;
+    pluginConfigSaving = false;
+    pluginConfigModalSaveButton.disabled = true;
+    pluginConfigModalTitleNode.textContent = "编辑插件配置";
+    pluginConfigModalBodyNode.innerHTML = '<p class="confirm-modal-text">加载中...</p>';
+    setPluginConfigModalAlert("");
+    pluginConfigModalNode.classList.remove("hidden");
+
+    try {
+      const payload = await api.apiRequest(
+        `/webui/api/servers/${server.id}/plugin-config`,
+        {
+          method: "GET",
+          headers: { Accept: "application/json" },
+          action: "读取",
+          expectedStatus: 200,
+        },
+      );
+      const config = api.unwrapData(payload);
+      if (!config || typeof config !== "object") {
+        throw new Error("读取失败，返回数据格式错误");
+      }
+      pluginConfigOriginal = config;
+      renderPluginConfigForm(config);
+      pluginConfigModalSaveButton.disabled = false;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "读取失败";
+      pluginConfigModalBodyNode.innerHTML = "";
+      setPluginConfigModalAlert(message, "error");
+    } finally {
+      pluginConfigLoading = false;
+    }
+  };
+
+  const closePluginConfigModal = (force = false) => {
+    if (pluginConfigSaving && !force) {
+      return;
+    }
+    pluginConfigModalNode.classList.add("hidden");
+    pluginConfigServerId = null;
+    pluginConfigServerName = "";
+    pluginConfigOriginal = {};
+    pluginConfigInputs = new Map();
+  };
+
+  const collectPluginConfigDiff = () => {
+    const diff = {};
+    for (const [path, { input, type }] of pluginConfigInputs.entries()) {
+      const original = getByPath(pluginConfigOriginal, path);
+      let current;
+      if (type === "bool") {
+        current = Boolean(input.checked);
+      } else {
+        current = String(input.value ?? "");
+      }
+      if (type === "bool") {
+        if (Boolean(original) !== current) {
+          diff[path] = current;
+        }
+      } else {
+        const originalText = original === undefined || original === null ? "" : String(original);
+        if (originalText !== current) {
+          diff[path] = current;
+        }
+      }
+    }
+    return diff;
+  };
+
+  const savePluginConfig = async () => {
+    if (pluginConfigSaving || pluginConfigLoading || pluginConfigServerId === null) {
+      return;
+    }
+    if (!pluginConfigInputs.size) {
+      setPluginConfigModalAlert("无可保存的字段", "warning");
+      return;
+    }
+
+    const diff = collectPluginConfigDiff();
+    if (!Object.keys(diff).length) {
+      setPluginConfigModalAlert("未修改任何字段", "info");
+      return;
+    }
+
+    pluginConfigSaving = true;
+    pluginConfigModalSaveButton.disabled = true;
+    setPluginConfigModalAlert("正在保存...", "info");
+
+    try {
+      await api.apiRequest(
+        `/webui/api/servers/${pluginConfigServerId}/plugin-config`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify(diff),
+          action: "保存",
+          expectedStatus: 200,
+        },
+      );
+      closePluginConfigModal(true);
+      setStatus("保存成功", "success");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "保存失败";
+      setPluginConfigModalAlert(message, "error");
+    } finally {
+      pluginConfigSaving = false;
+      pluginConfigModalSaveButton.disabled = false;
+    }
+  };
+
   const testServerConnectivity = async (serverId) => {
     testResultMap.set(serverId, { status: "loading", reason: "正在测试" });
     renderTable();
@@ -695,6 +967,25 @@
   });
   deleteModalConfirmButton.addEventListener("click", () => {
     void confirmDeleteServer();
+  });
+
+  pluginConfigModalCloseButton.addEventListener("click", () => {
+    closePluginConfigModal();
+  });
+  pluginConfigModalCancelButton.addEventListener("click", () => {
+    closePluginConfigModal();
+  });
+  pluginConfigModalSaveButton.addEventListener("click", () => {
+    void savePluginConfig();
+  });
+  pluginConfigModalNode.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    if (target.dataset.pluginConfigModalClose === "1") {
+      closePluginConfigModal();
+    }
   });
 
   deleteModalNode.addEventListener("click", (event) => {

@@ -371,3 +371,134 @@ async def webui_servers_test(server_id: int) -> JSONResponse:
             "reason": reason,
         }
     )
+
+
+def _extract_upstream_error(response: Any) -> str:
+    payload = getattr(response, "payload", {}) or {}
+    if isinstance(payload, dict):
+        raw = payload.get("error")
+        if isinstance(raw, str) and raw.strip():
+            return raw.strip()
+    return get_error_reason(response)
+
+
+def _load_server_or_none(server_id: int) -> Server | None:
+    session = get_session()
+    try:
+        return session.query(Server).filter(Server.id == server_id).first()
+    finally:
+        session.close()
+
+
+@router.get("/webui/api/servers/{server_id}/plugin-config")
+async def webui_servers_plugin_config_get(server_id: int) -> JSONResponse:
+    server = _load_server_or_none(server_id)
+    if server is None:
+        logger.warning(
+            f"读取插件配置失败：server_id={server_id}，reason=服务器不存在"
+        )
+        return api_error(status_code=404, code="not_found", message="服务器不存在")
+
+    try:
+        response = await request_server_api(server, "/nextbot/config")
+    except TShockRequestError:
+        logger.warning(
+            f"读取插件配置失败：server_id={server_id}，reason=无法连接服务器"
+        )
+        return api_error(
+            status_code=502,
+            code="upstream_error",
+            message="无法连接服务器",
+        )
+    except Exception as exc:
+        logger.exception(f"读取插件配置异常：server_id={server_id}，reason={exc}")
+        return api_error(
+            status_code=500, code="internal_error", message="内部错误"
+        )
+
+    if not is_success(response):
+        reason = _extract_upstream_error(response)
+        logger.warning(
+            f"读取插件配置失败：server_id={server_id}，reason={reason}"
+        )
+        return api_error(
+            status_code=502, code="upstream_error", message=reason
+        )
+
+    logger.info(f"读取插件配置成功：server_id={server_id}")
+    return api_success(data=response.payload)
+
+
+@router.patch("/webui/api/servers/{server_id}/plugin-config")
+async def webui_servers_plugin_config_update(
+    server_id: int, request: Request
+) -> JSONResponse:
+    data, error_response = await read_json_object(request)
+    if error_response is not None:
+        return error_response
+    assert data is not None
+
+    if not isinstance(data, dict) or not data:
+        return api_error(
+            status_code=422,
+            code="validation_error",
+            message="未提供任何更新字段",
+        )
+
+    params: dict[str, str] = {}
+    for key, value in data.items():
+        if not isinstance(key, str) or not key.strip():
+            continue
+        if isinstance(value, bool):
+            params[key.strip()] = "true" if value else "false"
+        elif value is None:
+            params[key.strip()] = ""
+        else:
+            params[key.strip()] = str(value)
+
+    if not params:
+        return api_error(
+            status_code=422,
+            code="validation_error",
+            message="未提供任何更新字段",
+        )
+
+    server = _load_server_or_none(server_id)
+    if server is None:
+        logger.warning(
+            f"更新插件配置失败：server_id={server_id}，reason=服务器不存在"
+        )
+        return api_error(status_code=404, code="not_found", message="服务器不存在")
+
+    try:
+        response = await request_server_api(
+            server, "/nextbot/config/update", params=params
+        )
+    except TShockRequestError:
+        logger.warning(
+            f"更新插件配置失败：server_id={server_id}，reason=无法连接服务器"
+        )
+        return api_error(
+            status_code=502,
+            code="upstream_error",
+            message="无法连接服务器",
+        )
+    except Exception as exc:
+        logger.exception(f"更新插件配置异常：server_id={server_id}，reason={exc}")
+        return api_error(
+            status_code=500, code="internal_error", message="内部错误"
+        )
+
+    if not is_success(response):
+        reason = _extract_upstream_error(response)
+        logger.warning(
+            f"更新插件配置失败：server_id={server_id}，field_count={len(params)}，reason={reason}"
+        )
+        return api_error(
+            status_code=502, code="upstream_error", message=reason
+        )
+
+    logger.info(
+        f"更新插件配置成功：server_id={server_id}，field_count={len(params)}"
+    )
+    return api_success(data=response.payload)

@@ -121,6 +121,26 @@
   </div>
 </div>
 
+<div id="plugin-config-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="plugin-config-modal-title">
+  <div class="modal-mask" data-plugin-config-modal-close="1"></div>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="plugin-config-modal-title" class="modal-title">编辑插件配置</h3>
+      <button id="plugin-config-modal-close-btn" type="button" class="btn btn-icon modal-close-btn" aria-label="关闭">✕</button>
+    </div>
+    <div id="plugin-config-modal-alert" class="alert hidden modal-alert" role="status" aria-live="polite">
+      <span id="plugin-config-modal-alert-message" class="alert-message"></span>
+    </div>
+    <div class="modal-body">
+      <div id="plugin-config-modal-body"></div>
+    </div>
+    <div class="modal-foot">
+      <button id="plugin-config-modal-cancel-btn" type="button" class="btn">取消</button>
+      <button id="plugin-config-modal-save-btn" type="button" class="btn btn-primary">保存</button>
+    </div>
+  </div>
+</div>
+
 <div id="delete-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
   <div class="modal-mask" data-delete-modal-close="1"></div>
   <div class="modal-card confirm-modal-card">

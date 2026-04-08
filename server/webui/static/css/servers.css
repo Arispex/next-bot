@@ -404,6 +404,43 @@ html.dark {
   line-height: 1.5;
 }
 
+.form-section {
+  display: grid;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.form-section:first-child {
+  padding-top: 4px;
+  border-top: none;
+}
+
+.form-section-title {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.form-item-bool {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.form-item-bool .form-label {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.form-checkbox {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+}
+
 .token-input-wrap {
   position: relative;
   width: 100%;
