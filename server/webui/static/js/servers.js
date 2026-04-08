@@ -128,6 +128,7 @@
       section: "登入确认",
       items: [
         { path: "loginConfirmation.enabled", label: "启用登入确认", type: "bool" },
+        { path: "loginConfirmation.autoLogin", label: "自动登入", type: "bool" },
         { path: "loginConfirmation.detectUuid", label: "检测 UUID 变化", type: "bool" },
         { path: "loginConfirmation.detectIp", label: "检测 IP 变化", type: "bool" },
         { path: "loginConfirmation.emptyUuidMessage", label: "UUID 为空提示", type: "text" },
