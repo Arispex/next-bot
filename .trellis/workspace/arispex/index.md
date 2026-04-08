@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 38
-- **Last Active**: 2026-03-31
+- **Total Sessions**: 39
+- **Last Active**: 2026-04-08
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1419 | Active |
+| `journal-1.md` | ~1473 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits |
 |---|------|-------|---------|
+| 39 | 2026-04-08 | 按主题重组 plugins 目录 | `aabafda` |
 | 38 | 2026-03-31 | 命令 admin 字段可配置化 | `b2971f1` |
 | 37 | 2026-03-31 | 贡献墙算法修复 & 同步白名单优化 | `520fd79`, `a726135` |
 | 36 | 2026-03-27 | 管理员列表 | `8648fac` |
