@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 42
+- **Total Sessions**: 43
 - **Last Active**: 2026-04-08
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1609 | Active |
+| `journal-1.md` | ~1641 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits |
 |---|------|-------|---------|
+| 43 | 2026-04-08 | 插件配置编辑器新增 autoLogin 字段 | `8b534aa` |
 | 42 | 2026-04-08 | 登入二次确认：WebUI 请求端点 + 允许/拒绝登入命令 | `8b236fc`, `dfd36cb` |
 | 41 | 2026-04-08 | 服务器插件配置编辑器 + NextBot 连通性验证 + 归属菜单文案 | `b7bfd68`, `853c8d7`, `3302ada` |
 | 40 | 2026-04-08 | WebUI 支持 query 参数 token 鉴权 | `2c390ea` |
