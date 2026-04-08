@@ -21,6 +21,7 @@ from server.web_server import create_menu_page
 
 menu_matcher = on_command("菜单")
 admin_menu_matcher = on_command("管理菜单")
+search_command_matcher = on_command("搜索命令")
 MENU_SCREENSHOT_OPTIONS = ScreenshotOptions(
     viewport_width=1920,
     viewport_height=1280,
@@ -134,3 +135,37 @@ async def handle_admin_menu(bot: Bot, event: Event, arg: Message = CommandArg())
     ]
 
     await _render_and_send_menu(bot, event, "管理菜单", render_commands)
+
+
+@search_command_matcher.handle()
+@command_control(
+    command_key="basic.search_command",
+    display_name="搜索命令",
+    permission="basic.search_command",
+    description="按关键词搜索命令名称",
+    usage="搜索命令 <关键词>",
+)
+@require_permission("basic.search_command")
+async def handle_search_command(
+    bot: Bot, event: Event, arg: Message = CommandArg()
+) -> None:
+    args = parse_command_args_with_fallback(event, arg, "搜索命令")
+    if len(args) != 1:
+        raise_command_usage()
+
+    keyword = args[0].strip()
+    if not keyword:
+        raise_command_usage()
+
+    all_items = list_command_configs()
+    matched = [
+        item for item in all_items
+        if keyword in str(item.get("display_name", ""))
+    ]
+
+    if not matched:
+        await bot.send(event, f"未找到包含「{keyword}」的命令")
+        return
+
+    lines = [item["display_name"] for item in matched]
+    await bot.send(event, "\n".join(lines))

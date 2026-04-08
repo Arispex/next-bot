@@ -1,11 +1,9 @@
 import base64
-from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 
 from nonebot import get_driver, on_command
 from nonebot.adapters import Bot, Event, Message
-from nonebot.adapters.onebot.v11 import GroupMessageEvent as OBV11GroupMessageEvent
 from nonebot.adapters.onebot.v11 import MessageSegment as OBV11MessageSegment
 from nonebot.log import logger
 from nonebot.params import CommandArg
@@ -15,13 +13,11 @@ from server.web_server import create_inventory_page, create_progress_page
 from nextbot.command_config import (
     command_control,
     get_current_param,
-    list_command_configs,
     raise_command_usage,
 )
 from nextbot.db import Server, User, get_session
 from nextbot.message_parser import (
     parse_command_args_with_fallback,
-    parse_command_text_with_fallback,
     resolve_user_id_arg_with_fallback,
 )
 from nextbot.permissions import require_permission
@@ -35,14 +31,11 @@ from nextbot.tshock_api import (
 )
 
 online_matcher = on_command("在线")
-execute_matcher = on_command("执行")
 self_kick_matcher = on_command("自踢")
 inventory_matcher = on_command("用户背包")
 my_inventory_matcher = on_command("我的背包")
-map_image_matcher = on_command("查看地图")
-download_map_matcher = on_command("下载地图")
 progress_matcher = on_command("进度")
-search_command_matcher = on_command("搜索命令")
+
 INVENTORY_SCREENSHOT_OPTIONS = ScreenshotOptions(
     viewport_width=2000,
     viewport_height=1000,
@@ -76,34 +69,6 @@ _PROGRESS_NAME_MAP: dict[str, str] = {
     "stardustPillar": "星尘柱",
     "moonLord": "月亮领主",
 }
-def _parse_execute_arg_text(text: str) -> tuple[int, str] | None:
-    if not text:
-        return None
-
-    parts = text.split(maxsplit=1)
-    if len(parts) != 2:
-        return None
-
-    server_id_text, command = parts
-    try:
-        server_id = int(server_id_text)
-    except ValueError:
-        return None
-
-    command_text = command.strip()
-    if not command_text:
-        return None
-    return server_id, command_text
-
-
-def _extract_response_text(payload: dict[str, object]) -> str:
-    value = payload.get("response")
-    if isinstance(value, list):
-        lines = [str(item).strip() for item in value if str(item).strip()]
-        return "\n".join(lines)
-    if isinstance(value, str):
-        return value.strip()
-    return ""
 
 
 def _to_non_negative_int(value: object) -> int | None:
@@ -267,57 +232,6 @@ async def handle_online(
 
     logger.info(f"在线查询完成：server_count={len(servers)}")
     await bot.send(event, "\n".join(lines))
-
-
-@execute_matcher.handle()
-@command_control(
-    command_key="basic.execute",
-    display_name="执行",
-    admin=True,
-    permission="basic.execute",
-    description="在指定服务器执行指令",
-    usage="执行 <服务器 ID> <命令>",
-)
-@require_permission("basic.execute")
-async def handle_execute(
-    bot: Bot, event: Event, arg: Message = CommandArg()
-):
-    text = parse_command_text_with_fallback(event, arg, "执行")
-    parsed = _parse_execute_arg_text(text)
-    if parsed is None:
-        raise_command_usage()
-
-    target_id, command = parsed
-    session = get_session()
-    try:
-        server = session.query(Server).filter(Server.id == target_id).first()
-    finally:
-        session.close()
-
-    if server is None:
-        await bot.send(event, "执行失败，服务器不存在")
-        return
-
-    try:
-        response = await request_server_api(
-            server,
-            "/v3/server/rawcmd",
-            params={"cmd": command},
-        )
-    except TShockRequestError:
-        await bot.send(event, "执行失败，无法连接服务器")
-        return
-
-    if not is_success(response):
-        await bot.send(event, f"执行失败，{get_error_reason(response)}")
-        return
-
-    result_text = _extract_response_text(response.payload)
-    if result_text:
-        await bot.send(event, f"执行成功，返回内容：\n{result_text}")
-        return
-
-    await bot.send(event, "执行成功，无返回内容")
 
 
 @self_kick_matcher.handle()
@@ -776,171 +690,3 @@ async def handle_world_progress(
         await bot.send(event, OBV11MessageSegment.image(file=image_uri))
         return
     await bot.send(event, f"截图成功，文件：{screenshot_path}")
-
-
-@map_image_matcher.handle()
-@command_control(
-    command_key="basic.map_image",
-    display_name="查看地图",
-    admin=True,
-    permission="basic.map_image",
-    description="生成当前世界地图图片",
-    usage="查看地图 <服务器 ID>",
-)
-@require_permission("basic.map_image")
-async def handle_map_image(
-    bot: Bot, event: Event, arg: Message = CommandArg()
-):
-    args = parse_command_args_with_fallback(event, arg, "查看地图")
-    if len(args) != 1:
-        raise_command_usage()
-
-    try:
-        server_id = int(args[0])
-    except ValueError:
-        raise_command_usage()
-
-    session = get_session()
-    try:
-        server = session.query(Server).filter(Server.id == server_id).first()
-    finally:
-        session.close()
-
-    if server is None:
-        await bot.send(event, "查询失败，服务器不存在")
-        return
-
-    try:
-        response = await request_server_api(
-            server,
-            "/nextbot/world/map-image",
-            timeout=60.0,
-        )
-    except TShockRequestError:
-        await bot.send(event, "查询失败，无法连接服务器")
-        return
-
-    if not is_success(response):
-        await bot.send(event, f"查询失败，{get_error_reason(response)}")
-        return
-
-    b64 = response.payload.get("base64")
-    if not isinstance(b64, str) or not b64:
-        await bot.send(event, "查询失败，返回数据格式错误")
-        return
-
-    logger.info(f"世界地图获取成功：server_id={server.id}")
-    if bot.adapter.get_name() == "OneBot V11":
-        await bot.send(event, OBV11MessageSegment.image(file=f"base64://{b64}"))
-        return
-    await bot.send(event, f"地图数据已获取，文件名：{response.payload.get('fileName', '')}")
-
-
-@download_map_matcher.handle()
-@command_control(
-    command_key="basic.download_map",
-    display_name="下载地图",
-    admin=True,
-    permission="basic.download_map",
-    description="下载当前世界的 .wld 文件",
-    usage="下载地图 <服务器 ID>",
-)
-@require_permission("basic.download_map")
-async def handle_download_map(
-    bot: Bot, event: Event, arg: Message = CommandArg()
-):
-    args = parse_command_args_with_fallback(event, arg, "下载地图")
-    if len(args) != 1:
-        raise_command_usage()
-
-    try:
-        server_id = int(args[0])
-    except ValueError:
-        raise_command_usage()
-
-    session = get_session()
-    try:
-        server = session.query(Server).filter(Server.id == server_id).first()
-    finally:
-        session.close()
-
-    if server is None:
-        await bot.send(event, "下载失败，服务器不存在")
-        return
-
-    try:
-        response = await request_server_api(
-            server,
-            "/nextbot/world/world-file",
-            timeout=60.0,
-        )
-    except TShockRequestError:
-        await bot.send(event, "下载失败，无法连接服务器")
-        return
-
-    if not is_success(response):
-        await bot.send(event, f"下载失败，{get_error_reason(response)}")
-        return
-
-    b64 = response.payload.get("base64")
-    file_name = response.payload.get("fileName") or "world.wld"
-    if not isinstance(b64, str) or not b64:
-        await bot.send(event, "下载失败，返回数据格式错误")
-        return
-
-    logger.info(f"世界文件下载成功：server_id={server.id} file={file_name}")
-    if bot.adapter.get_name() == "OneBot V11":
-        file_uri = f"base64://{b64}"
-        if isinstance(event, OBV11GroupMessageEvent):
-            await bot.call_api(
-                "upload_group_file",
-                group_id=event.group_id,
-                file=file_uri,
-                name=file_name,
-            )
-        else:
-            await bot.call_api(
-                "upload_private_file",
-                user_id=event.get_user_id(),
-                file=file_uri,
-                name=file_name,
-            )
-        return
-    file_data = base64.b64decode(b64)
-    file_path = Path("/tmp") / file_name
-    file_path.write_bytes(file_data)
-    await bot.send(event, f"文件已保存：{file_path}")
-
-
-@search_command_matcher.handle()
-@command_control(
-    command_key="basic.search_command",
-    display_name="搜索命令",
-    permission="basic.search_command",
-    description="按关键词搜索命令名称",
-    usage="搜索命令 <关键词>",
-)
-@require_permission("basic.search_command")
-async def handle_search_command(
-    bot: Bot, event: Event, arg: Message = CommandArg()
-) -> None:
-    args = parse_command_args_with_fallback(event, arg, "搜索命令")
-    if len(args) != 1:
-        raise_command_usage()
-
-    keyword = args[0].strip()
-    if not keyword:
-        raise_command_usage()
-
-    all_items = list_command_configs()
-    matched = [
-        item for item in all_items
-        if keyword in str(item.get("display_name", ""))
-    ]
-
-    if not matched:
-        await bot.send(event, f"未找到包含「{keyword}」的命令")
-        return
-
-    lines = [item["display_name"] for item in matched]
-    await bot.send(event, "\n".join(lines))

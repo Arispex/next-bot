@@ -36,8 +36,6 @@ add_matcher = on_command("注册账号")
 sync_matcher = on_command("同步白名单")
 info_matcher = on_command("用户信息")
 self_info_matcher = on_command("我的信息")
-add_coins_matcher = on_command("添加金币")
-remove_coins_matcher = on_command("扣除金币")
 MAX_USER_NAME_LENGTH = 16
 
 
@@ -52,17 +50,6 @@ def _validate_user_name(name: str) -> str | None:
     if not re.fullmatch(r"[A-Za-z0-9\u4e00-\u9fff]+", value):
         return "用户名称不能包含符号，只能使用中文、英文和数字"
     return None
-
-
-def _parse_positive_int(text: str) -> int | None:
-    value = text.strip()
-    if not value or not value.isdigit():
-        return None
-
-    amount = int(value)
-    if amount <= 0:
-        return None
-    return amount
 
 
 async def _sync_whitelist_to_all_servers(
@@ -355,125 +342,3 @@ async def handle_self_info(
         return
 
     await _render_and_send_user_info(bot, event, user, 365)
-
-
-@add_coins_matcher.handle()
-@command_control(
-    command_key="user.coins.add",
-    display_name="添加金币",
-    permission="user.coins.add",
-    description="为指定用户增加金币",
-    usage="添加金币 <用户 ID/@用户/用户名称> <数量>",
-    admin=True,
-)
-@require_permission("user.coins.add")
-async def handle_add_coins(
-    bot: Bot, event: Event, arg: Message = CommandArg()
-):
-    args = parse_command_args_with_fallback(event, arg, "添加金币")
-    if len(args) != 2:
-        raise_command_usage()
-
-    target_user_id, parse_error = resolve_user_id_arg_with_fallback(
-        event,
-        arg,
-        "添加金币",
-    )
-    if parse_error == "missing":
-        raise_command_usage()
-    if parse_error == "name_not_found":
-        await bot.send(event, "添加失败，用户名称不存在")
-        return
-    if parse_error == "name_ambiguous":
-        await bot.send(event, "添加失败，用户名称不唯一，请使用用户 ID 或 @用户")
-        return
-    if target_user_id is None:
-        await bot.send(event, "添加失败，用户参数解析失败")
-        return
-
-    amount = _parse_positive_int(args[1])
-    if amount is None:
-        await bot.send(event, "添加失败，数量必须为正整数")
-        return
-
-    session = get_session()
-    try:
-        user = session.query(User).filter(User.user_id == target_user_id).first()
-        if user is None:
-            await bot.send(event, "添加失败，用户不存在")
-            return
-
-        user.coins += amount
-        session.commit()
-        coins = user.coins
-        user_name = user.name
-    finally:
-        session.close()
-
-    logger.info(
-        f"添加金币成功：user_id={target_user_id} name={user_name} amount={amount} coins={coins}"
-    )
-    await bot.send(event, f"添加成功\n当前金币：{coins}")
-
-
-@remove_coins_matcher.handle()
-@command_control(
-    command_key="user.coins.remove",
-    display_name="扣除金币",
-    permission="user.coins.remove",
-    description="为指定用户扣减金币",
-    usage="扣除金币 <用户 ID/@用户/用户名称> <数量>",
-    admin=True,
-)
-@require_permission("user.coins.remove")
-async def handle_remove_coins(
-    bot: Bot, event: Event, arg: Message = CommandArg()
-):
-    args = parse_command_args_with_fallback(event, arg, "扣除金币")
-    if len(args) != 2:
-        raise_command_usage()
-
-    target_user_id, parse_error = resolve_user_id_arg_with_fallback(
-        event,
-        arg,
-        "扣除金币",
-    )
-    if parse_error == "missing":
-        raise_command_usage()
-    if parse_error == "name_not_found":
-        await bot.send(event, "扣除失败，用户名称不存在")
-        return
-    if parse_error == "name_ambiguous":
-        await bot.send(event, "扣除失败，用户名称不唯一，请使用用户 ID 或 @用户")
-        return
-    if target_user_id is None:
-        await bot.send(event, "扣除失败，用户参数解析失败")
-        return
-
-    amount = _parse_positive_int(args[1])
-    if amount is None:
-        await bot.send(event, "扣除失败，数量必须为正整数")
-        return
-
-    session = get_session()
-    try:
-        user = session.query(User).filter(User.user_id == target_user_id).first()
-        if user is None:
-            await bot.send(event, "扣除失败，用户不存在")
-            return
-
-        if user.coins < amount:
-            await bot.send(event, f"扣除失败，金币不足，当前仅有 {user.coins}")
-            return
-
-        user.coins -= amount
-        session.commit()
-        coins = user.coins
-        user_name = user.name
-    finally:
-        session.close()
-
-    logger.info(
-        f"扣除金币成功：user_id={target_user_id} name={user_name} amount={amount} coins={coins}"
-    )
-    await bot.send(event, f"扣除成功\n当前金币：{coins}")
