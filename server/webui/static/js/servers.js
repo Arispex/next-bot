@@ -144,6 +144,8 @@
   let pluginConfigInputs = new Map();
   let pluginConfigLoading = false;
   let pluginConfigSaving = false;
+  let pluginConfigVerifying = false;
+  let pluginConfigVerifyButton = null;
 
   let serverStates = [];
   let modalMode = "create";
@@ -739,6 +741,28 @@
         pluginConfigInputs.set(item.path, { input, type: item.type });
       }
 
+      if (section.section === "NextBot 服务") {
+        const actions = document.createElement("div");
+        actions.className = "form-section-actions";
+
+        const verifyButton = document.createElement("button");
+        verifyButton.type = "button";
+        verifyButton.className = "btn";
+        verifyButton.textContent = "验证连通性";
+        verifyButton.addEventListener("click", () => {
+          void verifyNextBotConnection(verifyButton);
+        });
+        pluginConfigVerifyButton = verifyButton;
+
+        const hint = document.createElement("span");
+        hint.className = "form-section-hint";
+        hint.textContent = "验证前会自动保存地址和 Token 改动";
+
+        actions.appendChild(verifyButton);
+        actions.appendChild(hint);
+        group.appendChild(actions);
+      }
+
       pluginConfigModalBodyNode.appendChild(group);
     }
 
@@ -798,6 +822,8 @@
     pluginConfigServerName = "";
     pluginConfigOriginal = {};
     pluginConfigInputs = new Map();
+    pluginConfigVerifyButton = null;
+    pluginConfigVerifying = false;
   };
 
   const collectPluginConfigDiff = () => {
@@ -864,6 +890,107 @@
       setPluginConfigModalAlert(message, "error");
     } finally {
       pluginConfigSaving = false;
+      pluginConfigModalSaveButton.disabled = false;
+    }
+  };
+
+  const setByPath = (obj, path, value) => {
+    const parts = String(path).split(".");
+    let current = obj;
+    for (let i = 0; i < parts.length - 1; i += 1) {
+      const key = parts[i];
+      if (current[key] === null || current[key] === undefined || typeof current[key] !== "object") {
+        current[key] = {};
+      }
+      current = current[key];
+    }
+    current[parts[parts.length - 1]] = value;
+  };
+
+  const verifyNextBotConnection = async (button) => {
+    if (
+      pluginConfigVerifying
+      || pluginConfigSaving
+      || pluginConfigLoading
+      || pluginConfigServerId === null
+    ) {
+      return;
+    }
+
+    const watchedPaths = ["nextbot.baseUrl", "nextbot.token"];
+    const diff = {};
+    for (const path of watchedPaths) {
+      const entry = pluginConfigInputs.get(path);
+      if (!entry) {
+        continue;
+      }
+      const current = String(entry.input.value ?? "");
+      const original = getByPath(pluginConfigOriginal, path);
+      const originalText = original === undefined || original === null ? "" : String(original);
+      if (originalText !== current) {
+        diff[path] = current;
+      }
+    }
+
+    pluginConfigVerifying = true;
+    const originalLabel = button.textContent;
+    button.disabled = true;
+    button.textContent = "正在验证";
+    pluginConfigModalSaveButton.disabled = true;
+    setPluginConfigModalAlert("");
+
+    try {
+      if (Object.keys(diff).length) {
+        setPluginConfigModalAlert("正在保存地址和 Token...", "info");
+        await api.apiRequest(
+          `/webui/api/servers/${pluginConfigServerId}/plugin-config`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify(diff),
+            action: "保存",
+            expectedStatus: 200,
+          },
+        );
+        for (const [path, value] of Object.entries(diff)) {
+          setByPath(pluginConfigOriginal, path, value);
+        }
+      }
+
+      setPluginConfigModalAlert("正在验证连通性...", "info");
+      const payload = await api.apiRequest(
+        `/webui/api/servers/${pluginConfigServerId}/plugin-config/verify-nextbot`,
+        {
+          method: "POST",
+          headers: { Accept: "application/json" },
+          action: "验证",
+          expectedStatus: 200,
+        },
+      );
+      const data = api.unwrapData(payload) || {};
+      const probeStatus = String(data.probeStatus || "");
+      const message = String(data.message || "").trim();
+      const httpStatus = data.httpStatus;
+      const suffix = Number.isInteger(httpStatus) ? `（HTTP ${httpStatus}）` : "";
+      const tone = probeStatus === "Ok"
+        ? "success"
+        : probeStatus === "Skipped"
+          ? "info"
+          : "error";
+      setPluginConfigModalAlert(
+        message ? `${message}${suffix}` : `验证完成：${probeStatus || "未知状态"}`,
+        tone,
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "验证失败";
+      setPluginConfigModalAlert(message, "error");
+    } finally {
+      pluginConfigVerifying = false;
+      button.disabled = false;
+      button.textContent = originalLabel;
       pluginConfigModalSaveButton.disabled = false;
     }
   };

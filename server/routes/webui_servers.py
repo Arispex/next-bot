@@ -502,3 +502,53 @@ async def webui_servers_plugin_config_update(
         f"更新插件配置成功：server_id={server_id}，field_count={len(params)}"
     )
     return api_success(data=response.payload)
+
+
+@router.post("/webui/api/servers/{server_id}/plugin-config/verify-nextbot")
+async def webui_servers_plugin_config_verify_nextbot(
+    server_id: int,
+) -> JSONResponse:
+    server = _load_server_or_none(server_id)
+    if server is None:
+        logger.warning(
+            f"验证 NextBot 连通性失败：server_id={server_id}，reason=服务器不存在"
+        )
+        return api_error(status_code=404, code="not_found", message="服务器不存在")
+
+    try:
+        response = await request_server_api(
+            server, "/nextbot/config/verify-nextbot", timeout=15.0
+        )
+    except TShockRequestError:
+        logger.warning(
+            f"验证 NextBot 连通性失败：server_id={server_id}，reason=无法连接服务器"
+        )
+        return api_error(
+            status_code=502,
+            code="upstream_error",
+            message="无法连接服务器",
+        )
+    except Exception as exc:
+        logger.exception(
+            f"验证 NextBot 连通性异常：server_id={server_id}，reason={exc}"
+        )
+        return api_error(
+            status_code=500, code="internal_error", message="内部错误"
+        )
+
+    if not is_success(response):
+        reason = _extract_upstream_error(response)
+        logger.warning(
+            f"验证 NextBot 连通性失败：server_id={server_id}，reason={reason}"
+        )
+        return api_error(
+            status_code=502, code="upstream_error", message=reason
+        )
+
+    probe_status = ""
+    if isinstance(response.payload, dict):
+        probe_status = str(response.payload.get("probeStatus") or "")
+    logger.info(
+        f"验证 NextBot 连通性完成：server_id={server_id}，probeStatus={probe_status}"
+    )
+    return api_success(data=response.payload)
