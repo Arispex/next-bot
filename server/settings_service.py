@@ -287,6 +287,8 @@ def _load_value_from_config(field: str, config: Any) -> Any:
             return []
         if isinstance(raw_value, (set, tuple)):
             raw_value = list(raw_value)
+        if isinstance(raw_value, list):
+            raw_value = [item for item in raw_value if str(item).strip()]
         return _normalize_field(field, raw_value)
     if field == "web_server_port":
         return _coerce_port(raw_value if raw_value is not None else 18081, field=field)
