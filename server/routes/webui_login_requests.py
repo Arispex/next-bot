@@ -80,6 +80,9 @@ async def webui_login_requests_create(request: Request) -> JSONResponse:
             details=[{"field": "name", "message": "用户名称不能为空"}],
         )
 
+    new_device = bool(data.get("newDevice", False))
+    new_location = bool(data.get("newLocation", False))
+
     user_id = _resolve_user_id_by_name(name)
     if user_id is None:
         logger.warning(f"发送登入确认失败：name={name}，reason=用户不存在")
@@ -111,10 +114,19 @@ async def webui_login_requests_create(request: Request) -> JSONResponse:
             message="未在任何群中找到该用户",
         )
 
+    if new_device and new_location:
+        change_text = "有新设备在新地点正在尝试登入服务器"
+    elif new_device:
+        change_text = "有新设备正在尝试登入服务器"
+    elif new_location:
+        change_text = "在新地点正在尝试登入服务器"
+    else:
+        change_text = "有新设备或者在新地点正在尝试登入服务器"
+
     message: list[Any] = [
         OBV11MessageSegment.at(int(user_id)),
         OBV11MessageSegment.text(
-            "\n有新设备或者新地点正在尝试登入服务器\n请回复「允许登入」或「拒绝登入」\n该请求 5 分钟内有效"
+            f"\n{change_text}\n请回复「允许登入」或「拒绝登入」\n该请求 5 分钟内有效"
         ),
     ]
 
