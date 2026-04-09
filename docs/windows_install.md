@@ -56,16 +56,16 @@ NextBotAdapter 是 NextBot 的**服务端适配插件**，必须安装，否则 
 
 ### 4.1 安装 NextBot 本体
 
-1. 输入 `1`（安装 NextBot），回车
-2. 输入 `1`（稳定版，最新 Release），回车
+1. 用方向键选择「安装 NextBot」，回车
+2. 用方向键选择「稳定版（最新 Release）」，回车
 3. 等待下载安装完成
 
 ### 4.2 安装 NapCat
 
 NapCat 是用来让 QQ 账号被程序控制的组件。
 
-1. 在安装器菜单中输入 `3`（安装 NapCat），回车
-2. 输入 `1`（NapCat.Shell），回车
+1. 在安装器菜单中用方向键选择「安装 NapCat」，回车
+2. 用方向键选择「NapCat.Shell」，回车
 3. 等待安装完成
 
 安装完成后，`NextBot` 文件夹根目录会多出两个启动脚本：
