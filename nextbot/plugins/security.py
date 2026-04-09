@@ -4,6 +4,7 @@ from urllib.parse import quote
 
 from nonebot import on_command
 from nonebot.adapters import Bot, Event, Message
+from nonebot.adapters.onebot.v11 import MessageSegment as OBV11MessageSegment
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
@@ -108,12 +109,13 @@ async def handle_confirm_login(
         raise_command_usage()
 
     user_id = event.get_user_id()
+    at = OBV11MessageSegment.at(int(user_id))
     user, servers = _load_self_and_servers(user_id)
     if user is None:
-        await bot.send(event, "允许失败，未注册账号")
+        await bot.send(event, at + " 允许失败，未注册账号")
         return
     if not servers:
-        await bot.send(event, "允许失败，暂无服务器")
+        await bot.send(event, at + " 允许失败，暂无服务器")
         return
 
     success_count, results = await _broadcast_login_action(
@@ -122,10 +124,10 @@ async def handle_confirm_login(
     _log_results("允许登入", user_id, user.name, success_count, results)
 
     if success_count > 0:
-        await bot.send(event, "允许成功，可在 5 分钟内重新连接")
+        await bot.send(event, at + " 允许成功，可在 5 分钟内重新连接")
         return
 
-    await bot.send(event, _pick_failure_reason("允许", results))
+    await bot.send(event, at + " " + _pick_failure_reason("允许", results))
 
 
 @reject_login_matcher.handle()
@@ -145,12 +147,13 @@ async def handle_reject_login(
         raise_command_usage()
 
     user_id = event.get_user_id()
+    at = OBV11MessageSegment.at(int(user_id))
     user, servers = _load_self_and_servers(user_id)
     if user is None:
-        await bot.send(event, "拒绝失败，未注册账号")
+        await bot.send(event, at + " 拒绝失败，未注册账号")
         return
     if not servers:
-        await bot.send(event, "拒绝失败，暂无服务器")
+        await bot.send(event, at + " 拒绝失败，暂无服务器")
         return
 
     success_count, results = await _broadcast_login_action(
@@ -159,7 +162,7 @@ async def handle_reject_login(
     _log_results("拒绝登入", user_id, user.name, success_count, results)
 
     if success_count > 0:
-        await bot.send(event, "拒绝成功")
+        await bot.send(event, at + " 拒绝成功")
         return
 
-    await bot.send(event, _pick_failure_reason("拒绝", results))
+    await bot.send(event, at + " " + _pick_failure_reason("拒绝", results))
