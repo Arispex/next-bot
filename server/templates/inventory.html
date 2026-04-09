@@ -6,188 +6,231 @@
   <title>NextBot - 用户背包</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* ── Light theme ────────────────────────────────────────── */
-    [data-theme="light"] body {
-      background: linear-gradient(135deg, #f0f4ff 0%, #f8fafc 40%, #e2e8f0 100%);
-    }
-    [data-theme="light"] .main-card {
-      background: white;
-      border-color: #e2e8f0;
-      box-shadow: 0 25px 60px rgba(30,64,175,0.12), 0 4px 16px rgba(0,0,0,0.06);
-    }
-    [data-theme="light"] .page-header {
-      background: linear-gradient(120deg, #1e3a8a 0%, #1d4ed8 45%, #1e40af 100%);
-    }
-    [data-theme="light"] .meta-chip {
-      background: rgba(255,255,255,0.14);
-      border: 1px solid rgba(255,255,255,0.18);
-    }
-    [data-theme="light"] .meta-label { color: rgba(255,255,255,0.6); }
-    [data-theme="light"] .meta-value { color: white; }
-    [data-theme="light"] .stat-chip-life   { background: rgba(254,202,202,0.18); border: 1px solid rgba(252,165,165,0.35); }
-    [data-theme="light"] .stat-chip-mana   { background: rgba(191,219,254,0.18); border: 1px solid rgba(147,197,253,0.35); }
-    [data-theme="light"] .stat-chip-fish   { background: rgba(167,243,208,0.18); border: 1px solid rgba(110,231,183,0.35); }
-    [data-theme="light"] .stat-chip-death  { background: rgba(221,214,254,0.18); border: 1px solid rgba(196,181,253,0.35); }
-    [data-theme="light"] .stat-chip-time   { background: rgba(254,243,199,0.18); border: 1px solid rgba(252,211,77,0.35); }
-    [data-theme="light"] .stat-label-life  { color: rgba(254,202,202,0.8); }
-    [data-theme="light"] .stat-label-mana  { color: rgba(191,219,254,0.8); }
-    [data-theme="light"] .stat-label-fish  { color: rgba(167,243,208,0.8); }
-    [data-theme="light"] .stat-label-death { color: rgba(221,214,254,0.8); }
-    [data-theme="light"] .stat-label-time  { color: rgba(254,243,199,0.8); }
-    [data-theme="light"] .stat-value-life  { color: #fecaca; }
-    [data-theme="light"] .stat-value-mana  { color: #bfdbfe; }
-    [data-theme="light"] .stat-value-fish  { color: #a7f3d0; }
-    [data-theme="light"] .stat-value-death { color: #ddd6fe; }
-    [data-theme="light"] .stat-value-time  { color: #fef08a; }
-    [data-theme="light"] .stats-bar   { background: linear-gradient(to right, rgba(239,246,255,0.6), #f8fafc); border-color: #f1f5f9; }
-    [data-theme="light"] .stat-badge  { background: white; border: 1px solid #e2e8f0; color: #475569; }
-    [data-theme="light"] .stat-badge b{ color: #1e293b; }
-    [data-theme="light"] .section-card{ background: white; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 8px rgba(30,64,175,0.04); }
-    [data-theme="light"] .section-head{ background: linear-gradient(90deg, #f8fafc, #f1f5f9); border-color: #e2e8f0; }
-    [data-theme="light"] .section-title { color: #334155; }
-    [data-theme="light"] .section-badge { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
-    [data-theme="light"] .cell-occupied { background: linear-gradient(145deg, #eff6ff, #f8fafc); border: 1px solid #bfdbfe; box-shadow: inset 0 1px 0 rgba(255,255,255,0.8); }
-    [data-theme="light"] .cell-occupied:hover { border-color: #60a5fa; box-shadow: 0 0 0 2px rgba(96,165,250,0.2); }
-    [data-theme="light"] .cell-empty   { background: #f1f5f9; border: 1px solid #e2e8f0; }
-    [data-theme="light"] .slot-index   { color: #94a3b8; }
-    [data-theme="light"] .stack-tag    { background: rgba(15,23,42,0.82); border: 1px solid rgba(255,255,255,0.15); color: #f8fafc; }
-    [data-theme="light"] .item-hint    { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
-    [data-theme="light"] .footer-text  { color: #94a3b8; }
+    :root { --cell: 52px; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    /* ── Dark theme ─────────────────────────────────────────── */
-    [data-theme="dark"] body {
-      background-color: #0d0d0f;
-      background-image:
-        radial-gradient(ellipse at 15% 0%, rgba(40,80,160,0.14) 0%, transparent 50%),
-        radial-gradient(ellipse at 85% 100%, rgba(40,20,80,0.18) 0%, transparent 50%),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%23111114'/%3E%3Crect x='0' y='0' width='32' height='32' fill='%2312121a' opacity='0.5'/%3E%3Crect x='32' y='32' width='32' height='32' fill='%2312121a' opacity='0.5'/%3E%3C/svg%3E");
+    /* ── Accent stripe at top ──────────────────────────────── */
+    .top-stripe {
+      height: 4px;
+      background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 30%, #ec4899 60%, #f59e0b 100%);
     }
-    [data-theme="dark"] .main-card {
-      background: linear-gradient(180deg, #141418 0%, #0f0f13 100%);
-      border-color: rgba(60,65,100,0.35);
-      box-shadow: 0 0 60px rgba(0,0,0,0.8), 0 0 30px rgba(60,80,160,0.06);
+
+    /* ── Light ──────────────────────────────────────────────── */
+    [data-theme="light"] body { background: #e4e5ea; }
+    [data-theme="light"] .card-root { background: #f4f4f7; box-shadow: 0 8px 40px rgba(0,0,0,0.12); }
+    [data-theme="light"] .hero {
+      background:
+        url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0z' fill='none'/%3E%3Cpath d='M0 20h40M20 0v40' stroke='%23000000' stroke-width='0.5' opacity='0.03'/%3E%3C/svg%3E"),
+        linear-gradient(160deg, #e0e7f1 0%, #dce4f0 40%, #d4dfef 100%);
+      position: relative; overflow: hidden;
     }
-    [data-theme="dark"] .page-header {
-      background: linear-gradient(135deg, rgba(20,25,45,0.95) 0%, rgba(15,18,35,0.95) 100%);
-      border-color: rgba(60,65,100,0.3);
+    [data-theme="light"] .hero::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse at 75% 10%, rgba(99,102,241,0.08) 0%, transparent 55%),
+        radial-gradient(ellipse at 25% 90%, rgba(139,92,246,0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(59,130,246,0.03) 0%, transparent 70%);
     }
-    [data-theme="dark"] .meta-chip {
-      background: rgba(20,22,40,0.7);
-      border: 1px solid rgba(60,65,100,0.35);
+    [data-theme="light"] .hero-name { color: #1e293b; text-shadow: 0 1px 8px rgba(99,102,241,0.1); }
+    [data-theme="light"] .hero-server { color: #64748b; }
+    [data-theme="light"] .header-rule { background: linear-gradient(90deg, #6366f1, #818cf8, transparent); }
+    [data-theme="light"] .hero-page-title { color: #475569; }
+    [data-theme="light"] .hero-tag { background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.06); color: #8893a7; }
+    [data-theme="light"] .hero-divider { background: linear-gradient(90deg, transparent, rgba(0,0,0,0.08), transparent); }
+    [data-theme="light"] .primary-stat-val { color: #1e293b; }
+    [data-theme="light"] .primary-stat-lbl { color: #94a3b8; }
+    [data-theme="light"] .primary-stat-slash { color: #cbd5e1; }
+    [data-theme="light"] .secondary-stats { border-top: 1px solid rgba(0,0,0,0.06); }
+    [data-theme="light"] .stat-block-val { color: #334155; }
+    [data-theme="light"] .stat-block-lbl { color: #94a3b8; }
+    [data-theme="light"] .stat-accent-life { background: #ef4444; box-shadow: 0 0 12px rgba(239,68,68,0.5); }
+    [data-theme="light"] .stat-accent-mana { background: #3b82f6; box-shadow: 0 0 12px rgba(59,130,246,0.5); }
+    [data-theme="light"] .stat-accent-fish { background: #10b981; box-shadow: 0 0 8px rgba(16,185,129,0.35); }
+    [data-theme="light"] .stat-accent-death { background: #8b5cf6; box-shadow: 0 0 8px rgba(139,92,246,0.35); }
+    [data-theme="light"] .stat-accent-time { background: #f59e0b; box-shadow: 0 0 8px rgba(245,158,11,0.35); }
+    [data-theme="light"] .hero-fade { background: linear-gradient(to bottom, #111827, #f4f4f7); }
+    [data-theme="light"] .summary-strip { background: rgba(0,0,0,0.04); }
+    [data-theme="light"] .summary-text { color: #94a3b8; }
+    [data-theme="light"] .summary-text b { color: #475569; }
+    [data-theme="light"] .inv-body { background: #f4f4f7; }
+    [data-theme="light"] .section-card { background: #fff; border: 1px solid #e0e0e6; }
+    [data-theme="light"] .section-head { border-color: #ebebf0; }
+    [data-theme="light"] .section-title { color: #444; }
+    [data-theme="light"] .section-badge { color: #999; }
+    [data-theme="light"] .section-stripe-blue { background: #6366f1; }
+    [data-theme="light"] .section-stripe-green { background: #10b981; }
+    [data-theme="light"] .section-stripe-purple { background: #8b5cf6; }
+    [data-theme="light"] .section-stripe-amber { background: #f59e0b; }
+    [data-theme="light"] .section-stripe-red { background: #ef4444; }
+    [data-theme="light"] .section-stripe-gray { background: #9ca3af; }
+    [data-theme="light"] .cell-occupied { background: #f5f5f8; border: 1.5px solid #d5d5dd; }
+    [data-theme="light"] .cell-occupied:hover { border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.18); }
+    [data-theme="light"] .cell-empty { background: #ededf2; border: 1.5px solid #e0e0e6; }
+    [data-theme="light"] .slot-index { color: #b0b0b8; }
+    [data-theme="light"] .stack-tag { background: #222; color: #f5f5f5; }
+    [data-theme="light"] .item-hint { background: #1c1c2e; color: #eee; box-shadow: 0 4px 16px rgba(0,0,0,0.25); }
+    [data-theme="light"] .footer-text { color: #c5c5cc; }
+
+    /* ── Dark ───────────────────────────────────────────────── */
+    [data-theme="dark"] body { background: #07070a; }
+    [data-theme="dark"] .card-root { background: #0e0e12; box-shadow: 0 0 60px rgba(0,0,0,0.6); }
+    [data-theme="dark"] .hero {
+      background:
+        url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0z' fill='none'/%3E%3Cpath d='M0 20h40M20 0v40' stroke='%23ffffff' stroke-width='0.5' opacity='0.015'/%3E%3C/svg%3E"),
+        linear-gradient(160deg, #060610 0%, #0a0c18 40%, #06101e 100%);
+      position: relative; overflow: hidden;
     }
-    [data-theme="dark"] .meta-label { color: #475569; }
-    [data-theme="dark"] .meta-value { color: #e2e8f0; }
-    [data-theme="dark"] .stat-chip-life   { background: rgba(248,113,113,0.06); border: 1px solid rgba(248,113,113,0.2); }
-    [data-theme="dark"] .stat-chip-mana   { background: rgba(96,165,250,0.06);  border: 1px solid rgba(96,165,250,0.2);  }
-    [data-theme="dark"] .stat-chip-fish   { background: rgba(52,211,153,0.06);  border: 1px solid rgba(52,211,153,0.2);  }
-    [data-theme="dark"] .stat-chip-death  { background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.2); }
-    [data-theme="dark"] .stat-chip-time   { background: rgba(251,191,36,0.06);  border: 1px solid rgba(251,191,36,0.2);  }
-    [data-theme="dark"] .stat-label-life  { color: rgba(248,113,113,0.6); }
-    [data-theme="dark"] .stat-label-mana  { color: rgba(96,165,250,0.6);  }
-    [data-theme="dark"] .stat-label-fish  { color: rgba(52,211,153,0.6);  }
-    [data-theme="dark"] .stat-label-death { color: rgba(167,139,250,0.6); }
-    [data-theme="dark"] .stat-label-time  { color: rgba(251,191,36,0.6);  }
-    [data-theme="dark"] .stat-value-life  { color: #f87171; }
-    [data-theme="dark"] .stat-value-mana  { color: #60a5fa; }
-    [data-theme="dark"] .stat-value-fish  { color: #34d399; }
-    [data-theme="dark"] .stat-value-death { color: #a78bfa; }
-    [data-theme="dark"] .stat-value-time  { color: #fcd34d; }
-    [data-theme="dark"] .stats-bar   { background: rgba(16,16,22,0.8); border-color: rgba(60,65,100,0.25); }
-    [data-theme="dark"] .stat-badge  { background: rgba(20,20,30,0.8); border: 1px solid rgba(60,65,100,0.45); color: #9ca3af; }
-    [data-theme="dark"] .stat-badge b{ color: #c4c8e8; }
-    [data-theme="dark"] .section-card{ background: linear-gradient(160deg, rgba(18,18,26,0.98) 0%, rgba(14,14,20,0.98) 100%); border: 1px solid rgba(60,65,100,0.4); box-shadow: none; }
-    [data-theme="dark"] .section-head{ background: linear-gradient(90deg, rgba(25,25,40,0.95), rgba(20,20,32,0.95)); border-color: rgba(60,65,100,0.35); }
-    [data-theme="dark"] .section-title { color: #cbd5e1; }
-    [data-theme="dark"] .section-badge { background: rgba(30,35,60,0.8); border: 1px solid rgba(80,90,150,0.4); color: #8892c8; }
-    [data-theme="dark"] .cell-occupied { background: linear-gradient(145deg, #1a1a24, #141420); border: 1px solid rgba(80,90,130,0.55); box-shadow: inset 0 0 8px rgba(80,100,200,0.08); }
-    [data-theme="dark"] .cell-occupied:hover { border-color: rgba(140,160,255,0.7); box-shadow: inset 0 0 12px rgba(100,120,255,0.12), 0 0 8px rgba(100,120,255,0.15); }
-    [data-theme="dark"] .cell-empty   { background: rgba(14,14,18,0.6); border: 1px solid rgba(40,40,55,0.4); }
-    [data-theme="dark"] .slot-index   { color: #475569; }
-    [data-theme="dark"] .stack-tag    { background: rgba(10,10,16,0.92); border: 1px solid rgba(60,65,100,0.5); color: #e2e8f0; }
-    [data-theme="dark"] .item-hint    { background: linear-gradient(135deg, rgba(20,20,35,0.98), rgba(15,15,28,0.98)); border: 1px solid rgba(100,110,200,0.5); color: #e2e8f0; box-shadow: 0 4px 20px rgba(0,0,0,0.6), 0 0 12px rgba(80,100,200,0.2); }
-    [data-theme="dark"] .footer-text  { color: #1f2937; }
+    [data-theme="dark"] .hero::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse at 75% 10%, rgba(99,102,241,0.06) 0%, transparent 55%),
+        radial-gradient(ellipse at 25% 90%, rgba(139,92,246,0.04) 0%, transparent 50%);
+    }
+    [data-theme="dark"] .hero-name { color: #e0e0ea; text-shadow: 0 0 30px rgba(99,102,241,0.2), 0 2px 10px rgba(0,0,0,0.5); }
+    [data-theme="dark"] .hero-server { color: rgba(255,255,255,0.25); }
+    [data-theme="dark"] .header-rule { background: linear-gradient(90deg, #6366f1, #818cf8, transparent); }
+    [data-theme="dark"] .hero-page-title { color: #e2e8f0; }
+    [data-theme="dark"] .hero-tag { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.2); }
+    [data-theme="dark"] .hero-divider { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent); }
+    [data-theme="dark"] .primary-stat-val { color: #ddd; }
+    [data-theme="dark"] .primary-stat-lbl { color: rgba(255,255,255,0.2); }
+    [data-theme="dark"] .primary-stat-slash { color: rgba(255,255,255,0.1); }
+    [data-theme="dark"] .secondary-stats { border-top: 1px solid rgba(255,255,255,0.03); }
+    [data-theme="dark"] .stat-block-val { color: rgba(255,255,255,0.65); }
+    [data-theme="dark"] .stat-block-lbl { color: rgba(255,255,255,0.18); }
+    [data-theme="dark"] .stat-accent-life { background: #ef4444; box-shadow: 0 0 10px rgba(239,68,68,0.3); }
+    [data-theme="dark"] .stat-accent-mana { background: #3b82f6; box-shadow: 0 0 10px rgba(59,130,246,0.3); }
+    [data-theme="dark"] .stat-accent-fish { background: #10b981; box-shadow: 0 0 6px rgba(16,185,129,0.25); }
+    [data-theme="dark"] .stat-accent-death { background: #8b5cf6; box-shadow: 0 0 6px rgba(139,92,246,0.25); }
+    [data-theme="dark"] .stat-accent-time { background: #f59e0b; box-shadow: 0 0 6px rgba(245,158,11,0.25); }
+    [data-theme="dark"] .hero-fade { background: linear-gradient(to bottom, #060610, #0e0e12); }
+    [data-theme="dark"] .summary-strip { background: rgba(0,0,0,0.3); }
+    [data-theme="dark"] .summary-text { color: rgba(255,255,255,0.2); }
+    [data-theme="dark"] .summary-text b { color: rgba(255,255,255,0.4); }
+    [data-theme="dark"] .inv-body { background: #0e0e12; }
+    [data-theme="dark"] .section-card { background: #141418; border: 1px solid rgba(255,255,255,0.04); }
+    [data-theme="dark"] .section-head { border-color: rgba(255,255,255,0.04); }
+    [data-theme="dark"] .section-title { color: #999; }
+    [data-theme="dark"] .section-badge { color: #555; }
+    [data-theme="dark"] .section-stripe-blue { background: #6366f1; }
+    [data-theme="dark"] .section-stripe-green { background: #10b981; }
+    [data-theme="dark"] .section-stripe-purple { background: #8b5cf6; }
+    [data-theme="dark"] .section-stripe-amber { background: #f59e0b; }
+    [data-theme="dark"] .section-stripe-red { background: #ef4444; }
+    [data-theme="dark"] .section-stripe-gray { background: #6b7280; }
+    [data-theme="dark"] .cell-occupied { background: #1a1a20; border: 1.5px solid rgba(255,255,255,0.06); }
+    [data-theme="dark"] .cell-occupied:hover { border-color: rgba(99,102,241,0.5); box-shadow: 0 0 0 2px rgba(99,102,241,0.12); }
+    [data-theme="dark"] .cell-empty { background: #111115; border: 1.5px solid rgba(255,255,255,0.025); }
+    [data-theme="dark"] .slot-index { color: #2a2a32; }
+    [data-theme="dark"] .stack-tag { background: #08080c; border: 1px solid rgba(255,255,255,0.08); color: #ccc; }
+    [data-theme="dark"] .item-hint { background: #18182a; border: 1px solid rgba(99,102,241,0.25); color: #ddd; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+    [data-theme="dark"] .footer-text { color: #1a1a20; }
+
+    /* ── Shared ─────────────────────────────────────────────── */
+    .hero-tag {
+      display: inline-block; padding: 2px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 500; letter-spacing: 0.05em;
+    }
+    .stat-accent { width: 3px; border-radius: 2px; flex-shrink: 0; }
+    .stat-accent-sm { height: 24px; }
+    .stat-accent-lg { height: 36px; }
+    .section-stripe { width: 3px; border-radius: 0 0 0 0; flex-shrink: 0; }
   </style>
 </head>
-<body class="min-h-screen p-5">
-  <main class="main-card mx-auto max-w-[2100px] overflow-hidden rounded-3xl border">
+<body class="min-h-screen flex items-start justify-center p-4">
+  <main class="card-root mx-auto max-w-[2100px] w-full overflow-hidden rounded-2xl">
 
-    <!-- Header -->
-    <header class="page-header relative overflow-hidden px-7 py-6">
-      <div class="absolute -left-8 -top-8 h-48 w-48 rounded-full opacity-15"
-           style="background: radial-gradient(circle, rgba(80,120,220,0.6) 0%, transparent 70%);"></div>
-      <div class="absolute -right-8 top-0 h-40 w-40 rounded-full opacity-10"
-           style="background: radial-gradient(circle, rgba(120,60,200,0.6) 0%, transparent 70%);"></div>
+    <!-- ═══ Hero Area ═══ -->
+    <div class="hero relative">
+      <div class="relative z-10 flex flex-col items-center pt-10 pb-6 px-8">
 
-      <div class="relative">
-        <h1 class="meta-value text-3xl font-extrabold tracking-wider drop-shadow-sm">用户背包</h1>
+        <!-- Page Title -->
+        <div class="absolute left-7 top-6">
+          <div class="header-rule h-1 w-24 rounded-full mb-3"></div>
+          <div class="hero-page-title text-4xl font-black" style="letter-spacing: -0.03em;">用户背包</div>
+        </div>
 
-        <div class="mt-4 grid grid-cols-2 gap-2 md:grid-cols-5">
-          <div class="meta-chip rounded-xl px-3 py-2">
-            <div class="meta-label text-[10px] font-semibold uppercase tracking-widest">用户 ID</div>
-            <div id="meta-user-id" class="meta-value truncate font-bold"></div>
+        <!-- Player Name -->
+        <h1 class="hero-name text-[42px] font-black tracking-tight leading-none" id="meta-user-name"></h1>
+        <div class="hero-server mt-2 text-sm font-medium tracking-widest uppercase" id="hero-server"></div>
+        <div class="mt-2 flex items-center gap-2">
+          <span class="hero-tag" id="meta-user-id-tag"></span>
+          <span class="hero-tag" id="meta-time-tag"></span>
+        </div>
+
+        <!-- Divider -->
+        <div class="hero-divider my-6 h-px w-full max-w-md"></div>
+
+        <!-- Primary Stats: Life & Mana -->
+        <div class="flex items-center justify-center gap-12 mb-5">
+          <div class="flex items-center gap-3">
+            <div class="stat-accent stat-accent-lg stat-accent-life"></div>
+            <div>
+              <div class="primary-stat-val text-3xl font-extrabold leading-none tracking-tight" id="meta-life"></div>
+              <div class="primary-stat-lbl text-[10px] font-semibold uppercase tracking-[0.2em] mt-1">生命值</div>
+            </div>
           </div>
-          <div class="meta-chip rounded-xl px-3 py-2">
-            <div class="meta-label text-[10px] font-semibold uppercase tracking-widest">用户名称</div>
-            <div id="meta-user-name" class="meta-value truncate font-bold"></div>
-          </div>
-          <div class="meta-chip rounded-xl px-3 py-2">
-            <div class="meta-label text-[10px] font-semibold uppercase tracking-widest">服务器 ID</div>
-            <div id="meta-server-id" class="meta-value truncate font-bold"></div>
-          </div>
-          <div class="meta-chip rounded-xl px-3 py-2">
-            <div class="meta-label text-[10px] font-semibold uppercase tracking-widest">服务器名称</div>
-            <div id="meta-server-name" class="meta-value truncate font-bold"></div>
-          </div>
-          <div class="meta-chip rounded-xl px-3 py-2">
-            <div class="meta-label text-[10px] font-semibold uppercase tracking-widest">生成时间</div>
-            <div id="meta-generated-at" class="meta-value truncate text-sm font-medium opacity-80"></div>
+          <div class="flex items-center gap-3">
+            <div class="stat-accent stat-accent-lg stat-accent-mana"></div>
+            <div>
+              <div class="primary-stat-val text-3xl font-extrabold leading-none tracking-tight" id="meta-mana"></div>
+              <div class="primary-stat-lbl text-[10px] font-semibold uppercase tracking-[0.2em] mt-1">魔力值</div>
+            </div>
           </div>
         </div>
 
-        <div id="stats-header" class="mt-2 grid grid-cols-2 gap-2 md:grid-cols-6">
-          <div class="stat-chip-life rounded-xl px-3 py-2">
-            <div class="stat-label-life text-[10px] font-semibold uppercase tracking-widest">生命值</div>
-            <div id="meta-life" class="stat-value-life truncate font-bold"></div>
+        <!-- Secondary Stats -->
+        <div id="stats-header" class="secondary-stats flex flex-wrap items-center justify-center gap-6 pt-4">
+          <div class="flex items-center gap-2">
+            <div class="stat-accent stat-accent-sm stat-accent-fish"></div>
+            <div>
+              <div class="stat-block-val text-base font-bold leading-tight" id="meta-fishing-tasks"></div>
+              <div class="stat-block-lbl text-[9px] font-semibold uppercase tracking-widest">渔夫任务</div>
+            </div>
           </div>
-          <div class="stat-chip-mana rounded-xl px-3 py-2">
-            <div class="stat-label-mana text-[10px] font-semibold uppercase tracking-widest">魔力值</div>
-            <div id="meta-mana" class="stat-value-mana truncate font-bold"></div>
+          <div class="flex items-center gap-2">
+            <div class="stat-accent stat-accent-sm stat-accent-death"></div>
+            <div>
+              <div class="stat-block-val text-base font-bold leading-tight" id="meta-pve-deaths"></div>
+              <div class="stat-block-lbl text-[9px] font-semibold uppercase tracking-widest">PVE 死亡</div>
+            </div>
           </div>
-          <div class="stat-chip-fish rounded-xl px-3 py-2">
-            <div class="stat-label-fish text-[10px] font-semibold uppercase tracking-widest">渔夫任务数</div>
-            <div id="meta-fishing-tasks" class="stat-value-fish truncate font-bold"></div>
+          <div class="flex items-center gap-2">
+            <div class="stat-accent stat-accent-sm stat-accent-death"></div>
+            <div>
+              <div class="stat-block-val text-base font-bold leading-tight" id="meta-pvp-deaths"></div>
+              <div class="stat-block-lbl text-[9px] font-semibold uppercase tracking-widest">PVP 死亡</div>
+            </div>
           </div>
-          <div class="stat-chip-death rounded-xl px-3 py-2">
-            <div class="stat-label-death text-[10px] font-semibold uppercase tracking-widest">PVE 死亡</div>
-            <div id="meta-pve-deaths" class="stat-value-death truncate font-bold"></div>
-          </div>
-          <div class="stat-chip-death rounded-xl px-3 py-2">
-            <div class="stat-label-death text-[10px] font-semibold uppercase tracking-widest">PVP 死亡</div>
-            <div id="meta-pvp-deaths" class="stat-value-death truncate font-bold"></div>
-          </div>
-          <div id="stats-online-time" class="stat-chip-time rounded-xl px-3 py-2">
-            <div class="stat-label-time text-[10px] font-semibold uppercase tracking-widest">在线时长</div>
-            <div id="meta-online-time" class="stat-value-time truncate font-bold"></div>
+          <div id="stats-online-time" class="flex items-center gap-2">
+            <div class="stat-accent stat-accent-sm stat-accent-time"></div>
+            <div>
+              <div class="stat-block-val text-base font-bold leading-tight" id="meta-online-time"></div>
+              <div class="stat-block-lbl text-[9px] font-semibold uppercase tracking-widest">在线时长</div>
+            </div>
           </div>
         </div>
       </div>
-    </header>
 
-    <section id="stats-section" class="stats-bar border-b px-6 py-3">
-      <div class="flex flex-wrap items-center gap-2 text-sm">
-        <span class="stat-badge rounded-full px-3 py-1 text-xs">显示格数：<b id="meta-total">0</b></span>
-        <span class="stat-badge rounded-full px-3 py-1 text-xs">已占用：<b id="meta-used">0</b></span>
-        <span class="stat-badge rounded-full px-3 py-1 text-xs">空格：<b id="meta-empty">0</b></span>
+      <!-- Summary Strip -->
+      <div id="stats-section" class="summary-strip relative z-10 flex items-center justify-center gap-4 py-2">
+        <span class="summary-text text-xs tracking-wide">总格数 <b id="meta-total">0</b></span>
+        <span class="summary-text text-xs">·</span>
+        <span class="summary-text text-xs tracking-wide">已占用 <b id="meta-used">0</b></span>
+        <span class="summary-text text-xs">·</span>
+        <span class="summary-text text-xs tracking-wide">空闲 <b id="meta-empty">0</b></span>
       </div>
-    </section>
-
-    <section class="p-5">
-      <div id="section-rows" class="space-y-5"></div>
-    </section>
-
-    <div class="footer-text px-6 pb-4 text-right text-xs font-medium tracking-widest">
-      Powered by NextBot
     </div>
+
+    <!-- ═══ Inventory Body ═══ -->
+    <div class="inv-body px-5 pt-5 pb-5">
+      <div id="section-rows" class="space-y-4"></div>
+
+      <div class="footer-text mt-4 text-right text-[11px] font-medium tracking-widest pr-2">
+        Powered by NextBot
+      </div>
+    </div>
+
   </main>
 
   <script id="inventory-data" type="application/json">__INVENTORY_DATA_JSON__</script>
@@ -196,11 +239,13 @@
     const theme = String(data.theme || "light");
     document.documentElement.setAttribute("data-theme", theme);
 
-    document.getElementById("meta-user-id").textContent = data.user_id || "";
     document.getElementById("meta-user-name").textContent = data.user_name || "";
-    document.getElementById("meta-server-id").textContent = data.server_id || "";
-    document.getElementById("meta-server-name").textContent = data.server_name || "";
-    document.getElementById("meta-generated-at").textContent = data.generated_at || "";
+    document.getElementById("hero-server").textContent = data.server_name || "";
+    const idTag = document.getElementById("meta-user-id-tag");
+    const timeTag = document.getElementById("meta-time-tag");
+    if (data.user_id) { idTag.textContent = "QQ：" + data.user_id; } else { idTag.style.display = "none"; }
+    if (data.generated_at) { timeTag.textContent = data.generated_at; } else { timeTag.style.display = "none"; }
+
     document.getElementById("meta-life").textContent = data.life_text || "";
     document.getElementById("meta-mana").textContent = data.mana_text || "";
     document.getElementById("meta-fishing-tasks").textContent = data.fishing_tasks_text || "";
@@ -223,6 +268,15 @@
 
     const prefixNameMap = new Map();
     let activeHintEl = null;
+
+    /* ── Section color mapping ── */
+    const sectionColors = {
+      main: "blue", piggy: "green", safe: "green",
+      loadout_1: "purple", loadout_2: "purple", loadout_3: "purple",
+      misc_equip: "purple", misc_dye: "purple",
+      ammo_1: "amber", ammo_2: "amber",
+      forge: "red", void: "red", trash: "gray"
+    };
 
     async function loadNameDicts() {
       try {
@@ -302,8 +356,10 @@
     function createCell(slot) {
       const occupied = slot.netId > 0;
       const cell = document.createElement("div");
-      cell.className = "group relative h-[52px] w-[52px] rounded-lg transition-all duration-150 "
+      cell.className = "group relative rounded-lg transition-all duration-150 "
         + (occupied ? "cell-occupied" : "cell-empty");
+      cell.style.width = "var(--cell)";
+      cell.style.height = "var(--cell)";
 
       if (showIndex) {
         const idx = document.createElement("span");
@@ -324,7 +380,7 @@
 
       if (slot.stack > 1) {
         const stackTag = document.createElement("span");
-        stackTag.className = "stack-tag absolute bottom-0.5 right-0.5 rounded border px-1 text-[10px] font-bold";
+        stackTag.className = "stack-tag absolute bottom-0.5 right-0.5 rounded px-1 text-[10px] font-bold";
         stackTag.textContent = String(slot.stack);
         cell.appendChild(stackTag);
       }
@@ -347,17 +403,27 @@
     function createSectionCard(section) {
       const sectionSlots = section.indices.map(getSlot);
       const used = sectionSlots.filter(s => s.netId > 0).length;
+      const color = sectionColors[section.id] || "gray";
 
       const card = document.createElement("article");
-      card.className = "section-card inline-block w-fit overflow-hidden rounded-xl";
+      card.className = "section-card inline-flex w-fit overflow-hidden rounded-xl";
+
+      /* Left color stripe */
+      const stripe = document.createElement("div");
+      stripe.className = `section-stripe section-stripe-${color}`;
+      stripe.style.width = "3px";
+      card.appendChild(stripe);
+
+      const inner = document.createElement("div");
+      inner.className = "flex-1 min-w-0";
 
       const head = document.createElement("header");
-      head.className = "section-head flex items-center justify-between border-b px-4 py-2.5";
+      head.className = "section-head flex items-center justify-between border-b px-4 py-2";
       const title = document.createElement("h2");
-      title.className = "section-title text-sm font-semibold tracking-wide";
+      title.className = "section-title text-[13px] font-semibold";
       title.textContent = section.title;
       const badge = document.createElement("span");
-      badge.className = "section-badge rounded-full px-2 py-0.5 text-xs font-semibold";
+      badge.className = "section-badge text-[11px] font-medium";
       badge.textContent = `${used}/${sectionSlots.length}`;
       head.appendChild(title);
       head.appendChild(badge);
@@ -366,13 +432,13 @@
       body.className = "overflow-x-auto p-3";
       const grid = document.createElement("div");
       grid.className = "grid gap-1.5";
-      grid.style.gridTemplateColumns = `repeat(${section.cols}, 52px)`;
-      grid.style.minWidth = `${section.cols * 52 + Math.max(section.cols - 1, 0) * 6}px`;
+      grid.style.gridTemplateColumns = `repeat(${section.cols}, var(--cell))`;
       sectionSlots.forEach(slot => grid.appendChild(createCell(slot)));
       body.appendChild(grid);
 
-      card.appendChild(head);
-      card.appendChild(body);
+      inner.appendChild(head);
+      inner.appendChild(body);
+      card.appendChild(inner);
       return { card, used, total: sectionSlots.length };
     }
 
