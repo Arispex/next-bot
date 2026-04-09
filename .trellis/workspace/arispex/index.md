@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 44
+- **Total Sessions**: 45
 - **Last Active**: 2026-04-09
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1687 | Active |
+| `journal-1.md` | ~1737 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits |
 |---|------|-------|---------|
+| 45 | 2026-04-09 | Fix settings crash & add docs | `e8c15ff`, `f25112b`, `d37f495`, `15b7c7f`, `a521737` |
 | 44 | 2026-04-09 | 权限键命名空间对齐 + guest 组默认权限补全 | `17c2618`, `1ed4315` |
 | 43 | 2026-04-08 | 插件配置编辑器新增 autoLogin 字段 | `8b534aa` |
 | 42 | 2026-04-08 | 登入二次确认：WebUI 请求端点 + 允许/拒绝登入命令 | `8b236fc`, `dfd36cb` |
