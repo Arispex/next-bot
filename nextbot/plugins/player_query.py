@@ -161,13 +161,13 @@ def _to_public_render_url(url: str) -> str:
 
 @online_matcher.handle()
 @command_control(
-    command_key="basic.online",
+    command_key="player_query.online",
     display_name="在线",
-    permission="basic.online",
+    permission="player_query.online",
     description="查询服务器在线状态与在线玩家列表",
     usage="在线",
 )
-@require_permission("basic.online")
+@require_permission("player_query.online")
 async def handle_online(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -236,13 +236,13 @@ async def handle_online(
 
 @self_kick_matcher.handle()
 @command_control(
-    command_key="basic.kick.self",
+    command_key="player_query.kick.self",
     display_name="自踢",
-    permission="basic.kick.self",
+    permission="player_query.kick.self",
     description="对所有服务器执行当前用户的踢出命令",
     usage="自踢",
 )
-@require_permission("basic.kick.self")
+@require_permission("player_query.kick.self")
 async def handle_self_kick(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -293,9 +293,9 @@ async def handle_self_kick(
 
 @inventory_matcher.handle()
 @command_control(
-    command_key="basic.inventory.user",
+    command_key="player_query.inventory.user",
     display_name="用户背包",
-    permission="basic.inventory.user",
+    permission="player_query.inventory.user",
     description="查询指定用户背包并生成截图",
     usage="用户背包 <服务器 ID> <用户 ID/@用户/用户名称>",
     params={
@@ -322,7 +322,7 @@ async def handle_self_kick(
         },
     },
 )
-@require_permission("basic.inventory.user")
+@require_permission("player_query.inventory.user")
 async def handle_user_inventory(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -455,9 +455,9 @@ async def handle_user_inventory(
 
 @my_inventory_matcher.handle()
 @command_control(
-    command_key="basic.inventory.self",
+    command_key="player_query.inventory.self",
     display_name="我的背包",
-    permission="basic.inventory.self",
+    permission="player_query.inventory.self",
     description="查询当前用户背包并生成截图",
     usage="我的背包 <服务器 ID>",
     params={
@@ -484,7 +484,7 @@ async def handle_user_inventory(
         },
     },
 )
-@require_permission("basic.inventory.self")
+@require_permission("player_query.inventory.self")
 async def handle_my_inventory(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -602,13 +602,13 @@ async def handle_my_inventory(
 
 @progress_matcher.handle()
 @command_control(
-    command_key="basic.progress",
+    command_key="player_query.progress",
     display_name="进度",
-    permission="basic.progress",
+    permission="player_query.progress",
     description="查询世界进度并生成截图",
     usage="进度 <服务器 ID>",
 )
-@require_permission("basic.progress")
+@require_permission("player_query.progress")
 async def handle_world_progress(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):

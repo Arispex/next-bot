@@ -206,14 +206,14 @@ async def handle_set_user_group(
 
 @admin_list_matcher.handle()
 @command_control(
-    command_key="admin.list",
+    command_key="permission.admin.list",
     display_name="管理员列表",
     admin=True,
-    permission="admin.list",
+    permission="permission.admin.list",
     description="查看 Bot 管理员列表",
     usage="管理员列表",
 )
-@require_permission("admin.list")
+@require_permission("permission.admin.list")
 async def handle_admin_list(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
     args = parse_command_args_with_fallback(event, arg, "管理员列表")
     if args:

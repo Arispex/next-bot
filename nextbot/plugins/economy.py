@@ -283,14 +283,14 @@ async def handle_transfer(bot: Bot, event: Event, arg: Message = CommandArg()) -
 
 @add_coins_matcher.handle()
 @command_control(
-    command_key="user.coins.add",
+    command_key="economy.coins.add",
     display_name="添加金币",
-    permission="user.coins.add",
+    permission="economy.coins.add",
     description="为指定用户增加金币",
     usage="添加金币 <用户 ID/@用户/用户名称> <数量>",
     admin=True,
 )
-@require_permission("user.coins.add")
+@require_permission("economy.coins.add")
 async def handle_add_coins(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -342,14 +342,14 @@ async def handle_add_coins(
 
 @remove_coins_matcher.handle()
 @command_control(
-    command_key="user.coins.remove",
+    command_key="economy.coins.remove",
     display_name="扣除金币",
-    permission="user.coins.remove",
+    permission="economy.coins.remove",
     description="为指定用户扣减金币",
     usage="扣除金币 <用户 ID/@用户/用户名称> <数量>",
     admin=True,
 )
-@require_permission("user.coins.remove")
+@require_permission("economy.coins.remove")
 async def handle_remove_coins(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):

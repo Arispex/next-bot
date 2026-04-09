@@ -139,13 +139,13 @@ async def handle_admin_menu(bot: Bot, event: Event, arg: Message = CommandArg())
 
 @search_command_matcher.handle()
 @command_control(
-    command_key="basic.search_command",
+    command_key="menu.search",
     display_name="搜索命令",
-    permission="basic.search_command",
+    permission="menu.search",
     description="按关键词搜索命令名称",
     usage="搜索命令 <关键词>",
 )
-@require_permission("basic.search_command")
+@require_permission("menu.search")
 async def handle_search_command(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ) -> None:

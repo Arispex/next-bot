@@ -59,14 +59,14 @@ def _extract_response_text(payload: dict[str, object]) -> str:
 
 @execute_matcher.handle()
 @command_control(
-    command_key="basic.execute",
+    command_key="server_tools.execute",
     display_name="执行",
     admin=True,
-    permission="basic.execute",
+    permission="server_tools.execute",
     description="在指定服务器执行指令",
     usage="执行 <服务器 ID> <命令>",
 )
-@require_permission("basic.execute")
+@require_permission("server_tools.execute")
 async def handle_execute(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -110,14 +110,14 @@ async def handle_execute(
 
 @map_image_matcher.handle()
 @command_control(
-    command_key="basic.map_image",
+    command_key="server_tools.map_image",
     display_name="查看地图",
     admin=True,
-    permission="basic.map_image",
+    permission="server_tools.map_image",
     description="生成当前世界地图图片",
     usage="查看地图 <服务器 ID>",
 )
-@require_permission("basic.map_image")
+@require_permission("server_tools.map_image")
 async def handle_map_image(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
@@ -168,14 +168,14 @@ async def handle_map_image(
 
 @download_map_matcher.handle()
 @command_control(
-    command_key="basic.download_map",
+    command_key="server_tools.download_map",
     display_name="下载地图",
     admin=True,
-    permission="basic.download_map",
+    permission="server_tools.download_map",
     description="下载当前世界的 .wld 文件",
     usage="下载地图 <服务器 ID>",
 )
-@require_permission("basic.download_map")
+@require_permission("server_tools.download_map")
 async def handle_download_map(
     bot: Bot, event: Event, arg: Message = CommandArg()
 ):
