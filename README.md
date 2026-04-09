@@ -18,6 +18,10 @@ NextBot
 
 Windows 小白向安装教程（含 TShock 插件、NapCat、NextBot 全流程）：[docs/windows_install.md](docs/windows_install.md)
 
+## 相关文档
+
+- [NextBotAdapter 配置文件说明](https://github.com/Arispex/NextBotAdapter/blob/main/docs/CONFIGURATION.md)（TShock 适配插件的配置文件字段说明）
+
 ## 关于许可证
 本项目基于 AGPL v3.0 许可证授权发行，您可以在遵守许可证的前提下自由使用、复制、修改、发布和分发本项目。
 
