@@ -1965,3 +1965,35 @@ Added keep_order bool param to admin list command. When enabled (default), displ
 ### Next Steps
 
 - None - task complete
+
+
+## Session 52: Daily sign-in leaderboard
+
+**Date**: 2026-04-10
+**Task**: Daily sign-in leaderboard
+
+### Summary
+
+Added 今日签到排行榜 command showing today's sign-in order by time. Queries UserSignRecord by sign_date with created_at ASC, displays sign-in time as HH:MM:SS. Added leaderboard.daily_sign to guest default permissions.
+
+### Main Changes
+
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d290268` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 51
+- **Total Sessions**: 52
 - **Last Active**: 2026-04-10
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1967 | Active |
+| `journal-1.md` | ~1999 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits |
 |---|------|-------|---------|
+| 52 | 2026-04-10 | Daily sign-in leaderboard | `d290268` |
 | 51 | 2026-04-10 | Admin list config order option | `29e5108` |
 | 50 | 2026-04-10 | Mention user in operation replies & unify QQ label | `ce08623`, `eb713b6` |
 | 49 | 2026-04-10 | Unify user ID label to QQ | `ce08623` |
