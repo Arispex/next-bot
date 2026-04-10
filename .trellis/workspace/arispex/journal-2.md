@@ -1,0 +1,61 @@
+# Journal - arispex (Part 2)
+
+> Continuation from `journal-1.md` (archived at ~2000 lines)
+> Started: 2026-04-10
+
+---
+
+
+
+## Session 53: Command aliases, login notify config, daily sign leaderboard
+
+**Date**: 2026-04-10
+**Task**: Command aliases, login notify config, daily sign leaderboard
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| Feature | Description |
+|---------|-------------|
+| Daily sign leaderboard | Added 今日签到排行榜 command showing sign-in order by time (created_at ASC), value displays HH:MM:SS |
+| Login notify config | Added LOGIN_NOTIFY_ALL_GROUPS .env setting with WebUI toggle; restricted group lookup to GROUP_ID list only |
+| Command aliases | Full custom alias system: DB aliases_json field + migration, startup alias matcher registration, usage message adapts to actual alias typed, WebUI alias editor modal, conflict validation, restart button on commands page, standalone POST /webui/api/restart endpoint |
+
+**Updated Files**:
+- `nextbot/db.py` — aliases_json column + migration, leaderboard.daily_sign in guest perms
+- `nextbot/command_config.py` — register_alias_matchers, update_command_aliases, _build_usage_message alias support
+- `nextbot/plugins/leaderboard.py` — daily sign leaderboard handler
+- `bot.py` — startup alias registration, LOGIN_NOTIFY_ALL_GROUPS default
+- `server/settings_service.py` — login_notify_all_groups field + _coerce_bool
+- `server/routes/webui_commands.py` — PATCH aliases endpoint
+- `server/routes/webui_settings.py` — POST /webui/api/restart
+- `server/routes/webui_login_requests.py` — multi-group notify + GROUP_ID restriction
+- `server/webui/static/js/commands.js` — alias modal + restart button
+- `server/webui/templates/commands_content.html` — aliases column + alias modal + restart button
+- `server/webui/static/css/commands.css` — btn-danger, action-wrap styles
+- `server/webui/static/js/settings.js` — login_notify_all_groups binding
+- `server/webui/templates/settings_content.html` — login confirm section
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d290268` | (see git log) |
+| `038c737` | (see git log) |
+| `1d93501` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
