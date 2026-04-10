@@ -15,7 +15,7 @@ from nextbot.command_config import (
     get_current_param,
     raise_command_usage,
 )
-from nextbot.db import Server, User, get_session
+from nextbot.db import Server, User, UserSignRecord, get_session
 from nextbot.message_parser import parse_command_args_with_fallback
 from nextbot.tshock_api import (
     TShockRequestError,
@@ -25,7 +25,12 @@ from nextbot.tshock_api import (
 )
 from nextbot.permissions import require_permission
 from nextbot.render_utils import resolve_render_theme
-from nextbot.time_utils import beijing_filename_timestamp, format_online_seconds
+from nextbot.time_utils import (
+    beijing_filename_timestamp,
+    beijing_today_text,
+    format_online_seconds,
+    utc_naive_to_beijing,
+)
 from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
 from server.web_server import create_leaderboard_page
 
@@ -36,6 +41,7 @@ deaths_leaderboard_matcher = on_command("死亡排行榜")
 fishing_leaderboard_matcher = on_command("渔夫任务排行榜")
 online_time_leaderboard_matcher = on_command("在线时长排行榜")
 total_online_time_leaderboard_matcher = on_command("总在线时长排行榜")
+daily_sign_leaderboard_matcher = on_command("今日签到排行榜")
 
 LEADERBOARD_SCREENSHOT_OPTIONS = ScreenshotOptions(
     viewport_width=900,
@@ -783,6 +789,123 @@ async def handle_total_online_time_leaderboard(
         entries=entries,
         total_pages=total_pages,
         file_prefix="leaderboard-total-online-time",
+        self_entry=self_entry,
+        theme=resolve_render_theme(),
+    )
+
+
+def _format_sign_time(created_at) -> str:
+    converted = utc_naive_to_beijing(created_at)
+    if converted is None:
+        return ""
+    return converted.strftime("%H:%M:%S")
+
+
+@daily_sign_leaderboard_matcher.handle()
+@command_control(
+    command_key="leaderboard.daily_sign",
+    display_name="今日签到排行榜",
+    permission="leaderboard.daily_sign",
+    description="查看今日签到先后顺序",
+    usage="今日签到排行榜 [页数]",
+    params={
+        "limit": {
+            "type": "int",
+            "label": "每页名次",
+            "description": "每页显示的名次数",
+            "required": False,
+            "default": 10,
+            "min": 1,
+            "max": 50,
+        },
+    },
+)
+@require_permission("leaderboard.daily_sign")
+async def handle_daily_sign_leaderboard(
+    bot: Bot, event: Event, arg: Message = CommandArg()
+) -> None:
+    args = parse_command_args_with_fallback(event, arg, "今日签到排行榜")
+    if len(args) > 1:
+        raise_command_usage()
+
+    page = _parse_page_arg(args, "今日签到排行榜")
+    if page is None:
+        await bot.send(event, "查询失败，页数必须为正整数")
+        return
+
+    limit = max(1, min(int(get_current_param("limit", 10)), 50))
+    today = beijing_today_text()
+
+    caller_id = event.get_user_id()
+    session = get_session()
+    try:
+        total_count = (
+            session.query(UserSignRecord)
+            .filter(UserSignRecord.sign_date == today)
+            .count()
+        )
+        total_pages = max(1, math.ceil(total_count / limit))
+        if page > total_pages:
+            await bot.send(event, f"查询失败，超出总页数（共 {total_pages} 页）")
+            return
+        offset = (page - 1) * limit
+        records = (
+            session.query(UserSignRecord, User.name)
+            .join(User, User.user_id == UserSignRecord.user_id)
+            .filter(UserSignRecord.sign_date == today)
+            .order_by(UserSignRecord.created_at.asc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+        entries = [
+            {
+                "rank": offset + i + 1,
+                "name": name or "",
+                "user_id": record.user_id,
+                "value": _format_sign_time(record.created_at),
+            }
+            for i, (record, name) in enumerate(records)
+        ]
+
+        self_entry = None
+        caller_record = (
+            session.query(UserSignRecord)
+            .filter(
+                UserSignRecord.sign_date == today,
+                UserSignRecord.user_id == caller_id,
+            )
+            .first()
+        )
+        if caller_record is not None:
+            caller_rank = (
+                session.query(UserSignRecord)
+                .filter(
+                    UserSignRecord.sign_date == today,
+                    UserSignRecord.created_at < caller_record.created_at,
+                )
+                .count()
+                + 1
+            )
+            caller_user = session.query(User).filter(User.user_id == caller_id).first()
+            caller_name = caller_user.name if caller_user else ""
+            self_entry = {
+                "rank": caller_rank,
+                "name": caller_name,
+                "value": _format_sign_time(caller_record.created_at),
+            }
+    finally:
+        session.close()
+
+    await _render_and_send(
+        bot, event,
+        title="今日签到排行榜",
+        value_label="签到时间",
+        page=page,
+        limit=limit,
+        entries=entries,
+        total_pages=total_pages,
+        file_prefix="leaderboard-daily-sign",
         self_entry=self_entry,
         theme=resolve_render_theme(),
     )
