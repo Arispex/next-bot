@@ -42,6 +42,7 @@ DEFAULT_ENV_CONTENT = (
     "COMMAND_DISABLED_MODE=reply\n"
     "COMMAND_DISABLED_MESSAGE=该命令暂时关闭~\n"
     "RENDER_THEME=auto\n"
+    "LOGIN_NOTIFY_ALL_GROUPS=false\n"
 )
 
 

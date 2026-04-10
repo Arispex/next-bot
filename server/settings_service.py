@@ -46,6 +46,7 @@ _FIELD_SPECS: tuple[FieldSpec, ...] = (
     FieldSpec("command_disabled_mode", "COMMAND_DISABLED_MODE"),
     FieldSpec("command_disabled_message", "COMMAND_DISABLED_MESSAGE"),
     FieldSpec("render_theme", "RENDER_THEME"),
+    FieldSpec("login_notify_all_groups", "LOGIN_NOTIFY_ALL_GROUPS"),
 )
 
 _FIELD_BY_NAME: dict[str, FieldSpec] = {item.field: item for item in _FIELD_SPECS}
@@ -93,6 +94,8 @@ def _serialize_env_value(field: str, value: Any) -> str:
         return json.dumps(value, ensure_ascii=False)
     if field == "web_server_port":
         return str(value)
+    if isinstance(value, bool):
+        return "true" if value else "false"
     return str(value)
 
 
@@ -193,6 +196,17 @@ def _coerce_ws_urls(value: Any, *, field: str) -> list[str]:
     return values
 
 
+def _coerce_bool(value: Any, *, field: str) -> bool:
+    if isinstance(value, bool):
+        return value
+    text = str(value).strip().lower()
+    if text in {"true", "1", "yes"}:
+        return True
+    if text in {"false", "0", "no", ""}:
+        return False
+    raise SettingsValidationError(f"{field} 必须是 true 或 false", field=field)
+
+
 def _coerce_http_url(value: Any, *, field: str) -> str:
     text = _coerce_string(value, field=field)
     parsed = urlparse(text)
@@ -246,6 +260,8 @@ def _normalize_field(field: str, value: Any) -> Any:
                 field=field,
             )
         return theme
+    if field == "login_notify_all_groups":
+        return _coerce_bool(value, field=field)
     raise SettingsValidationError("不支持的配置项", field=field)
 
 
@@ -277,6 +293,8 @@ def _load_value_from_env(field: str, raw_value: str) -> Any:
         return _normalize_field(field, values)
     if field == "web_server_port":
         return _coerce_port(raw_value, field=field)
+    if field == "login_notify_all_groups":
+        return _coerce_bool(raw_value, field=field)
     return _normalize_field(field, raw_value)
 
 
@@ -302,6 +320,8 @@ def _load_value_from_config(field: str, config: Any) -> Any:
         raw_value = "该命令暂时关闭"
     if field == "render_theme" and raw_value is None:
         raw_value = "auto"
+    if field == "login_notify_all_groups":
+        return _coerce_bool(raw_value if raw_value is not None else False, field=field)
     return _normalize_field(field, raw_value if raw_value is not None else "")
 
 

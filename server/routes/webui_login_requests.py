@@ -4,11 +4,13 @@ from typing import Any
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
+import nonebot
 from nonebot import get_bots
 from nonebot.adapters.onebot.v11 import Bot as OBV11Bot
 from nonebot.adapters.onebot.v11 import MessageSegment as OBV11MessageSegment
 from nonebot.log import logger
 
+from nextbot.access_control import get_group_ids
 from nextbot.db import User, get_session
 from server.routes import api_error, api_success, read_json_object
 
@@ -32,23 +34,13 @@ def _resolve_user_id_by_name(name: str) -> str | None:
 
 
 async def _find_user_group(bot: OBV11Bot, user_id: str) -> int | None:
-    try:
-        group_list = await bot.call_api("get_group_list")
-    except Exception as exc:
-        logger.warning(f"查询群列表失败：reason={exc}")
+    allowed_groups = get_group_ids()
+    if not allowed_groups:
         return None
 
-    if not isinstance(group_list, list):
-        return None
-
-    for group in group_list:
-        if not isinstance(group, dict):
-            continue
-        raw_group_id = group.get("group_id")
-        if raw_group_id is None:
-            continue
+    for raw_gid in allowed_groups:
         try:
-            group_id = int(raw_group_id)
+            group_id = int(raw_gid)
         except (TypeError, ValueError):
             continue
         try:
@@ -62,6 +54,30 @@ async def _find_user_group(bot: OBV11Bot, user_id: str) -> int | None:
             continue
         return group_id
     return None
+
+
+async def _find_all_user_groups(bot: OBV11Bot, user_id: str) -> list[int]:
+    allowed_groups = get_group_ids()
+    if not allowed_groups:
+        return []
+
+    found: list[int] = []
+    for raw_gid in allowed_groups:
+        try:
+            group_id = int(raw_gid)
+        except (TypeError, ValueError):
+            continue
+        try:
+            await bot.call_api(
+                "get_group_member_info",
+                group_id=group_id,
+                user_id=int(user_id),
+                no_cache=False,
+            )
+        except Exception:
+            continue
+        found.append(group_id)
+    return found
 
 
 @router.post("/webui/api/login-requests")
@@ -103,8 +119,16 @@ async def webui_login_requests_create(request: Request) -> JSONResponse:
             message="机器人未连接",
         )
 
-    group_id = await _find_user_group(bot, user_id)
-    if group_id is None:
+    config = nonebot.get_driver().config
+    notify_all = bool(getattr(config, "login_notify_all_groups", False))
+
+    if notify_all:
+        group_ids = await _find_all_user_groups(bot, user_id)
+    else:
+        first = await _find_user_group(bot, user_id)
+        group_ids = [first] if first is not None else []
+
+    if not group_ids:
         logger.warning(
             f"发送登入确认失败：name={name}，user_id={user_id}，reason=未在任何群中找到该用户"
         )
@@ -130,37 +154,55 @@ async def webui_login_requests_create(request: Request) -> JSONResponse:
         ),
     ]
 
-    try:
-        send_result = await bot.call_api(
-            "send_group_msg",
-            group_id=group_id,
-            message=message,
+    results: list[dict[str, Any]] = []
+    for gid in group_ids:
+        try:
+            send_result = await bot.call_api(
+                "send_group_msg",
+                group_id=gid,
+                message=message,
+            )
+        except Exception as exc:
+            logger.exception(
+                f"发送登入确认异常：name={name}，user_id={user_id}，group_id={gid}，reason={exc}"
+            )
+            results.append({"group_id": gid, "message_id": None})
+            continue
+
+        msg_id: int | None = None
+        if isinstance(send_result, dict):
+            raw_msg_id = send_result.get("message_id")
+            if isinstance(raw_msg_id, int):
+                msg_id = raw_msg_id
+
+        logger.info(
+            f"发送登入确认成功：name={name}，user_id={user_id}，group_id={gid}，message_id={msg_id}"
         )
-    except Exception as exc:
-        logger.exception(
-            f"发送登入确认异常：name={name}，user_id={user_id}，group_id={group_id}，reason={exc}"
-        )
+        results.append({"group_id": gid, "message_id": msg_id})
+
+    if not any(r["message_id"] is not None for r in results):
         return api_error(
             status_code=502,
             code="send_failed",
             message="发送消息失败",
         )
 
-    message_id: int | None = None
-    if isinstance(send_result, dict):
-        raw_message_id = send_result.get("message_id")
-        if isinstance(raw_message_id, int):
-            message_id = raw_message_id
+    if len(results) == 1:
+        return api_success(
+            status_code=201,
+            data={
+                "name": name,
+                "user_id": user_id,
+                "group_id": results[0]["group_id"],
+                "message_id": results[0]["message_id"],
+            },
+        )
 
-    logger.info(
-        f"发送登入确认成功：name={name}，user_id={user_id}，group_id={group_id}，message_id={message_id}"
-    )
     return api_success(
         status_code=201,
         data={
             "name": name,
             "user_id": user_id,
-            "group_id": group_id,
-            "message_id": message_id,
+            "results": results,
         },
     )

@@ -17,6 +17,7 @@
   const commandDisabledModeInput = document.getElementById("field-command-disabled-mode");
   const commandDisabledMessageInput = document.getElementById("field-command-disabled-message");
   const renderThemeInput = document.getElementById("field-render-theme");
+  const loginNotifyAllGroupsInput = document.getElementById("field-login-notify-all-groups");
   const tokenToggleButton = document.getElementById("token-toggle-btn");
 
   const requiredNodesReady = Boolean(
@@ -37,6 +38,7 @@
     commandDisabledModeInput &&
     commandDisabledMessageInput &&
     renderThemeInput &&
+    loginNotifyAllGroupsInput &&
     tokenToggleButton
   );
   if (!requiredNodesReady) {
@@ -57,6 +59,7 @@
     command_disabled_mode: "命令关闭模式",
     command_disabled_message: "命令关闭提示语",
     render_theme: "图片主题",
+    login_notify_all_groups: "登入通知范围",
   };
   const RENDER_THEME_LABELS = {
     auto: "跟随时间",
@@ -272,6 +275,7 @@
       command_disabled_mode: commandDisabledMode,
       command_disabled_message: commandDisabledMessage,
       render_theme: renderThemeInput.value,
+      login_notify_all_groups: loginNotifyAllGroupsInput.value === "true",
     };
   };
 
@@ -288,6 +292,7 @@
     commandDisabledModeInput.value = String(data.command_disabled_mode ?? "reply");
     commandDisabledMessageInput.value = String(data.command_disabled_message ?? "");
     renderThemeInput.value = String(data.render_theme ?? "auto");
+    loginNotifyAllGroupsInput.value = data.login_notify_all_groups ? "true" : "false";
     updateArrayPreviews();
   };
 
