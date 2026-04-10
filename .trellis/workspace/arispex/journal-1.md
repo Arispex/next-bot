@@ -1933,3 +1933,35 @@ Replaced all user-facing '用户 ID' labels with '用户 QQ' across 7 files: Web
 ### Next Steps
 
 - None - task complete
+
+
+## Session 51: Admin list config order option
+
+**Date**: 2026-04-10
+**Task**: Admin list config order option
+
+### Summary
+
+Added keep_order bool param to admin list command. When enabled (default), displays admins in .env config order instead of sorted by QQ number. Added get_owner_ids_ordered() in access_control.py.
+
+### Main Changes
+
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `29e5108` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
