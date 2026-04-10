@@ -251,6 +251,7 @@ async def handle_self_kick(
         raise_command_usage()
 
     user_id = event.get_user_id()
+    at = OBV11MessageSegment.at(int(user_id))
     session = get_session()
     try:
         user = session.query(User).filter(User.user_id == user_id).first()
@@ -259,11 +260,11 @@ async def handle_self_kick(
         session.close()
 
     if user is None:
-        await bot.send(event, "执行失败，未注册账号")
+        await bot.send(event, at + " 执行失败，未注册账号")
         return
 
     if not servers:
-        await bot.send(event, "执行失败，暂无服务器")
+        await bot.send(event, at + " 执行失败，暂无服务器")
         return
 
     lines: list[str] = []
@@ -288,7 +289,7 @@ async def handle_self_kick(
     logger.info(
         f"自踢执行完成：user_id={user_id} name={user.name} server_count={len(servers)}"
     )
-    await bot.send(event, "\n".join(lines))
+    await bot.send(event, at + "\n" + "\n".join(lines))
 
 
 @inventory_matcher.handle()

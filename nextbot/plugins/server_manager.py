@@ -1,5 +1,6 @@
 from nonebot import on_command
 from nonebot.adapters import Bot, Event, Message
+from nonebot.adapters.onebot.v11 import MessageSegment as OBV11MessageSegment
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
@@ -36,6 +37,7 @@ async def handle_add_server(
     if len(args) != 5:
         raise_command_usage()
 
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
     name, ip, game_port, restapi_port, token = args
     session = get_session()
     try:
@@ -56,7 +58,7 @@ async def handle_add_server(
     logger.info(
         f"添加服务器成功：ID={count + 1} name={name} ip={ip} game_port={game_port} restapi_port={restapi_port}"
     )
-    await bot.send(event, "添加成功")
+    await bot.send(event, at + " 添加成功")
 
 
 @delete_matcher.handle()
@@ -81,11 +83,12 @@ async def handle_delete_server(
     except ValueError:
         raise_command_usage()
 
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
     session = get_session()
     try:
         server = session.query(Server).filter(Server.id == target_id).first()
         if server is None:
-            await bot.send(event, "删除失败，服务器不存在")
+            await bot.send(event, at + " 删除失败，服务器不存在")
             return
 
         deleted_id = server.id
@@ -100,7 +103,7 @@ async def handle_delete_server(
         session.close()
 
     logger.info(f"删除服务器成功：ID={deleted_id}")
-    await bot.send(event, "删除成功")
+    await bot.send(event, at + " 删除成功")
 
 
 @list_matcher.handle()
@@ -163,6 +166,7 @@ async def handle_test_server(
     except ValueError:
         raise_command_usage()
 
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
     session = get_session()
     try:
         server = session.query(Server).filter(Server.id == target_id).first()
@@ -170,7 +174,7 @@ async def handle_test_server(
         session.close()
 
     if server is None:
-        await bot.send(event, "测试失败，服务器不存在")
+        await bot.send(event, at + " 测试失败，服务器不存在")
         return
 
     try:
@@ -179,7 +183,7 @@ async def handle_test_server(
         logger.info(
             f"测试连通性失败：id={target_id} ip={server.ip} port={server.restapi_port}"
         )
-        await bot.send(event, "测试失败，无法连接服务器")
+        await bot.send(event, at + " 测试失败，无法连接服务器")
         return
 
     status_code = response.http_status
@@ -189,8 +193,8 @@ async def handle_test_server(
     )
 
     if is_success(response):
-        await bot.send(event, "测试成功，一切正常")
+        await bot.send(event, at + " 测试成功，一切正常")
         return
 
     reason = get_error_reason(response)
-    await bot.send(event, f"测试失败，{reason}")
+    await bot.send(event, at + f" 测试失败，{reason}")

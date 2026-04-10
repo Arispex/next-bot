@@ -133,25 +133,25 @@ async def handle_add_whitelist(
     if len(args) != 1:
         raise_command_usage()
 
+    user_id = event.get_user_id()
+    at = OBV11MessageSegment.at(int(user_id))
     name = args[0].strip()
     invalid_reason = _validate_user_name(name)
     if invalid_reason is not None:
-        await bot.send(event, f"注册失败，{invalid_reason}")
+        await bot.send(event, at + f" 注册失败，{invalid_reason}")
         return
-
-    user_id = event.get_user_id()
 
     session = get_session()
     try:
         exists = session.query(User).filter(User.user_id == user_id).first()
         if exists is not None:
             logger.info(f"账号已注册：user_id={user_id} name={exists.name}")
-            await bot.send(event, "注册失败，该账号已注册")
+            await bot.send(event, at + " 注册失败，该账号已注册")
             return
         name_exists = session.query(User).filter(User.name == name).first()
         if name_exists is not None:
             logger.info(f"用户名称已存在：name={name}")
-            await bot.send(event, "注册失败，用户名称已被占用")
+            await bot.send(event, at + " 注册失败，用户名称已被占用")
             return
 
         user = User(user_id=user_id, name=name, group="default")
@@ -163,7 +163,7 @@ async def handle_add_whitelist(
     await _sync_whitelist_to_all_servers(user_id, name)
 
     logger.info(f"注册账号成功：user_id={user_id} name={name}")
-    await bot.send(event, "注册成功")
+    await bot.send(event, at + " 注册成功")
 
 
 @sync_matcher.handle()
@@ -183,6 +183,7 @@ async def handle_sync_whitelist(
         raise_command_usage()
 
     user_id = event.get_user_id()
+    at = OBV11MessageSegment.at(int(user_id))
     session = get_session()
     try:
         user = session.query(User).filter(User.user_id == user_id).first()
@@ -190,12 +191,12 @@ async def handle_sync_whitelist(
         session.close()
 
     if user is None:
-        await bot.send(event, "同步失败，未注册账号")
+        await bot.send(event, at + " 同步失败，未注册账号")
         return
 
     results = await _sync_whitelist_to_all_servers(user_id, user.name)
     if not results:
-        await bot.send(event, "同步失败，暂无可同步的服务器")
+        await bot.send(event, at + " 同步失败，暂无可同步的服务器")
         return
 
     lines: list[str] = []
@@ -210,7 +211,7 @@ async def handle_sync_whitelist(
     logger.info(
         f"同步白名单完成：user_id={user_id} name={user.name} server_count={len(results)}"
     )
-    await bot.send(event, "\n".join(lines))
+    await bot.send(event, at + "\n" + "\n".join(lines))
 
 
 def _get_sign_dates(user_id: str, days: int) -> list[str]:

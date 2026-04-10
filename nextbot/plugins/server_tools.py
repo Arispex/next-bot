@@ -76,6 +76,7 @@ async def handle_execute(
         raise_command_usage()
 
     target_id, command = parsed
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
     session = get_session()
     try:
         server = session.query(Server).filter(Server.id == target_id).first()
@@ -83,7 +84,7 @@ async def handle_execute(
         session.close()
 
     if server is None:
-        await bot.send(event, "执行失败，服务器不存在")
+        await bot.send(event, at + " 执行失败，服务器不存在")
         return
 
     try:
@@ -93,19 +94,19 @@ async def handle_execute(
             params={"cmd": command},
         )
     except TShockRequestError:
-        await bot.send(event, "执行失败，无法连接服务器")
+        await bot.send(event, at + " 执行失败，无法连接服务器")
         return
 
     if not is_success(response):
-        await bot.send(event, f"执行失败，{get_error_reason(response)}")
+        await bot.send(event, at + f" 执行失败，{get_error_reason(response)}")
         return
 
     result_text = _extract_response_text(response.payload)
     if result_text:
-        await bot.send(event, f"执行成功，返回内容：\n{result_text}")
+        await bot.send(event, at + f"\n执行成功，返回内容：\n{result_text}")
         return
 
-    await bot.send(event, "执行成功，无返回内容")
+    await bot.send(event, at + " 执行成功，无返回内容")
 
 
 @map_image_matcher.handle()

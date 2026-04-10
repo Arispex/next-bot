@@ -1,5 +1,6 @@
 from nonebot import on_command
 from nonebot.adapters import Bot, Event, Message
+from nonebot.adapters.onebot.v11 import MessageSegment as OBV11MessageSegment
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
@@ -77,12 +78,13 @@ async def handle_add_group(
     if len(args) != 1:
         raise_command_usage()
 
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
     name = args[0]
     session = get_session()
     try:
         exists = session.query(Group).filter(Group.name == name).first()
         if exists is not None:
-            await bot.send(event, "添加失败，身份组已存在")
+            await bot.send(event, at + " 添加失败，身份组已存在")
             return
 
         session.add(Group(name=name, permissions="", inherits=""))
@@ -91,7 +93,7 @@ async def handle_add_group(
         session.close()
 
     logger.info(f"添加身份组成功：name={name}")
-    await bot.send(event, "添加成功")
+    await bot.send(event, at + " 添加成功")
 
 
 @delete_matcher.handle()
@@ -111,16 +113,17 @@ async def handle_delete_group(
     if len(args) != 1:
         raise_command_usage()
 
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
     name = args[0]
     if name in {"guest", "default"}:
-        await bot.send(event, "删除失败，系统内置身份组不可删除")
+        await bot.send(event, at + " 删除失败，系统内置身份组不可删除")
         return
 
     session = get_session()
     try:
         group = session.query(Group).filter(Group.name == name).first()
         if group is None:
-            await bot.send(event, "删除失败，身份组不存在")
+            await bot.send(event, at + " 删除失败，身份组不存在")
             return
 
         session.delete(group)
@@ -139,7 +142,7 @@ async def handle_delete_group(
         session.close()
 
     logger.info(f"删除身份组成功：name={name}")
-    await bot.send(event, "删除成功")
+    await bot.send(event, at + " 删除成功")
 
 
 @inherit_matcher.handle()
@@ -159,9 +162,10 @@ async def handle_inherit_group(
     if len(args) != 2:
         raise_command_usage()
 
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
     child, parent = args
     if child == parent:
-        await bot.send(event, "修改失败，不能继承到自身")
+        await bot.send(event, at + " 修改失败，不能继承到自身")
         return
 
     session = get_session()
@@ -169,7 +173,7 @@ async def handle_inherit_group(
         child_group = session.query(Group).filter(Group.name == child).first()
         parent_group = session.query(Group).filter(Group.name == parent).first()
         if child_group is None or parent_group is None:
-            await bot.send(event, "修改失败，身份组不存在")
+            await bot.send(event, at + " 修改失败，身份组不存在")
             return
 
         child_group.inherits = add_inherit(child_group.inherits, parent)
@@ -178,7 +182,7 @@ async def handle_inherit_group(
         session.close()
 
     logger.info(f"身份组继承成功：{child} -> {parent}")
-    await bot.send(event, "修改成功")
+    await bot.send(event, at + " 修改成功")
 
 
 @clear_inherit_matcher.handle()
@@ -198,12 +202,13 @@ async def handle_clear_inherit_group(
     if len(args) != 1:
         raise_command_usage()
 
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
     name = args[0]
     session = get_session()
     try:
         group = session.query(Group).filter(Group.name == name).first()
         if group is None:
-            await bot.send(event, "修改失败，身份组不存在")
+            await bot.send(event, at + " 修改失败，身份组不存在")
             return
 
         group.inherits = ""
@@ -212,7 +217,7 @@ async def handle_clear_inherit_group(
         session.close()
 
     logger.info(f"取消身份组继承成功：name={name}")
-    await bot.send(event, "修改成功")
+    await bot.send(event, at + " 修改成功")
 
 
 @add_perm_matcher.handle()
@@ -232,12 +237,13 @@ async def handle_add_group_perm(
     if len(args) != 2:
         raise_command_usage()
 
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
     name, permission = args
     session = get_session()
     try:
         group = session.query(Group).filter(Group.name == name).first()
         if group is None:
-            await bot.send(event, "添加失败，身份组不存在")
+            await bot.send(event, at + " 添加失败，身份组不存在")
             return
 
         group.permissions = add_permission(group.permissions, permission)
@@ -246,7 +252,7 @@ async def handle_add_group_perm(
         session.close()
 
     logger.info(f"添加身份组权限成功：name={name} permission={permission}")
-    await bot.send(event, "添加成功")
+    await bot.send(event, at + " 添加成功")
 
 
 @remove_perm_matcher.handle()
@@ -266,12 +272,13 @@ async def handle_remove_group_perm(
     if len(args) != 2:
         raise_command_usage()
 
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
     name, permission = args
     session = get_session()
     try:
         group = session.query(Group).filter(Group.name == name).first()
         if group is None:
-            await bot.send(event, "删除失败，身份组不存在")
+            await bot.send(event, at + " 删除失败，身份组不存在")
             return
 
         group.permissions = remove_permission(group.permissions, permission)
@@ -280,4 +287,4 @@ async def handle_remove_group_perm(
         session.close()
 
     logger.info(f"删除身份组权限成功：name={name} permission={permission}")
-    await bot.send(event, "删除成功")
+    await bot.send(event, at + " 删除成功")

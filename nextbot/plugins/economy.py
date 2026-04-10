@@ -6,6 +6,7 @@ from datetime import date, timedelta
 
 from nonebot import on_command
 from nonebot.adapters import Bot, Event, Message
+from nonebot.adapters.onebot.v11 import MessageSegment as OBV11MessageSegment
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
@@ -127,6 +128,7 @@ async def handle_sign(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     if args:
         raise_command_usage()
 
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
     min_coins = int(get_current_param("min_coins", 10))
     max_coins = int(get_current_param("max_coins", 30))
     enable_streak = bool(get_current_param("enable_streak", True))
@@ -134,10 +136,10 @@ async def handle_sign(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     max_streak_bonus = int(get_current_param("max_streak_bonus", 50))
 
     if min_coins < 0 or max_coins < 0 or streak_bonus_per_day < 0 or max_streak_bonus < 0:
-        await bot.send(event, "签到失败，签到奖励配置不能为负数")
+        await bot.send(event, at + " 签到失败，签到奖励配置不能为负数")
         return
     if min_coins > max_coins:
-        await bot.send(event, "签到失败，签到奖励配置错误：最小值不能大于最大值")
+        await bot.send(event, at + " 签到失败，签到奖励配置错误：最小值不能大于最大值")
         return
 
     user_id = event.get_user_id()
@@ -146,12 +148,12 @@ async def handle_sign(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     try:
         user = session.query(User).filter(User.user_id == user_id).first()
         if user is None:
-            await bot.send(event, "签到失败，请先注册账号")
+            await bot.send(event, at + " 签到失败，请先注册账号")
             return
 
         last_sign_date = str(user.last_sign_date or "").strip()
         if bool(user.signed_today) or last_sign_date == today_text:
-            await bot.send(event, "签到失败，今天已经签到过了")
+            await bot.send(event, at + " 签到失败，今天已经签到过了")
             return
 
         base_reward = random.randint(min_coins, max_coins)
@@ -198,7 +200,7 @@ async def handle_sign(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
                 f"当前金币：{user.coins}",
             ]
         )
-        await bot.send(event, "\n".join(lines))
+        await bot.send(event, at + "\n" + "\n".join(lines))
     finally:
         session.close()
 
@@ -217,51 +219,52 @@ async def handle_transfer(bot: Bot, event: Event, arg: Message = CommandArg()) -
     if len(args) != 2:
         raise_command_usage()
 
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
     target_user_id, parse_error = resolve_user_id_arg_with_fallback(
         event, arg, "转账", arg_index=0
     )
     if parse_error == "missing":
         raise_command_usage()
     if parse_error == "name_not_found":
-        await bot.send(event, "转账失败，用户名称不存在")
+        await bot.send(event, at + " 转账失败，用户名称不存在")
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, "转账失败，用户名称不唯一，请使用用户 QQ 或 @用户")
+        await bot.send(event, at + " 转账失败，用户名称不唯一，请使用用户 QQ 或 @用户")
         return
     if target_user_id is None:
-        await bot.send(event, "转账失败，用户参数解析失败")
+        await bot.send(event, at + " 转账失败，用户参数解析失败")
         return
 
     amount_str = args[1].strip()
     try:
         amount = int(amount_str)
     except ValueError:
-        await bot.send(event, "转账失败，数量必须为整数")
+        await bot.send(event, at + " 转账失败，数量必须为整数")
         return
     if amount <= 0:
-        await bot.send(event, "转账失败，数量必须大于 0")
+        await bot.send(event, at + " 转账失败，数量必须大于 0")
         return
 
     sender_id = event.get_user_id()
     if sender_id == target_user_id:
-        await bot.send(event, "转账失败，不能转账给自己")
+        await bot.send(event, at + " 转账失败，不能转账给自己")
         return
 
     session = get_session()
     try:
         sender = session.query(User).filter(User.user_id == sender_id).first()
         if sender is None:
-            await bot.send(event, "转账失败，请先注册账号")
+            await bot.send(event, at + " 转账失败，请先注册账号")
             return
 
         target = session.query(User).filter(User.user_id == target_user_id).first()
         if target is None:
-            await bot.send(event, "转账失败，目标用户不存在")
+            await bot.send(event, at + " 转账失败，目标用户不存在")
             return
 
         sender_coins = int(sender.coins or 0)
         if sender_coins < amount:
-            await bot.send(event, f"转账失败，金币不足（当前：{sender_coins}）")
+            await bot.send(event, at + f" 转账失败，金币不足（当前：{sender_coins}）")
             return
 
         sender.coins = sender_coins - amount
@@ -275,7 +278,7 @@ async def handle_transfer(bot: Bot, event: Event, arg: Message = CommandArg()) -
         )
         await bot.send(
             event,
-            f"转账成功\n转出金币：{amount}\n转账对象：{target.name}（{target.user_id}）\n当前余额：{sender.coins}",
+            at + f"\n转账成功\n转出金币：{amount}\n转账对象：{target.name}（{target.user_id}）\n当前余额：{sender.coins}",
         )
     finally:
         session.close()
@@ -298,6 +301,7 @@ async def handle_add_coins(
     if len(args) != 2:
         raise_command_usage()
 
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
     target_user_id, parse_error = resolve_user_id_arg_with_fallback(
         event,
         arg,
@@ -306,25 +310,25 @@ async def handle_add_coins(
     if parse_error == "missing":
         raise_command_usage()
     if parse_error == "name_not_found":
-        await bot.send(event, "添加失败，用户名称不存在")
+        await bot.send(event, at + " 添加失败，用户名称不存在")
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, "添加失败，用户名称不唯一，请使用用户 QQ 或 @用户")
+        await bot.send(event, at + " 添加失败，用户名称不唯一，请使用用户 QQ 或 @用户")
         return
     if target_user_id is None:
-        await bot.send(event, "添加失败，用户参数解析失败")
+        await bot.send(event, at + " 添加失败，用户参数解析失败")
         return
 
     amount = _parse_positive_int(args[1])
     if amount is None:
-        await bot.send(event, "添加失败，数量必须为正整数")
+        await bot.send(event, at + " 添加失败，数量必须为正整数")
         return
 
     session = get_session()
     try:
         user = session.query(User).filter(User.user_id == target_user_id).first()
         if user is None:
-            await bot.send(event, "添加失败，用户不存在")
+            await bot.send(event, at + " 添加失败，用户不存在")
             return
 
         user.coins += amount
@@ -337,7 +341,7 @@ async def handle_add_coins(
     logger.info(
         f"添加金币成功：user_id={target_user_id} name={user_name} amount={amount} coins={coins}"
     )
-    await bot.send(event, f"添加成功\n当前金币：{coins}")
+    await bot.send(event, at + f"\n添加成功\n当前金币：{coins}")
 
 
 @remove_coins_matcher.handle()
@@ -357,6 +361,7 @@ async def handle_remove_coins(
     if len(args) != 2:
         raise_command_usage()
 
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
     target_user_id, parse_error = resolve_user_id_arg_with_fallback(
         event,
         arg,
@@ -365,29 +370,29 @@ async def handle_remove_coins(
     if parse_error == "missing":
         raise_command_usage()
     if parse_error == "name_not_found":
-        await bot.send(event, "扣除失败，用户名称不存在")
+        await bot.send(event, at + " 扣除失败，用户名称不存在")
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, "扣除失败，用户名称不唯一，请使用用户 QQ 或 @用户")
+        await bot.send(event, at + " 扣除失败，用户名称不唯一，请使用用户 QQ 或 @用户")
         return
     if target_user_id is None:
-        await bot.send(event, "扣除失败，用户参数解析失败")
+        await bot.send(event, at + " 扣除失败，用户参数解析失败")
         return
 
     amount = _parse_positive_int(args[1])
     if amount is None:
-        await bot.send(event, "扣除失败，数量必须为正整数")
+        await bot.send(event, at + " 扣除失败，数量必须为正整数")
         return
 
     session = get_session()
     try:
         user = session.query(User).filter(User.user_id == target_user_id).first()
         if user is None:
-            await bot.send(event, "扣除失败，用户不存在")
+            await bot.send(event, at + " 扣除失败，用户不存在")
             return
 
         if user.coins < amount:
-            await bot.send(event, f"扣除失败，金币不足，当前仅有 {user.coins}")
+            await bot.send(event, at + f" 扣除失败，金币不足，当前仅有 {user.coins}")
             return
 
         user.coins -= amount
@@ -400,4 +405,4 @@ async def handle_remove_coins(
     logger.info(
         f"扣除金币成功：user_id={target_user_id} name={user_name} amount={amount} coins={coins}"
     )
-    await bot.send(event, f"扣除成功\n当前金币：{coins}")
+    await bot.send(event, at + f"\n扣除成功\n当前金币：{coins}")

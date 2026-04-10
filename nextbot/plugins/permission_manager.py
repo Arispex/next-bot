@@ -61,6 +61,7 @@ async def handle_add_user_perm(
     if len(args) != 2:
         raise_command_usage()
 
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
     user_id, parse_error = resolve_user_id_arg_with_fallback(
         event,
         arg,
@@ -69,13 +70,13 @@ async def handle_add_user_perm(
     if parse_error == "missing":
         raise_command_usage()
     if parse_error == "name_not_found":
-        await bot.send(event, "添加失败，用户名称不存在")
+        await bot.send(event, at + " 添加失败，用户名称不存在")
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, "添加失败，用户名称不唯一，请使用用户 QQ 或 @用户")
+        await bot.send(event, at + " 添加失败，用户名称不唯一，请使用用户 QQ 或 @用户")
         return
     if user_id is None:
-        await bot.send(event, "添加失败，用户参数解析失败")
+        await bot.send(event, at + " 添加失败，用户参数解析失败")
         return
 
     permission = args[1]
@@ -83,7 +84,7 @@ async def handle_add_user_perm(
     try:
         user = session.query(User).filter(User.user_id == user_id).first()
         if user is None:
-            await bot.send(event, "添加失败，用户不存在")
+            await bot.send(event, at + " 添加失败，用户不存在")
             return
 
         user.permissions = add_permission(user.permissions, permission)
@@ -92,7 +93,7 @@ async def handle_add_user_perm(
         session.close()
 
     logger.info(f"添加用户权限成功：user_id={user_id} permission={permission}")
-    await bot.send(event, "添加成功")
+    await bot.send(event, at + " 添加成功")
 
 
 @remove_user_perm_matcher.handle()
@@ -112,6 +113,7 @@ async def handle_remove_user_perm(
     if len(args) != 2:
         raise_command_usage()
 
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
     user_id, parse_error = resolve_user_id_arg_with_fallback(
         event,
         arg,
@@ -120,13 +122,13 @@ async def handle_remove_user_perm(
     if parse_error == "missing":
         raise_command_usage()
     if parse_error == "name_not_found":
-        await bot.send(event, "删除失败，用户名称不存在")
+        await bot.send(event, at + " 删除失败，用户名称不存在")
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, "删除失败，用户名称不唯一，请使用用户 QQ 或 @用户")
+        await bot.send(event, at + " 删除失败，用户名称不唯一，请使用用户 QQ 或 @用户")
         return
     if user_id is None:
-        await bot.send(event, "删除失败，用户参数解析失败")
+        await bot.send(event, at + " 删除失败，用户参数解析失败")
         return
 
     permission = args[1]
@@ -134,7 +136,7 @@ async def handle_remove_user_perm(
     try:
         user = session.query(User).filter(User.user_id == user_id).first()
         if user is None:
-            await bot.send(event, "删除失败，用户不存在")
+            await bot.send(event, at + " 删除失败，用户不存在")
             return
 
         user.permissions = remove_permission(user.permissions, permission)
@@ -143,7 +145,7 @@ async def handle_remove_user_perm(
         session.close()
 
     logger.info(f"删除用户权限成功：user_id={user_id} permission={permission}")
-    await bot.send(event, "删除成功")
+    await bot.send(event, at + " 删除成功")
 
 
 @set_user_group_matcher.handle()
@@ -163,6 +165,7 @@ async def handle_set_user_group(
     if len(args) != 2:
         raise_command_usage()
 
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
     target_user_id, parse_error = resolve_user_id_arg_with_fallback(
         event,
         arg,
@@ -171,13 +174,13 @@ async def handle_set_user_group(
     if parse_error == "missing":
         raise_command_usage()
     if parse_error == "name_not_found":
-        await bot.send(event, "修改失败，用户名称不存在")
+        await bot.send(event, at + " 修改失败，用户名称不存在")
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, "修改失败，用户名称不唯一，请使用用户 QQ 或 @用户")
+        await bot.send(event, at + " 修改失败，用户名称不唯一，请使用用户 QQ 或 @用户")
         return
     if target_user_id is None:
-        await bot.send(event, "修改失败，用户参数解析失败")
+        await bot.send(event, at + " 修改失败，用户参数解析失败")
         return
 
     group_name = args[1]
@@ -185,12 +188,12 @@ async def handle_set_user_group(
     try:
         user = session.query(User).filter(User.user_id == target_user_id).first()
         if user is None:
-            await bot.send(event, "修改失败，用户不存在")
+            await bot.send(event, at + " 修改失败，用户不存在")
             return
 
         group = session.query(Group).filter(Group.name == group_name).first()
         if group is None:
-            await bot.send(event, "修改失败，身份组不存在")
+            await bot.send(event, at + " 修改失败，身份组不存在")
             return
 
         user.group = group_name
@@ -201,7 +204,7 @@ async def handle_set_user_group(
     logger.info(
         f"修改用户身份组成功：user_id={target_user_id} group={group_name}"
     )
-    await bot.send(event, "修改成功")
+    await bot.send(event, at + " 修改成功")
 
 
 @admin_list_matcher.handle()
