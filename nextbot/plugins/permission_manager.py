@@ -7,8 +7,8 @@ from nonebot.adapters.onebot.v11 import MessageSegment as OBV11MessageSegment
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
-from nextbot.access_control import get_owner_ids
-from nextbot.command_config import command_control, raise_command_usage
+from nextbot.access_control import get_owner_ids, get_owner_ids_ordered
+from nextbot.command_config import command_control, get_current_param, raise_command_usage
 from nextbot.db import Group, User, get_session
 from nextbot.message_parser import (
     parse_command_args_with_fallback,
@@ -215,6 +215,15 @@ async def handle_set_user_group(
     permission="permission.admin.list",
     description="查看 Bot 管理员列表",
     usage="管理员列表",
+    params={
+        "keep_order": {
+            "type": "bool",
+            "label": "按配置顺序显示",
+            "description": "开启后按 .env 中填写的 QQ 号顺序显示，关闭则按 QQ 号排序",
+            "required": False,
+            "default": True,
+        },
+    },
 )
 @require_permission("permission.admin.list")
 async def handle_admin_list(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
@@ -222,7 +231,8 @@ async def handle_admin_list(bot: Bot, event: Event, arg: Message = CommandArg())
     if args:
         raise_command_usage()
 
-    owner_ids = sorted(get_owner_ids())
+    keep_order = bool(get_current_param("keep_order", True))
+    owner_ids = get_owner_ids_ordered() if keep_order else sorted(get_owner_ids())
     if not owner_ids:
         await bot.send(event, "查询失败，未配置管理员（owner_id）")
         return
