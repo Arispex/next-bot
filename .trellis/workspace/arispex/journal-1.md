@@ -1852,3 +1852,35 @@ Redesigned progress.html to match the inventory page game summary card style: ce
 ### Next Steps
 
 - None - task complete
+
+
+## Session 49: Unify user ID label to QQ
+
+**Date**: 2026-04-10
+**Task**: Unify user ID label to QQ
+
+### Summary
+
+Replaced all user-facing '用户 ID' labels with '用户 QQ' across 7 files: WebUI templates, JS validation, API error messages, and all plugin usage/bot.send text. Database column names unchanged.
+
+### Main Changes
+
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ce08623` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
