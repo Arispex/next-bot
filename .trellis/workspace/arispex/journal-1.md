@@ -1884,3 +1884,52 @@ Replaced all user-facing '用户 ID' labels with '用户 QQ' across 7 files: Web
 ### Next Steps
 
 - None - task complete
+
+
+## Session 50: Mention user in operation replies & unify QQ label
+
+**Date**: 2026-04-10
+**Task**: Mention user in operation replies & unify QQ label
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| Change | Description |
+|--------|-------------|
+| Unify QQ label | Replaced all user-facing "用户 ID" with "用户 QQ" across 7 files (WebUI, API errors, plugin messages) |
+| @mention in operation replies | All operation commands (签到/转账/注册/白名单同步/添加删除金币/权限管理/身份组管理/执行/测试连通性/自踢) now @mention the user in reply messages. Query commands unchanged |
+
+**Updated Files**:
+- `nextbot/plugins/economy.py` — 签到/转账/添加金币/扣除金币
+- `nextbot/plugins/user_manager.py` — 注册账号/同步白名单
+- `nextbot/plugins/permission_manager.py` — 添加/删除用户权限/修改用户身份组
+- `nextbot/plugins/group_manager.py` — 添加/删除身份组/继承/取消继承/添加/删除身份组权限
+- `nextbot/plugins/server_tools.py` — 执行
+- `nextbot/plugins/server_manager.py` — 添加/删除服务器/测试连通性
+- `nextbot/plugins/player_query.py` — 自踢
+- `server/routes/webui_users.py` — API error messages
+- `server/webui/static/js/users.js` — frontend validation
+- `server/webui/templates/users_content.html` — table/form labels
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ce08623` | (see git log) |
+| `eb713b6` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

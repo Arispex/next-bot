@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 49
+- **Total Sessions**: 50
 - **Last Active**: 2026-04-10
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1886 | Active |
+| `journal-1.md` | ~1935 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits |
 |---|------|-------|---------|
+| 50 | 2026-04-10 | Mention user in operation replies & unify QQ label | `ce08623`, `eb713b6` |
 | 49 | 2026-04-10 | Unify user ID label to QQ | `ce08623` |
 | 48 | 2026-04-09 | Redesign progress page | `0ac76a3` |
 | 47 | 2026-04-09 | Redesign inventory page | `0eafedb` |
