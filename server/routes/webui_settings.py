@@ -107,3 +107,15 @@ async def webui_settings_put(request: Request) -> JSONResponse:
             "saved_fields": result.saved_fields,
         }
     )
+
+
+@router.post("/webui/api/restart")
+async def webui_restart() -> JSONResponse:
+    if not _schedule_process_restart():
+        return api_error(
+            status_code=409,
+            code="conflict",
+            message="重启已在进行中，请稍后刷新页面",
+        )
+    logger.info("手动触发重启")
+    return api_success(data={"restart_scheduled": True})

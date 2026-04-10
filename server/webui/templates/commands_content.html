@@ -19,6 +19,13 @@
         </svg>
         刷新
       </button>
+      <button id="restart-btn" type="button" class="btn btn-danger">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M18.36 6.64A9 9 0 1 1 12 3"></path>
+          <polyline points="12 7 12 3 16 3"></polyline>
+        </svg>
+        重启
+      </button>
     </div>
   </div>
 
@@ -36,6 +43,7 @@
           <th>命令介绍</th>
           <th>用法</th>
           <th>权限</th>
+          <th>别名</th>
           <th>状态</th>
           <th>归属菜单</th>
           <th>操作</th>
@@ -77,6 +85,32 @@
     <div class="modal-foot">
       <button id="modal-cancel-btn" type="button" class="btn">取消</button>
       <button id="modal-save-btn" type="button" class="btn btn-primary">保存参数</button>
+    </div>
+  </div>
+</div>
+
+<div id="alias-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="alias-modal-title">
+  <div class="modal-mask" data-alias-modal-close="1"></div>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="alias-modal-title" class="modal-title">编辑别名</h3>
+      <button id="alias-modal-close-btn" type="button" class="btn btn-icon modal-close-btn" aria-label="关闭">✕</button>
+    </div>
+    <div id="alias-modal-alert" class="alert info modal-alert hidden" role="status" aria-live="polite">
+      <span id="alias-modal-alert-message" class="alert-message"></span>
+    </div>
+    <div class="modal-body">
+      <div class="param-item">
+        <div class="param-head">
+          <p class="param-label">命令别名（逗号分隔）</p>
+          <p class="param-desc">保存后需要重启才能生效。</p>
+        </div>
+        <input id="alias-input" class="input" type="text" placeholder="例如：c, exec, run" />
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button id="alias-cancel-btn" type="button" class="btn">取消</button>
+      <button id="alias-save-btn" type="button" class="btn btn-primary">保存别名</button>
     </div>
   </div>
 </div>

@@ -23,9 +23,21 @@
   const modalCancelButton = document.getElementById("modal-cancel-btn");
   const modalSaveButton = document.getElementById("modal-save-btn");
 
+  const aliasModalNode = document.getElementById("alias-modal");
+  const aliasModalTitleNode = document.getElementById("alias-modal-title");
+  const aliasModalAlertNode = document.getElementById("alias-modal-alert");
+  const aliasModalAlertMessageNode = document.getElementById("alias-modal-alert-message");
+  const aliasInput = document.getElementById("alias-input");
+  const aliasCloseButton = document.getElementById("alias-modal-close-btn");
+  const aliasCancelButton = document.getElementById("alias-cancel-btn");
+  const aliasSaveButton = document.getElementById("alias-save-btn");
+  const restartButton = document.getElementById("restart-btn");
+
   let commandStates = [];
   let activeModalCommandKey = "";
+  let activeAliasCommandKey = "";
   let modalSaving = false;
+  let aliasSaving = false;
   let currentPage = 1;
   let currentPerPage = Number(perPageSelect?.value || 10);
   let currentMeta = { total: 0, page: 1, per_page: currentPerPage, total_pages: 0 };
@@ -400,7 +412,16 @@
         : {};
       const paramNames = Object.keys(schema);
 
+      const aliasesCell = document.createElement("td");
+      const aliasesList = Array.isArray(command.aliases) ? command.aliases : [];
+      const aliasesNode = document.createElement("div");
+      aliasesNode.className = "command-desc";
+      aliasesNode.textContent = aliasesList.length ? aliasesList.join(", ") : "-";
+      aliasesCell.appendChild(aliasesNode);
+
       const actionCell = document.createElement("td");
+      const actionWrap = document.createElement("div");
+      actionWrap.className = "action-wrap";
       if (paramNames.length) {
         const actionButton = document.createElement("button");
         actionButton.type = "button";
@@ -409,13 +430,23 @@
         actionButton.addEventListener("click", () => {
           openParamModal(command.command_key);
         });
-        actionCell.appendChild(actionButton);
+        actionWrap.appendChild(actionButton);
       }
+      const aliasButton = document.createElement("button");
+      aliasButton.type = "button";
+      aliasButton.className = "btn action-btn";
+      aliasButton.textContent = "编辑别名";
+      aliasButton.addEventListener("click", () => {
+        openAliasModal(command.command_key);
+      });
+      actionWrap.appendChild(aliasButton);
+      actionCell.appendChild(actionWrap);
 
       row.appendChild(commandCell);
       row.appendChild(descriptionCell);
       row.appendChild(usageCell);
       row.appendChild(permissionCell);
+      row.appendChild(aliasesCell);
       row.appendChild(statusCell);
       row.appendChild(adminCell);
       row.appendChild(actionCell);
@@ -773,6 +804,105 @@
       closeParamModal();
     }
   });
+
+  // ── Alias Modal ──
+
+  const setAliasAlert = (message, type = "") => {
+    if (!aliasModalAlertNode || !aliasModalAlertMessageNode) return;
+    const text = String(message || "").trim();
+    if (!text) {
+      aliasModalAlertNode.classList.add("hidden");
+      aliasModalAlertMessageNode.textContent = "";
+      return;
+    }
+    aliasModalAlertMessageNode.textContent = text;
+    aliasModalAlertNode.className = `alert ${type || "info"} modal-alert`;
+  };
+
+  const openAliasModal = (commandKey) => {
+    const command = getCommandByKey(commandKey);
+    if (!command || !aliasModalNode) return;
+
+    activeAliasCommandKey = commandKey;
+    setAliasAlert("");
+    const aliases = Array.isArray(command.aliases) ? command.aliases : [];
+    aliasInput.value = aliases.join(", ");
+    aliasModalTitleNode.textContent = "编辑别名";
+    aliasModalNode.classList.remove("hidden");
+  };
+
+  const closeAliasModal = () => {
+    if (aliasModalNode) aliasModalNode.classList.add("hidden");
+    activeAliasCommandKey = "";
+    aliasSaving = false;
+  };
+
+  const saveAliases = async () => {
+    if (aliasSaving || !activeAliasCommandKey) return;
+
+    const raw = String(aliasInput.value || "").trim();
+    const aliases = raw ? raw.split(",").map(s => s.trim()).filter(Boolean) : [];
+
+    aliasSaving = true;
+    aliasSaveButton.disabled = true;
+    setAliasAlert("正在保存...", "info");
+
+    try {
+      const response = await api.apiRequest(
+        `/webui/api/commands/${encodeURIComponent(activeAliasCommandKey)}/aliases`,
+        { method: "PATCH", body: JSON.stringify({ aliases }) }
+      );
+      const result = api.unwrapData(response);
+      if (!result) throw new Error("保存失败");
+      closeAliasModal();
+      setStatus("保存成功，需要重启后生效", "success");
+      await loadCommands({ clearStatus: false });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "保存失败";
+      setAliasAlert(message, "error");
+    } finally {
+      aliasSaving = false;
+      aliasSaveButton.disabled = false;
+    }
+  };
+
+  if (aliasSaveButton) aliasSaveButton.addEventListener("click", saveAliases);
+  if (aliasCancelButton) aliasCancelButton.addEventListener("click", closeAliasModal);
+  if (aliasCloseButton) aliasCloseButton.addEventListener("click", closeAliasModal);
+  if (aliasModalNode) {
+    aliasModalNode.addEventListener("click", (event) => {
+      const target = event.target;
+      if (target instanceof HTMLElement && target.dataset.aliasModalClose === "1") {
+        closeAliasModal();
+      }
+    });
+  }
+
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && aliasModalNode && !aliasModalNode.classList.contains("hidden")) {
+      closeAliasModal();
+    }
+  });
+
+  // ── Restart Button ──
+
+  if (restartButton) {
+    restartButton.addEventListener("click", async () => {
+      if (!confirm("确定要重启吗？")) return;
+
+      restartButton.disabled = true;
+      setStatus("正在重启...", "info");
+      try {
+        await api.apiRequest("/webui/api/restart", { method: "POST" });
+        setStatus("重启中，页面将在几秒后自动刷新...", "success");
+        setTimeout(() => location.reload(), 3000);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "重启失败";
+        setStatus(message, "error");
+        restartButton.disabled = false;
+      }
+    });
+  }
 
   void loadCommands();
 })();

@@ -72,6 +72,7 @@ class CommandConfig(Base):
     admin: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True, default=None)
     param_schema_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
     param_values_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    aliases_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
     is_registered: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     meta_hash: Mapped[str] = mapped_column(String, nullable=False, default="")
     last_synced_at: Mapped[datetime] = mapped_column(
@@ -190,6 +191,11 @@ def ensure_command_config_schema() -> None:
         if "admin" not in columns:
             conn.execute(
                 'ALTER TABLE "command_config" ADD COLUMN "admin" INTEGER'
+            )
+            changed = True
+        if "aliases_json" not in columns:
+            conn.execute(
+                'ALTER TABLE "command_config" ADD COLUMN "aliases_json" TEXT NOT NULL DEFAULT \'[]\''
             )
             changed = True
         if changed:

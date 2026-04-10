@@ -288,6 +288,24 @@ html.dark {
   transform: translateX(16px);
 }
 
+.btn-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #ffffff;
+}
+
+.btn-danger:hover {
+  background: color-mix(in srgb, var(--danger) 85%, #000);
+  border-color: color-mix(in srgb, var(--danger) 85%, #000);
+  color: #ffffff;
+}
+
+.action-wrap {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
 .action-btn {
   height: 24px;
   min-width: 72px;

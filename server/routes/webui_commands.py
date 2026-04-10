@@ -9,6 +9,7 @@ from nonebot.log import logger
 from nextbot.command_config import (
     CommandConfigValidationError,
     list_command_configs,
+    update_command_aliases,
     update_command_config,
 )
 from server.pages.console_page import render_commands_page
@@ -56,6 +57,7 @@ async def webui_commands_api_list(request: Request) -> JSONResponse:
                         str(item.get("usage") or ""),
                         str(item.get("permission") or ""),
                         str(item.get("command_key") or ""),
+                        " ".join(item.get("aliases") or []),
                     ]
                 ).lower()
             ]
@@ -137,4 +139,52 @@ async def webui_commands_api_update(command_key: str, request: Request) -> JSONR
         )
 
     logger.info(f"保存命令配置成功：command_key={command_key}")
+    return api_success(data=updated_command)
+
+
+@router.patch("/webui/api/commands/{command_key}/aliases")
+async def webui_commands_api_update_aliases(command_key: str, request: Request) -> JSONResponse:
+    payload, error_response = await read_json_object(request)
+    if error_response is not None:
+        return error_response
+
+    assert payload is not None
+
+    raw_aliases = payload.get("aliases")
+    if not isinstance(raw_aliases, list):
+        return api_error(
+            status_code=422,
+            code="validation_error",
+            message="aliases 必须是数组",
+        )
+
+    try:
+        updated_command = update_command_aliases(command_key, raw_aliases)
+    except CommandConfigValidationError as exc:
+        details = exc.errors or []
+        status_code = 422
+        error_code = "validation_error"
+        message = str(exc)
+        for item in details:
+            field = str(item.get("field", "")).strip()
+            item_message = str(item.get("message", "")).strip()
+            if field == "command_key" and item_message == "命令不存在":
+                status_code = 404
+                error_code = "not_found"
+                message = item_message
+                break
+            if field == "command_key" and item_message == "命令已下线，无法编辑":
+                status_code = 409
+                error_code = "conflict"
+                message = item_message
+                break
+        logger.warning(f"保存命令别名失败：command_key={command_key}，reason={exc}")
+        return api_error(
+            status_code=status_code,
+            code=error_code,
+            message=message,
+            details=details,
+        )
+
+    logger.info(f"保存命令别名成功：command_key={command_key}")
     return api_success(data=updated_command)

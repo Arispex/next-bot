@@ -142,6 +142,8 @@ async def _init_database() -> None:
 
     sync_registered_commands_to_db()
     logger.info("命令配置同步完成")
+    from nextbot.command_config import register_alias_matchers
+    register_alias_matchers()
     start_signin_reset_worker()
     start_web_server()
 

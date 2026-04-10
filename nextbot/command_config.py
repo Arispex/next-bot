@@ -11,8 +11,10 @@ from datetime import datetime
 from functools import wraps
 from typing import Any, NoReturn
 
-from nonebot import get_driver
+from nonebot import get_driver, on_command
 from nonebot.log import logger
+from nonebot.matcher import current_matcher
+from nonebot.params import CommandArg
 
 from nextbot.db import CommandConfig, get_session
 from nextbot.stats import increment_command_execute_total
@@ -51,6 +53,7 @@ class RuntimeCommandState:
     admin: bool
     param_schema: dict[str, dict[str, Any]]
     param_values: dict[str, Any]
+    aliases: list[str]
     is_registered: bool
 
 
@@ -95,10 +98,23 @@ def _normalize_usage_text(value: Any) -> str:
     return str(value).strip()
 
 
-def _build_usage_message(usage: str) -> str:
+def _get_raw_command() -> str:
+    try:
+        matcher = current_matcher.get()
+        prefix = matcher.state.get("_prefix", {})
+        return str(prefix.get("raw_command", "")).strip()
+    except Exception:
+        return ""
+
+
+def _build_usage_message(usage: str, *, actual_command: str = "") -> str:
     normalized = _normalize_usage_text(usage)
     if not normalized:
         return "命令格式错误"
+    if actual_command:
+        display_name = normalized.split()[0] if normalized else ""
+        if display_name and actual_command != display_name:
+            normalized = actual_command + normalized[len(display_name):]
     return f"格式错误，正确格式：{normalized}"
 
 
@@ -377,6 +393,14 @@ def _to_runtime_state(row: CommandConfig) -> RuntimeCommandState:
         admin_value = bool(registered.admin)
     else:
         admin_value = False
+    aliases: list[str] = []
+    try:
+        raw_aliases = json.loads(row.aliases_json or "[]")
+        if isinstance(raw_aliases, list):
+            aliases = [str(a).strip() for a in raw_aliases if str(a).strip()]
+    except (json.JSONDecodeError, TypeError):
+        pass
+
     return RuntimeCommandState(
         command_key=row.command_key,
         display_name=row.display_name,
@@ -389,6 +413,7 @@ def _to_runtime_state(row: CommandConfig) -> RuntimeCommandState:
         admin=admin_value,
         param_schema=schema,
         param_values=values,
+        aliases=aliases,
         is_registered=bool(row.is_registered),
     )
 
@@ -511,6 +536,7 @@ def _serialize_runtime_state(item: RuntimeCommandState) -> dict[str, Any]:
         "admin": item.admin,
         "param_schema": _clone_dict(item.param_schema),
         "param_values": _clone_dict(item.param_values),
+        "aliases": list(item.aliases),
         "is_registered": item.is_registered,
     }
 
@@ -725,6 +751,108 @@ def sync_registered_commands_to_db() -> None:
     refresh_runtime_cache()
 
 
+def update_command_aliases(
+    command_key: str,
+    aliases: list[str],
+) -> dict[str, Any]:
+    normalized_key = str(command_key).strip()
+    if not normalized_key:
+        raise CommandConfigValidationError("command_key 不能为空")
+
+    cleaned: list[str] = []
+    for raw in aliases:
+        alias = str(raw).strip()
+        if not alias:
+            continue
+        if " " in alias:
+            raise CommandConfigValidationError(
+                "别名不能包含空格",
+                errors=[{"field": "aliases", "message": f"别名 \"{alias}\" 包含空格"}],
+            )
+        cleaned.append(alias)
+
+    session = get_session()
+    now = db_now_utc_naive()
+    try:
+        row = (
+            session.query(CommandConfig)
+            .filter(CommandConfig.command_key == normalized_key)
+            .first()
+        )
+        if row is None:
+            raise CommandConfigValidationError(
+                "保存失败",
+                errors=[{"field": "command_key", "message": "命令不存在"}],
+            )
+        if not row.is_registered:
+            raise CommandConfigValidationError(
+                "保存失败",
+                errors=[{"field": "command_key", "message": "命令已下线，无法编辑"}],
+            )
+
+        all_rows = session.query(CommandConfig).filter(
+            CommandConfig.command_key != normalized_key,
+            CommandConfig.is_registered.is_(True),
+        ).all()
+        conflict_names: set[str] = set()
+        for r in all_rows:
+            conflict_names.add(r.display_name)
+            try:
+                existing_aliases = json.loads(r.aliases_json or "[]")
+                if isinstance(existing_aliases, list):
+                    for a in existing_aliases:
+                        conflict_names.add(str(a).strip())
+            except (json.JSONDecodeError, TypeError):
+                pass
+
+        for alias in cleaned:
+            if alias in conflict_names:
+                raise CommandConfigValidationError(
+                    "保存失败",
+                    errors=[{"field": "aliases", "message": f"别名 \"{alias}\" 与其他命令冲突"}],
+                )
+
+        row.aliases_json = json.dumps(cleaned, ensure_ascii=False)
+        row.updated_at = now
+        session.commit()
+    except CommandConfigValidationError:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+    refresh_runtime_cache()
+    return get_command_config(normalized_key)
+
+
+_original_handlers: dict[str, Any] = {}
+
+
+def register_alias_matchers() -> None:
+    _ensure_runtime_cache_loaded()
+    with _registry_lock:
+        items = list(_runtime_cache.values())
+
+    count = 0
+    for state in items:
+        if not state.is_registered or not state.aliases:
+            continue
+        original = _original_handlers.get(state.command_key)
+        if original is None:
+            continue
+
+        for alias in state.aliases:
+            alias_matcher = on_command(alias)
+            alias_matcher.handle()(original)
+            count += 1
+            logger.info(
+                f"注册命令别名：alias={alias} command_key={state.command_key}"
+            )
+
+    if count > 0:
+        logger.info(f"命令别名注册完成：count={count}")
+
+
 def command_control(
     *,
     command_key: str,
@@ -817,12 +945,14 @@ def command_control(
             except CommandUsageError:
                 bot, event = _resolve_bot_event(resolved_signature, args, kwargs)
                 if bot is not None and event is not None:
-                    await bot.send(event, _build_usage_message(state.usage))
+                    actual_cmd = _get_raw_command()
+                    await bot.send(event, _build_usage_message(state.usage, actual_command=actual_cmd))
                 return None
             finally:
                 _current_command_context.reset(context_token)
 
         setattr(wrapper, "__signature__", resolved_signature)
+        _original_handlers[normalized_key] = wrapper
         return wrapper
 
     return decorator
