@@ -209,7 +209,7 @@ async def handle_sign(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     display_name="转账",
     permission="economy.transfer",
     description="向其他用户转账金币",
-    usage="转账 <用户 ID/@用户/用户名称> <数量>",
+    usage="转账 <用户 QQ/@用户/用户名称> <数量>",
 )
 @require_permission("economy.transfer")
 async def handle_transfer(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
@@ -226,7 +226,7 @@ async def handle_transfer(bot: Bot, event: Event, arg: Message = CommandArg()) -
         await bot.send(event, "转账失败，用户名称不存在")
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, "转账失败，用户名称不唯一，请使用用户 ID 或 @用户")
+        await bot.send(event, "转账失败，用户名称不唯一，请使用用户 QQ 或 @用户")
         return
     if target_user_id is None:
         await bot.send(event, "转账失败，用户参数解析失败")
@@ -287,7 +287,7 @@ async def handle_transfer(bot: Bot, event: Event, arg: Message = CommandArg()) -
     display_name="添加金币",
     permission="economy.coins.add",
     description="为指定用户增加金币",
-    usage="添加金币 <用户 ID/@用户/用户名称> <数量>",
+    usage="添加金币 <用户 QQ/@用户/用户名称> <数量>",
     admin=True,
 )
 @require_permission("economy.coins.add")
@@ -309,7 +309,7 @@ async def handle_add_coins(
         await bot.send(event, "添加失败，用户名称不存在")
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, "添加失败，用户名称不唯一，请使用用户 ID 或 @用户")
+        await bot.send(event, "添加失败，用户名称不唯一，请使用用户 QQ 或 @用户")
         return
     if target_user_id is None:
         await bot.send(event, "添加失败，用户参数解析失败")
@@ -346,7 +346,7 @@ async def handle_add_coins(
     display_name="扣除金币",
     permission="economy.coins.remove",
     description="为指定用户扣减金币",
-    usage="扣除金币 <用户 ID/@用户/用户名称> <数量>",
+    usage="扣除金币 <用户 QQ/@用户/用户名称> <数量>",
     admin=True,
 )
 @require_permission("economy.coins.remove")
@@ -368,7 +368,7 @@ async def handle_remove_coins(
         await bot.send(event, "扣除失败，用户名称不存在")
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, "扣除失败，用户名称不唯一，请使用用户 ID 或 @用户")
+        await bot.send(event, "扣除失败，用户名称不唯一，请使用用户 QQ 或 @用户")
         return
     if target_user_id is None:
         await bot.send(event, "扣除失败，用户参数解析失败")

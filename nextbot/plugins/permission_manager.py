@@ -51,7 +51,7 @@ async def _fetch_nickname_via_bot(bot: Bot, qq: str) -> str:
     display_name="添加用户权限",
     permission="permission.user.add",
     description="为用户增加单独权限",
-    usage="添加用户权限 <用户 ID/@用户/用户名称> <权限名称>",
+    usage="添加用户权限 <用户 QQ/@用户/用户名称> <权限名称>",
 )
 @require_permission("permission.user.add")
 async def handle_add_user_perm(
@@ -72,7 +72,7 @@ async def handle_add_user_perm(
         await bot.send(event, "添加失败，用户名称不存在")
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, "添加失败，用户名称不唯一，请使用用户 ID 或 @用户")
+        await bot.send(event, "添加失败，用户名称不唯一，请使用用户 QQ 或 @用户")
         return
     if user_id is None:
         await bot.send(event, "添加失败，用户参数解析失败")
@@ -102,7 +102,7 @@ async def handle_add_user_perm(
     display_name="删除用户权限",
     permission="permission.user.remove",
     description="从用户移除单独权限",
-    usage="删除用户权限 <用户 ID/@用户/用户名称> <权限名称>",
+    usage="删除用户权限 <用户 QQ/@用户/用户名称> <权限名称>",
 )
 @require_permission("permission.user.remove")
 async def handle_remove_user_perm(
@@ -123,7 +123,7 @@ async def handle_remove_user_perm(
         await bot.send(event, "删除失败，用户名称不存在")
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, "删除失败，用户名称不唯一，请使用用户 ID 或 @用户")
+        await bot.send(event, "删除失败，用户名称不唯一，请使用用户 QQ 或 @用户")
         return
     if user_id is None:
         await bot.send(event, "删除失败，用户参数解析失败")
@@ -153,7 +153,7 @@ async def handle_remove_user_perm(
     display_name="修改用户身份组",
     permission="permission.user.group.set",
     description="调整用户所属身份组",
-    usage="修改用户身份组 <用户 ID/@用户/用户名称> <身份组名称>",
+    usage="修改用户身份组 <用户 QQ/@用户/用户名称> <身份组名称>",
 )
 @require_permission("permission.user.group.set")
 async def handle_set_user_group(
@@ -174,7 +174,7 @@ async def handle_set_user_group(
         await bot.send(event, "修改失败，用户名称不存在")
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, "修改失败，用户名称不唯一，请使用用户 ID 或 @用户")
+        await bot.send(event, "修改失败，用户名称不唯一，请使用用户 QQ 或 @用户")
         return
     if target_user_id is None:
         await bot.send(event, "修改失败，用户参数解析失败")

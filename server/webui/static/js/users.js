@@ -517,10 +517,10 @@
     const permissions = normalizePermissionsText(fieldPermissions.value || "");
 
     if (!userId) {
-      throw new Error("用户 ID 不能为空");
+      throw new Error("用户 QQ 不能为空");
     }
     if (!USER_ID_PATTERN.test(userId)) {
-      throw new Error("用户 ID 必须是 5-20 位数字");
+      throw new Error("用户 QQ 必须是 5-20 位数字");
     }
     if (!name) {
       throw new Error("用户名称不能为空");

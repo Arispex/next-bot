@@ -274,7 +274,7 @@ async def _render_and_send_user_info(bot: Bot, event: Event, user: User, days: i
     display_name="用户信息",
     permission="user.info.user",
     description="查询指定用户信息并生成截图",
-    usage="用户信息 <用户 ID/@用户/用户名称>",
+    usage="用户信息 <用户 QQ/@用户/用户名称>",
 )
 @require_permission("user.info.user")
 async def handle_user_info(
@@ -295,7 +295,7 @@ async def handle_user_info(
         await bot.send(event, "查询失败，用户名称不存在")
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, "查询失败，用户名称不唯一，请使用用户 ID 或 @用户")
+        await bot.send(event, "查询失败，用户名称不唯一，请使用用户 QQ 或 @用户")
         return
     if target_user_id is None:
         await bot.send(event, "查询失败，用户参数解析失败")

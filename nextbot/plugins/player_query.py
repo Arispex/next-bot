@@ -297,7 +297,7 @@ async def handle_self_kick(
     display_name="用户背包",
     permission="player_query.inventory.user",
     description="查询指定用户背包并生成截图",
-    usage="用户背包 <服务器 ID> <用户 ID/@用户/用户名称>",
+    usage="用户背包 <服务器 ID> <用户 QQ/@用户/用户名称>",
     params={
         "show_stats": {
             "type": "bool",
@@ -346,7 +346,7 @@ async def handle_user_inventory(
         await bot.send(event, "查询失败，用户名称不存在")
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, "查询失败，用户名称不唯一，请使用用户 ID 或 @用户")
+        await bot.send(event, "查询失败，用户名称不唯一，请使用用户 QQ 或 @用户")
         return
     if target_user_id is None:
         await bot.send(event, "查询失败，用户参数解析失败")

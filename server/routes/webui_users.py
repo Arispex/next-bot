@@ -59,9 +59,9 @@ def _require_field(payload: dict[str, Any], key: str) -> Any:
 def _normalize_user_id(raw_value: Any) -> str:
     value = str(raw_value).strip()
     if not value:
-        raise UserPayloadValidationError("用户 ID 不能为空", field="user_id")
+        raise UserPayloadValidationError("用户 QQ 不能为空", field="user_id")
     if _USER_ID_PATTERN.fullmatch(value) is None:
-        raise UserPayloadValidationError("用户 ID 必须是 5-20 位数字", field="user_id")
+        raise UserPayloadValidationError("用户 QQ 必须是 5-20 位数字", field="user_id")
     return value
 
 
@@ -314,8 +314,8 @@ async def webui_users_create(request: Request) -> JSONResponse:
             return api_error(
                 status_code=409,
                 code="conflict",
-                message="用户 ID 已存在",
-                details=[{"field": "user_id", "message": "用户 ID 已存在"}],
+                message="用户 QQ 已存在",
+                details=[{"field": "user_id", "message": "用户 QQ 已存在"}],
             )
 
         if session.query(User).filter(User.name == validated.name).first() is not None:
@@ -395,8 +395,8 @@ async def webui_users_update(user_id: int, request: Request) -> JSONResponse:
             return api_error(
                 status_code=409,
                 code="conflict",
-                message="用户 ID 已存在",
-                details=[{"field": "user_id", "message": "用户 ID 已存在"}],
+                message="用户 QQ 已存在",
+                details=[{"field": "user_id", "message": "用户 QQ 已存在"}],
             )
 
         if (
