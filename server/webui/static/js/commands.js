@@ -850,7 +850,13 @@
     try {
       const response = await api.apiRequest(
         `/webui/api/commands/${encodeURIComponent(activeAliasCommandKey)}/aliases`,
-        { method: "PATCH", body: JSON.stringify({ aliases }) }
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({ aliases }),
+          action: "保存",
+          expectedStatus: 200,
+        }
       );
       const result = api.unwrapData(response);
       if (!result) throw new Error("保存失败");
@@ -858,7 +864,10 @@
       setStatus("保存成功，需要重启后生效", "success");
       await loadCommands({ clearStatus: false });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "保存失败";
+      let message = error instanceof Error ? error.message : "保存失败";
+      if (error && error.details && Array.isArray(error.details) && error.details.length > 0) {
+        message = error.details[0].message || message;
+      }
       setAliasAlert(message, "error");
     } finally {
       aliasSaving = false;
