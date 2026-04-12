@@ -255,10 +255,16 @@ def _validation_error(exc: UserPayloadValidationError) -> JSONResponse:
 
 @router.get("/webui/api/users")
 async def webui_users_list(request: Request) -> JSONResponse:
-    pagination, error_response = read_pagination_query(request)
-    if error_response is not None:
-        return error_response
-    assert pagination is not None
+    raw_per_page = request.query_params.get("per_page")
+    fetch_all = raw_per_page is not None and str(raw_per_page).strip() == "0"
+
+    if fetch_all:
+        pagination = {"page": 1, "per_page": 0}
+    else:
+        pagination, error_response = read_pagination_query(request)
+        if error_response is not None:
+            return error_response
+        assert pagination is not None
 
     keyword = str(request.query_params.get("q") or "").strip().lower()
 
@@ -280,6 +286,11 @@ async def webui_users_list(request: Request) -> JSONResponse:
                     ]
                 ).lower()
             ]
+        if pagination["per_page"] == 0:
+            return api_success(
+                data=serialized,
+                meta={"total": len(serialized), "page": 1, "per_page": len(serialized), "total_pages": 1},
+            )
         meta, offset, limit = build_pagination_slice(
             total=len(serialized),
             page=pagination["page"],
