@@ -18,6 +18,8 @@ from nextbot.db import (
     ensure_command_config_schema,
     ensure_default_groups,
     ensure_default_stats,
+    ensure_sign_record_schema,
+    ensure_user_ban_schema,
     ensure_user_signin_schema,
     get_engine,
     init_db,
@@ -136,6 +138,8 @@ async def _init_database() -> None:
         Base.metadata.create_all(get_engine())
         ensure_command_config_schema()
         ensure_user_signin_schema()
+        ensure_sign_record_schema()
+        ensure_user_ban_schema()
         ensure_default_groups()
         ensure_default_stats()
         logger.info("表结构检查完成")

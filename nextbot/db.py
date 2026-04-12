@@ -45,6 +45,9 @@ class User(Base):
     sign_total: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     permissions: Mapped[str] = mapped_column(String, nullable=False, default="")
     group: Mapped[str] = mapped_column(String, nullable=False, default="guest")
+    is_banned: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    banned_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=None)
+    ban_reason: Mapped[str] = mapped_column(String, nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=db_now_utc_naive
     )
@@ -120,6 +123,7 @@ def init_db() -> None:
     ensure_command_config_schema()
     ensure_user_signin_schema()
     ensure_sign_record_schema()
+    ensure_user_ban_schema()
     ensure_default_groups()
     ensure_default_stats()
 
@@ -260,5 +264,38 @@ def ensure_sign_record_schema() -> None:
             """
         )
         conn.commit()
+    finally:
+        conn.close()
+
+
+def ensure_user_ban_schema() -> None:
+    if not DB_PATH.exists():
+        return
+
+    conn = sqlite3.connect(str(DB_PATH))
+    try:
+        rows = conn.execute('PRAGMA table_info("user")').fetchall()
+        if not rows:
+            return
+
+        columns = {str(row[1]) for row in rows}
+        changed = False
+        if "is_banned" not in columns:
+            conn.execute(
+                'ALTER TABLE "user" ADD COLUMN "is_banned" INTEGER NOT NULL DEFAULT 0'
+            )
+            changed = True
+        if "banned_at" not in columns:
+            conn.execute(
+                'ALTER TABLE "user" ADD COLUMN "banned_at" DATETIME'
+            )
+            changed = True
+        if "ban_reason" not in columns:
+            conn.execute(
+                'ALTER TABLE "user" ADD COLUMN "ban_reason" TEXT NOT NULL DEFAULT ""'
+            )
+            changed = True
+        if changed:
+            conn.commit()
     finally:
         conn.close()
