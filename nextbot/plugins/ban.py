@@ -8,6 +8,7 @@ from nonebot.adapters.onebot.v11 import MessageSegment as OBV11MessageSegment
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
+from nextbot.access_control import get_owner_ids
 from nextbot.command_config import command_control, get_current_param, raise_command_usage
 from nextbot.db import Server, User, get_session
 from nextbot.message_parser import parse_command_args_with_fallback, resolve_user_id_arg_with_fallback
@@ -75,6 +76,10 @@ async def handle_ban(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
         user = session.query(User).filter(User.user_id == target_user_id).first()
         if user is None:
             await bot.send(event, at + " 封禁失败，未找到该用户")
+            return
+
+        if str(user.user_id) in get_owner_ids():
+            await bot.send(event, at + " 封禁失败，不能封禁 Owner")
             return
 
         if user.is_banned:

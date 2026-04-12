@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse, Response
 from nonebot.log import logger
 from sqlalchemy import func
 
+from nextbot.access_control import get_owner_ids
 from nextbot.db import Group, Server, User, get_session
 from nextbot.time_utils import db_now_utc_naive, format_beijing_datetime
 from nextbot.tshock_api import (
@@ -544,6 +545,9 @@ async def webui_users_ban(user_id: int, request: Request) -> JSONResponse:
         user = session.query(User).filter(User.id == user_id).first()
         if user is None:
             return api_error(status_code=404, code="not_found", message="用户不存在")
+
+        if str(user.user_id) in get_owner_ids():
+            return api_error(status_code=403, code="forbidden", message="不能封禁 Owner")
 
         if user.is_banned:
             return api_error(
