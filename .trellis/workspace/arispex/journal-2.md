@@ -59,3 +59,54 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 54: 添加关于页面和视频教程链接
+
+**Date**: 2026-04-12
+**Task**: 添加关于页面和视频教程链接
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 改动 | 说明 |
+|------|------|
+| README 视频教程 | 添加 Bilibili Windows 安装视频教程链接 |
+| 关于命令 | 新增「关于」命令，截图渲染项目介绍页面 |
+| 关于页面模板 | 双主题 HTML 模板：Hero 区 Logo + 项目名 + 介绍 + 技术栈徽章，项目信息区（作者、仓库、框架、许可证、QQ 交流群），特别感谢区（QQ 头像 + 昵称 + 打码 QQ） |
+| Logo 资源路由 | 新增亮/暗两个 Logo 静态资源路由，适配长方形 Logo |
+| guest 默认权限 | 添加 about 权限到 guest 组 |
+
+**新增文件**:
+- `nextbot/plugins/about.py`
+- `server/pages/about_page.py`
+- `server/templates/about.html`
+
+**修改文件**:
+- `README.md`
+- `server/web_server.py`
+- `server/routes/render.py`
+- `nextbot/db.py`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2107e4d` | (see git log) |
+| `9cda3fc` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
