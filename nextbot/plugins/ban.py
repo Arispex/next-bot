@@ -1,18 +1,39 @@
+import base64
+import math
+from pathlib import Path
+
 from nonebot import on_command
 from nonebot.adapters import Bot, Event, Message
 from nonebot.adapters.onebot.v11 import MessageSegment as OBV11MessageSegment
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
-from nextbot.command_config import command_control, raise_command_usage
+from nextbot.command_config import command_control, get_current_param, raise_command_usage
 from nextbot.db import Server, User, get_session
 from nextbot.message_parser import parse_command_args_with_fallback, resolve_user_id_arg_with_fallback
 from nextbot.permissions import require_permission
-from nextbot.time_utils import db_now_utc_naive
+from nextbot.render_utils import resolve_render_theme
+from nextbot.time_utils import beijing_filename_timestamp, db_now_utc_naive
+from nextbot.time_utils import format_beijing_datetime
 from nextbot.tshock_api import TShockRequestError, get_error_reason, is_success, request_server_api
+from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
+from server.web_server import create_ban_list_page
 
 ban_matcher = on_command("封禁用户")
 unban_matcher = on_command("解封用户")
+ban_list_matcher = on_command("封禁列表")
+
+BAN_LIST_SCREENSHOT_OPTIONS = ScreenshotOptions(
+    viewport_width=900,
+    viewport_height=800,
+    full_page=True,
+)
+
+
+def _to_base64_image_uri(path: Path) -> str:
+    raw = path.read_bytes()
+    encoded = base64.b64encode(raw).decode("ascii")
+    return f"base64://{encoded}"
 
 
 @ban_matcher.handle()
@@ -127,6 +148,107 @@ async def handle_ban(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
         f"封禁用户黑名单同步完成：user_id={user_qq} name={user_name} server_count={len(servers)}"
     )
     await bot.send(event, at + "\n" + "\n".join(lines))
+
+
+@ban_list_matcher.handle()
+@command_control(
+    command_key="ban.list",
+    display_name="封禁列表",
+    permission="ban.list",
+    description="查看封禁用户列表",
+    usage="封禁列表 [页数]",
+    params={
+        "limit": {
+            "type": "int",
+            "label": "每页数量",
+            "description": "每页显示的封禁用户数量",
+            "required": False,
+            "default": 10,
+            "min": 1,
+            "max": 50,
+        },
+    },
+)
+@require_permission("ban.list")
+async def handle_ban_list(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
+    args = parse_command_args_with_fallback(event, arg, "封禁列表")
+    if len(args) > 1:
+        raise_command_usage()
+
+    page = 1
+    if args:
+        try:
+            page = int(args[0])
+        except ValueError:
+            await bot.send(event, "查询失败，页数必须为正整数")
+            return
+        if page <= 0:
+            await bot.send(event, "查询失败，页数必须为正整数")
+            return
+
+    limit = max(1, min(int(get_current_param("limit", 10)), 50))
+
+    session = get_session()
+    try:
+        banned_users = (
+            session.query(User)
+            .filter(User.is_banned == True)
+            .order_by(User.banned_at.asc())
+            .all()
+        )
+    finally:
+        session.close()
+
+    total = len(banned_users)
+    total_pages = max(1, math.ceil(total / limit))
+
+    if total == 0:
+        page_url = create_ban_list_page(
+            page=1, total_pages=1, entries=[], theme=resolve_render_theme(),
+        )
+    else:
+        if page > total_pages:
+            await bot.send(event, f"查询失败，超出总页数（共 {total_pages} 页）")
+            return
+
+        offset = (page - 1) * limit
+        page_users = banned_users[offset : offset + limit]
+        entries = [
+            {
+                "index": offset + i + 1,
+                "name": str(u.name),
+                "user_id": str(u.user_id),
+                "ban_reason": str(u.ban_reason or ""),
+                "banned_at": format_beijing_datetime(u.banned_at) if u.banned_at else "",
+            }
+            for i, u in enumerate(page_users)
+        ]
+        page_url = create_ban_list_page(
+            page=page, total_pages=total_pages, entries=entries, theme=resolve_render_theme(),
+        )
+
+    logger.info(
+        f"封禁列表渲染地址：page={page}/{total_pages} total={total} internal_url={page_url}"
+    )
+
+    screenshot_path = Path("/tmp") / f"ban-list-{beijing_filename_timestamp()}.png"
+    try:
+        await screenshot_url(page_url, screenshot_path, options=BAN_LIST_SCREENSHOT_OPTIONS)
+    except RenderScreenshotError as exc:
+        await bot.send(event, f"查询失败，{exc}")
+        return
+
+    logger.info(f"封禁列表截图成功：page={page}/{total_pages} file={screenshot_path}")
+    if bot.adapter.get_name() == "OneBot V11":
+        try:
+            image_uri = _to_base64_image_uri(screenshot_path)
+        except OSError:
+            await bot.send(event, "查询失败，读取截图文件失败")
+            return
+        await bot.send(event, OBV11MessageSegment.image(file=image_uri))
+        return
+
+    await bot.send(event, f"截图成功，文件：{screenshot_path}")
 
 
 @unban_matcher.handle()
