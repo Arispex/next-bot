@@ -94,7 +94,7 @@ def _resolve_streak_reward(
             "label": "最大奖励金币",
             "description": "签到随机奖励的最大金币值",
             "required": False,
-            "default": 30,
+            "default": 100,
             "min": 0,
         },
         "enable_streak": {
@@ -109,7 +109,7 @@ def _resolve_streak_reward(
             "label": "连续签到每日奖励",
             "description": "连续签到第 N 天额外奖励为 (N-1) * 此值",
             "required": False,
-            "default": 5,
+            "default": 10,
             "min": 0,
         },
         "max_streak_bonus": {
@@ -117,7 +117,7 @@ def _resolve_streak_reward(
             "label": "连续签到最大奖励",
             "description": "连续签到奖励超过该值时会被限制到该值",
             "required": False,
-            "default": 50,
+            "default": 140,
             "min": 0,
         },
     },
