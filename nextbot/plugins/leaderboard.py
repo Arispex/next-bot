@@ -42,6 +42,9 @@ fishing_leaderboard_matcher = on_command("渔夫任务排行榜")
 online_time_leaderboard_matcher = on_command("在线时长排行榜")
 total_online_time_leaderboard_matcher = on_command("总在线时长排行榜")
 daily_sign_leaderboard_matcher = on_command("今日签到排行榜")
+rob_income_leaderboard_matcher = on_command("抢劫排行榜")
+rob_loss_leaderboard_matcher = on_command("被抢排行榜")
+rob_success_rate_leaderboard_matcher = on_command("抢劫成功率排行榜")
 
 LEADERBOARD_SCREENSHOT_OPTIONS = ScreenshotOptions(
     viewport_width=900,
@@ -906,6 +909,259 @@ async def handle_daily_sign_leaderboard(
         entries=entries,
         total_pages=total_pages,
         file_prefix="leaderboard-daily-sign",
+        self_entry=self_entry,
+        theme=resolve_render_theme(),
+    )
+
+
+def _rob_net_income(user: User) -> int:
+    return int(user.rob_total_gain or 0) - int(user.rob_total_loss or 0)
+
+
+@rob_income_leaderboard_matcher.handle()
+@command_control(
+    command_key="leaderboard.rob_income",
+    display_name="抢劫排行榜",
+    permission="leaderboard.rob_income",
+    description="查看抢劫净收入排行榜",
+    usage="抢劫排行榜 [页数]",
+    params={
+        "limit": {
+            "type": "int",
+            "label": "每页名次",
+            "description": "每页显示的名次数",
+            "required": False,
+            "default": 10,
+            "min": 1,
+            "max": 50,
+        },
+    },
+)
+@require_permission("leaderboard.rob_income")
+async def handle_rob_income_leaderboard(
+    bot: Bot, event: Event, arg: Message = CommandArg()
+) -> None:
+    args = parse_command_args_with_fallback(event, arg, "抢劫排行榜")
+    if len(args) > 1:
+        raise_command_usage()
+
+    page = _parse_page_arg(args, "抢劫排行榜")
+    if page is None:
+        await bot.send(event, "查询失败，页数必须为正整数")
+        return
+
+    limit = max(1, min(int(get_current_param("limit", 10)), 50))
+
+    caller_id = event.get_user_id()
+    session = get_session()
+    try:
+        all_users = session.query(User).filter(User.rob_total_count > 0).all()
+        sorted_users = sorted(all_users, key=_rob_net_income, reverse=True)
+        total_count = len(sorted_users)
+        total_pages = max(1, math.ceil(total_count / limit))
+        if page > total_pages:
+            await bot.send(event, f"查询失败，超出总页数（共 {total_pages} 页）")
+            return
+        offset = (page - 1) * limit
+        page_users = sorted_users[offset : offset + limit]
+        entries = [
+            {"rank": offset + i + 1, "name": u.name, "user_id": u.user_id, "value": _rob_net_income(u)}
+            for i, u in enumerate(page_users)
+        ]
+        caller = session.query(User).filter(User.user_id == caller_id).first()
+        self_entry = None
+        if caller is not None and int(caller.rob_total_count or 0) > 0:
+            caller_income = _rob_net_income(caller)
+            caller_rank = sum(1 for u in sorted_users if _rob_net_income(u) > caller_income) + 1
+            self_entry = {"rank": caller_rank, "name": caller.name, "value": caller_income}
+    finally:
+        session.close()
+
+    await _render_and_send(
+        bot, event,
+        title="抢劫排行榜",
+        value_label="净收入",
+        page=page,
+        limit=limit,
+        entries=entries,
+        total_pages=total_pages,
+        file_prefix="leaderboard-rob-income",
+        self_entry=self_entry,
+        theme=resolve_render_theme(),
+    )
+
+
+@rob_loss_leaderboard_matcher.handle()
+@command_control(
+    command_key="leaderboard.rob_loss",
+    display_name="被抢排行榜",
+    permission="leaderboard.rob_loss",
+    description="查看被抢金额排行榜",
+    usage="被抢排行榜 [页数]",
+    params={
+        "limit": {
+            "type": "int",
+            "label": "每页名次",
+            "description": "每页显示的名次数",
+            "required": False,
+            "default": 10,
+            "min": 1,
+            "max": 50,
+        },
+    },
+)
+@require_permission("leaderboard.rob_loss")
+async def handle_rob_loss_leaderboard(
+    bot: Bot, event: Event, arg: Message = CommandArg()
+) -> None:
+    args = parse_command_args_with_fallback(event, arg, "被抢排行榜")
+    if len(args) > 1:
+        raise_command_usage()
+
+    page = _parse_page_arg(args, "被抢排行榜")
+    if page is None:
+        await bot.send(event, "查询失败，页数必须为正整数")
+        return
+
+    limit = max(1, min(int(get_current_param("limit", 10)), 50))
+
+    caller_id = event.get_user_id()
+    session = get_session()
+    try:
+        total_count = session.query(User).filter(User.rob_total_loss > 0).count()
+        total_pages = max(1, math.ceil(total_count / limit))
+        if page > total_pages:
+            await bot.send(event, f"查询失败，超出总页数（共 {total_pages} 页）")
+            return
+        offset = (page - 1) * limit
+        users = (
+            session.query(User)
+            .filter(User.rob_total_loss > 0)
+            .order_by(User.rob_total_loss.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+        entries = [
+            {"rank": offset + i + 1, "name": u.name, "user_id": u.user_id, "value": int(u.rob_total_loss or 0)}
+            for i, u in enumerate(users)
+        ]
+        caller = session.query(User).filter(User.user_id == caller_id).first()
+        self_entry = None
+        if caller is not None and int(caller.rob_total_loss or 0) > 0:
+            caller_loss = int(caller.rob_total_loss or 0)
+            caller_rank = session.query(User).filter(User.rob_total_loss > caller_loss).count() + 1
+            self_entry = {"rank": caller_rank, "name": caller.name, "value": caller_loss}
+    finally:
+        session.close()
+
+    await _render_and_send(
+        bot, event,
+        title="被抢排行榜",
+        value_label="被抢金额",
+        page=page,
+        limit=limit,
+        entries=entries,
+        total_pages=total_pages,
+        file_prefix="leaderboard-rob-loss",
+        self_entry=self_entry,
+        theme=resolve_render_theme(),
+    )
+
+
+@rob_success_rate_leaderboard_matcher.handle()
+@command_control(
+    command_key="leaderboard.rob_success_rate",
+    display_name="抢劫成功率排行榜",
+    permission="leaderboard.rob_success_rate",
+    description="查看抢劫成功率排行榜",
+    usage="抢劫成功率排行榜 [页数]",
+    params={
+        "limit": {
+            "type": "int",
+            "label": "每页名次",
+            "description": "每页显示的名次数",
+            "required": False,
+            "default": 10,
+            "min": 1,
+            "max": 50,
+        },
+        "min_rob_count": {
+            "type": "int",
+            "label": "最低抢劫次数",
+            "description": "上榜需要的最低抢劫次数",
+            "required": False,
+            "default": 1,
+            "min": 1,
+        },
+    },
+)
+@require_permission("leaderboard.rob_success_rate")
+async def handle_rob_success_rate_leaderboard(
+    bot: Bot, event: Event, arg: Message = CommandArg()
+) -> None:
+    args = parse_command_args_with_fallback(event, arg, "抢劫成功率排行榜")
+    if len(args) > 1:
+        raise_command_usage()
+
+    page = _parse_page_arg(args, "抢劫成功率排行榜")
+    if page is None:
+        await bot.send(event, "查询失败，页数必须为正整数")
+        return
+
+    limit = max(1, min(int(get_current_param("limit", 10)), 50))
+    min_rob_count = max(1, int(get_current_param("min_rob_count", 10)))
+
+    caller_id = event.get_user_id()
+    session = get_session()
+    try:
+        all_users = (
+            session.query(User)
+            .filter(User.rob_total_count >= min_rob_count)
+            .all()
+        )
+
+        def _success_rate(u: User) -> float:
+            total = int(u.rob_total_count or 0)
+            if total == 0:
+                return 0.0
+            return int(u.rob_success_count or 0) / total
+
+        sorted_users = sorted(all_users, key=_success_rate, reverse=True)
+        total_count = len(sorted_users)
+        total_pages = max(1, math.ceil(total_count / limit))
+        if page > total_pages:
+            await bot.send(event, f"查询失败，超出总页数（共 {total_pages} 页）")
+            return
+        offset = (page - 1) * limit
+        page_users = sorted_users[offset : offset + limit]
+        entries = [
+            {
+                "rank": offset + i + 1,
+                "name": u.name,
+                "user_id": u.user_id,
+                "value": f"{_success_rate(u) * 100:.1f}%",
+            }
+            for i, u in enumerate(page_users)
+        ]
+        caller = session.query(User).filter(User.user_id == caller_id).first()
+        self_entry = None
+        if caller is not None and int(caller.rob_total_count or 0) >= min_rob_count:
+            caller_rate = _success_rate(caller)
+            caller_rank = sum(1 for u in sorted_users if _success_rate(u) > caller_rate) + 1
+            self_entry = {"rank": caller_rank, "name": caller.name, "value": f"{caller_rate * 100:.1f}%"}
+    finally:
+        session.close()
+
+    await _render_and_send(
+        bot, event,
+        title="抢劫成功率排行榜",
+        value_label="成功率",
+        page=page,
+        limit=limit,
+        entries=entries,
+        total_pages=total_pages,
+        file_prefix="leaderboard-rob-rate",
         self_entry=self_entry,
         theme=resolve_render_theme(),
     )
