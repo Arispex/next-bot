@@ -179,14 +179,21 @@ async def handle_sign(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
         ))
         session.commit()
 
+        today_order = (
+            session.query(UserSignRecord)
+            .filter(UserSignRecord.sign_date == today_text)
+            .count()
+        )
+
         logger.info(
             "签到成功："
             f"user_id={user.user_id} name={user.name} base_reward={base_reward} "
             f"streak_reward={streak_result.streak_reward} total_reward={total_reward} "
-            f"streak={streak_result.next_streak} coins={user.coins}"
+            f"streak={streak_result.next_streak} coins={user.coins} today_order={today_order}"
         )
         lines = [
             "签到成功",
+            f"签到排名：{today_order}",
             f"获得金币：{base_reward}",
             f"连续签到：{streak_result.next_streak} 天",
         ]
