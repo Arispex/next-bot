@@ -11,7 +11,7 @@ from nonebot.log import logger
 from sqlalchemy import func
 
 from nextbot.db import Group, Server, User, get_session
-from nextbot.time_utils import format_beijing_datetime
+from nextbot.time_utils import db_now_utc_naive, format_beijing_datetime
 from nextbot.tshock_api import (
     TShockRequestError,
     get_error_reason,
@@ -187,6 +187,9 @@ def _serialize_user(user: User) -> dict[str, Any]:
         "sign_streak": int(user.sign_streak or 0),
         "permissions": str(user.permissions or ""),
         "group": str(user.group),
+        "is_banned": bool(user.is_banned),
+        "banned_at": format_beijing_datetime(user.banned_at) if user.banned_at else "",
+        "ban_reason": str(user.ban_reason or ""),
         "created_at": _format_created_at(user.created_at),
     }
 
@@ -518,3 +521,200 @@ async def webui_users_sync_whitelist(user_id: int) -> JSONResponse:
             "results": results,
         }
     )
+
+
+@router.post("/webui/api/users/{user_id}/ban")
+async def webui_users_ban(user_id: int, request: Request) -> JSONResponse:
+    data, error_response = await read_json_object(request)
+    if error_response is not None:
+        return error_response
+    assert data is not None
+
+    reason = str(data.get("reason", "")).strip()
+    if not reason:
+        return api_error(
+            status_code=422,
+            code="validation_error",
+            message="封禁原因不能为空",
+            details=[{"field": "reason", "message": "封禁原因不能为空"}],
+        )
+
+    session = get_session()
+    try:
+        user = session.query(User).filter(User.id == user_id).first()
+        if user is None:
+            return api_error(status_code=404, code="not_found", message="用户不存在")
+
+        if user.is_banned:
+            return api_error(
+                status_code=409,
+                code="conflict",
+                message="该用户已被封禁",
+                details=[{"reason": str(user.ban_reason or "")}],
+            )
+
+        user.is_banned = True
+        user.banned_at = db_now_utc_naive()
+        user.ban_reason = reason
+        session.commit()
+
+        user_name = str(user.name)
+        user_qq = str(user.user_id)
+        logger.info(f"WebUI 封禁用户成功：user_id={user_qq} name={user_name} reason={reason}")
+    except Exception as exc:
+        session.rollback()
+        logger.exception(f"WebUI 封禁用户异常：user_id={user_id}，reason={exc}")
+        return api_error(status_code=500, code="internal_error", message="内部错误")
+    finally:
+        session.close()
+
+    session = get_session()
+    try:
+        servers = session.query(Server).order_by(Server.id.asc()).all()
+    finally:
+        session.close()
+
+    server_results: list[dict[str, Any]] = []
+    for server in servers:
+        try:
+            check_response = await request_server_api(server, "/nextbot/blacklist")
+        except TShockRequestError:
+            server_results.append({
+                "server_id": int(server.id), "server_name": str(server.name),
+                "success": False, "reason": "无法连接服务器",
+            })
+            continue
+
+        if is_success(check_response):
+            entries = check_response.payload.get("entries", [])
+            already_exists = any(
+                str(e.get("username", "")).lower() == user_name.lower()
+                for e in entries if isinstance(e, dict)
+            )
+            if already_exists:
+                server_results.append({
+                    "server_id": int(server.id), "server_name": str(server.name),
+                    "success": True, "reason": "已存在于黑名单中",
+                })
+                continue
+
+        try:
+            response = await request_server_api(
+                server, f"/nextbot/blacklist/add/{user_name}", params={"reason": reason},
+            )
+        except TShockRequestError:
+            server_results.append({
+                "server_id": int(server.id), "server_name": str(server.name),
+                "success": False, "reason": "无法连接服务器",
+            })
+            continue
+
+        if is_success(response):
+            server_results.append({
+                "server_id": int(server.id), "server_name": str(server.name),
+                "success": True, "reason": "",
+            })
+        else:
+            server_results.append({
+                "server_id": int(server.id), "server_name": str(server.name),
+                "success": False, "reason": get_error_reason(response),
+            })
+
+    logger.info(f"WebUI 封禁用户黑名单同步完成：user_id={user_qq} name={user_name} server_count={len(servers)}")
+
+    session = get_session()
+    try:
+        refreshed_user = session.query(User).filter(User.id == user_id).first()
+        user_data = _serialize_user(refreshed_user) if refreshed_user else {}
+    finally:
+        session.close()
+
+    return api_success(data={"user": user_data, "server_results": server_results})
+
+
+@router.post("/webui/api/users/{user_id}/unban")
+async def webui_users_unban(user_id: int) -> JSONResponse:
+    session = get_session()
+    try:
+        user = session.query(User).filter(User.id == user_id).first()
+        if user is None:
+            return api_error(status_code=404, code="not_found", message="用户不存在")
+
+        if not user.is_banned:
+            return api_error(status_code=409, code="conflict", message="该用户未被封禁")
+
+        user.is_banned = False
+        user.banned_at = None
+        user.ban_reason = ""
+        session.commit()
+
+        user_name = str(user.name)
+        user_qq = str(user.user_id)
+        logger.info(f"WebUI 解封用户成功：user_id={user_qq} name={user_name}")
+    except Exception as exc:
+        session.rollback()
+        logger.exception(f"WebUI 解封用户异常：user_id={user_id}，reason={exc}")
+        return api_error(status_code=500, code="internal_error", message="内部错误")
+    finally:
+        session.close()
+
+    session = get_session()
+    try:
+        servers = session.query(Server).order_by(Server.id.asc()).all()
+    finally:
+        session.close()
+
+    server_results: list[dict[str, Any]] = []
+    for server in servers:
+        try:
+            check_response = await request_server_api(server, "/nextbot/blacklist")
+        except TShockRequestError:
+            server_results.append({
+                "server_id": int(server.id), "server_name": str(server.name),
+                "success": False, "reason": "无法连接服务器",
+            })
+            continue
+
+        if is_success(check_response):
+            entries = check_response.payload.get("entries", [])
+            exists = any(
+                str(e.get("username", "")).lower() == user_name.lower()
+                for e in entries if isinstance(e, dict)
+            )
+            if not exists:
+                server_results.append({
+                    "server_id": int(server.id), "server_name": str(server.name),
+                    "success": True, "reason": "不在黑名单中",
+                })
+                continue
+
+        try:
+            response = await request_server_api(server, f"/nextbot/blacklist/remove/{user_name}")
+        except TShockRequestError:
+            server_results.append({
+                "server_id": int(server.id), "server_name": str(server.name),
+                "success": False, "reason": "无法连接服务器",
+            })
+            continue
+
+        if is_success(response):
+            server_results.append({
+                "server_id": int(server.id), "server_name": str(server.name),
+                "success": True, "reason": "",
+            })
+        else:
+            server_results.append({
+                "server_id": int(server.id), "server_name": str(server.name),
+                "success": False, "reason": get_error_reason(response),
+            })
+
+    logger.info(f"WebUI 解封用户黑名单同步完成：user_id={user_qq} name={user_name} server_count={len(servers)}")
+
+    session = get_session()
+    try:
+        refreshed_user = session.query(User).filter(User.id == user_id).first()
+        user_data = _serialize_user(refreshed_user) if refreshed_user else {}
+    finally:
+        session.close()
+
+    return api_success(data={"user": user_data, "server_results": server_results})

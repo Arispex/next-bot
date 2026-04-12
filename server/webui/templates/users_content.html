@@ -46,6 +46,7 @@
           <th>累计签到</th>
           <th>连续签到</th>
           <th>身份组</th>
+          <th>封禁状态</th>
           <th>权限</th>
           <th>创建时间</th>
           <th>操作</th>
@@ -144,6 +145,30 @@
     <div class="modal-foot">
       <button id="delete-modal-cancel-btn" type="button" class="btn">取消</button>
       <button id="delete-modal-confirm-btn" type="button" class="btn btn-danger">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<div id="ban-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="ban-modal-title">
+  <div class="modal-mask" data-ban-modal-close="1"></div>
+  <div class="modal-card confirm-modal-card">
+    <div class="modal-head">
+      <h3 id="ban-modal-title" class="modal-title">封禁用户</h3>
+      <button id="ban-modal-close-btn" type="button" class="btn btn-icon modal-close-btn" aria-label="关闭">✕</button>
+    </div>
+    <div id="ban-modal-alert" class="alert hidden modal-alert" role="status" aria-live="polite">
+      <span id="ban-modal-alert-message" class="alert-message"></span>
+    </div>
+    <div class="modal-body">
+      <p id="ban-modal-text" class="confirm-modal-text"></p>
+      <label class="form-item">
+        <span class="form-label">封禁原因</span>
+        <input id="ban-reason-input" class="input" type="text" placeholder="请输入封禁原因" />
+      </label>
+    </div>
+    <div class="modal-foot">
+      <button id="ban-modal-cancel-btn" type="button" class="btn">取消</button>
+      <button id="ban-modal-confirm-btn" type="button" class="btn btn-danger">确认封禁</button>
     </div>
   </div>
 </div>

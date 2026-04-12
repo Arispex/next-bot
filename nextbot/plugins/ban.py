@@ -83,9 +83,9 @@ async def handle_ban(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
     lines: list[str] = [f"封禁成功，用户 {user_name}（{user_qq}）已被封禁，原因：{reason}"]
 
     if not servers:
-        lines.append("服务器黑名单：暂无服务器")
+        lines.append("同步服务器黑名单结果：暂无服务器")
     else:
-        lines.append("服务器黑名单：")
+        lines.append("同步服务器黑名单结果：")
         for server in servers:
             try:
                 check_response = await request_server_api(
@@ -93,7 +93,7 @@ async def handle_ban(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
                     "/nextbot/blacklist",
                 )
             except TShockRequestError:
-                lines.append(f"  {server.id}.{server.name}：添加失败，无法连接服务器")
+                lines.append(f"{server.id}.{server.name}：添加失败，无法连接服务器")
                 continue
 
             if is_success(check_response):
@@ -114,14 +114,14 @@ async def handle_ban(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
                     params={"reason": reason},
                 )
             except TShockRequestError:
-                lines.append(f"  {server.id}.{server.name}：添加失败，无法连接服务器")
+                lines.append(f"{server.id}.{server.name}：添加失败，无法连接服务器")
                 continue
 
             if is_success(response):
-                lines.append(f"  {server.id}.{server.name}：添加成功")
+                lines.append(f"{server.id}.{server.name}：添加成功")
             else:
                 error_msg = get_error_reason(response)
-                lines.append(f"  {server.id}.{server.name}：添加失败，{error_msg}")
+                lines.append(f"{server.id}.{server.name}：添加失败，{error_msg}")
 
     logger.info(
         f"封禁用户黑名单同步完成：user_id={user_qq} name={user_name} server_count={len(servers)}"
@@ -192,9 +192,9 @@ async def handle_unban(bot: Bot, event: Event, arg: Message = CommandArg()) -> N
     lines: list[str] = [f"解封成功，用户 {user_name}（{user_qq}）已解除封禁"]
 
     if not servers:
-        lines.append("服务器黑名单：暂无服务器")
+        lines.append("同步服务器黑名单结果：暂无服务器")
     else:
-        lines.append("服务器黑名单：")
+        lines.append("同步服务器黑名单结果：")
         for server in servers:
             try:
                 check_response = await request_server_api(

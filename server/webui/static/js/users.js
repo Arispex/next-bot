@@ -22,6 +22,15 @@
   const modalCloseButton = document.getElementById("modal-close-btn");
   const modalCancelButton = document.getElementById("modal-cancel-btn");
   const modalSaveButton = document.getElementById("modal-save-btn");
+  const banModalNode = document.getElementById("ban-modal");
+  const banModalTextNode = document.getElementById("ban-modal-text");
+  const banModalAlertNode = document.getElementById("ban-modal-alert");
+  const banModalAlertMessageNode = document.getElementById("ban-modal-alert-message");
+  const banModalCloseButton = document.getElementById("ban-modal-close-btn");
+  const banModalCancelButton = document.getElementById("ban-modal-cancel-btn");
+  const banModalConfirmButton = document.getElementById("ban-modal-confirm-btn");
+  const banReasonInput = document.getElementById("ban-reason-input");
+
   const deleteModalNode = document.getElementById("delete-modal");
   const deleteModalTextNode = document.getElementById("delete-modal-text");
   const deleteModalAlertNode = document.getElementById("delete-modal-alert");
@@ -61,6 +70,14 @@
       modalCloseButton &&
       modalCancelButton &&
       modalSaveButton &&
+      banModalNode &&
+      banModalTextNode &&
+      banModalAlertNode &&
+      banModalAlertMessageNode &&
+      banModalCloseButton &&
+      banModalCancelButton &&
+      banModalConfirmButton &&
+      banReasonInput &&
       deleteModalNode &&
       deleteModalTextNode &&
       deleteModalAlertNode &&
@@ -94,6 +111,8 @@
   let modalSaving = false;
   let deletingUser = null;
   let deleteSaving = false;
+  let banningUser = null;
+  let banSaving = false;
   let currentPage = 1;
   let currentPerPage = Number(perPageSelect.value || 10);
   let currentMeta = { total: 0, page: 1, per_page: currentPerPage, total_pages: 0 };
@@ -142,6 +161,20 @@
     deleteModalAlertMessageNode.textContent = text;
   };
 
+  const setBanModalAlert = (message = "", type = "info") => {
+    const text = String(message || "").trim();
+    if (!text) {
+      banModalAlertNode.className = "alert hidden modal-alert";
+      banModalAlertMessageNode.textContent = "";
+      return;
+    }
+    const normalizedType = ["success", "error", "warning", "info"].includes(type)
+      ? type
+      : "info";
+    banModalAlertNode.className = `alert ${normalizedType} modal-alert`;
+    banModalAlertMessageNode.textContent = text;
+  };
+
   const normalizePermissionsText = (raw) => {
     const text = String(raw || "").trim();
     if (!text) {
@@ -187,6 +220,9 @@
     sign_streak: Number(item?.sign_streak || 0),
     permissions: normalizePermissionsText(item?.permissions || ""),
     group: String(item?.group || ""),
+    is_banned: Boolean(item?.is_banned),
+    banned_at: String(item?.banned_at || ""),
+    ban_reason: String(item?.ban_reason || ""),
     created_at: String(item?.created_at || ""),
   });
 
@@ -315,6 +351,22 @@
       groupCell.className = "group-cell";
       groupCell.textContent = user.group;
 
+      const banCell = document.createElement("td");
+      banCell.className = "ban-cell";
+      if (user.is_banned) {
+        var banBadge = document.createElement("span");
+        banBadge.className = "permission-badge";
+        banBadge.style.cssText = "color: var(--danger); border-color: color-mix(in srgb, var(--danger) 35%, var(--line-strong));";
+        banBadge.textContent = "已封禁";
+        banBadge.title = (user.ban_reason || "") + (user.banned_at ? "\n" + user.banned_at : "");
+        banCell.appendChild(banBadge);
+      } else {
+        var normalBadge = document.createElement("span");
+        normalBadge.className = "permission-badge none";
+        normalBadge.textContent = "正常";
+        banCell.appendChild(normalBadge);
+      }
+
       const permissionCell = document.createElement("td");
       permissionCell.className = "permission-cell";
       const permissionList = document.createElement("div");
@@ -358,6 +410,22 @@
         void syncWhitelist(user);
       });
 
+      const banButton = document.createElement("button");
+      banButton.type = "button";
+      if (user.is_banned) {
+        banButton.className = "btn action-btn";
+        banButton.textContent = "解封";
+        banButton.addEventListener("click", () => {
+          void toggleBan(user, false);
+        });
+      } else {
+        banButton.className = "btn action-btn action-btn-danger";
+        banButton.textContent = "封禁";
+        banButton.addEventListener("click", () => {
+          openBanModal(user);
+        });
+      }
+
       const deleteButton = document.createElement("button");
       deleteButton.type = "button";
       deleteButton.className = "btn action-btn action-btn-danger";
@@ -368,6 +436,7 @@
 
       actions.appendChild(editButton);
       actions.appendChild(syncButton);
+      actions.appendChild(banButton);
       actions.appendChild(deleteButton);
       actionCell.appendChild(actions);
 
@@ -378,6 +447,7 @@
       row.appendChild(signTotalCell);
       row.appendChild(signStreakCell);
       row.appendChild(groupCell);
+      row.appendChild(banCell);
       row.appendChild(permissionCell);
       row.appendChild(createdCell);
       row.appendChild(actionCell);
@@ -449,6 +519,53 @@
       return;
     }
     modalNode.classList.add("hidden");
+  };
+
+  const openBanModal = (user) => {
+    banningUser = user;
+    banSaving = false;
+    banModalConfirmButton.disabled = false;
+    setBanModalAlert("");
+    banReasonInput.value = "";
+    banModalTextNode.textContent = `确定要封禁用户 "${user.name || "未命名用户"}" 吗？`;
+    banModalNode.classList.remove("hidden");
+    banReasonInput.focus();
+  };
+
+  const closeBanModal = (force = false) => {
+    if (banSaving && !force) {
+      return;
+    }
+    banModalNode.classList.add("hidden");
+    if (force || !banSaving) {
+      banningUser = null;
+    }
+  };
+
+  const confirmBanUser = async () => {
+    if (!banningUser || banSaving) {
+      return;
+    }
+    var reason = banReasonInput.value.trim();
+    if (!reason) {
+      setBanModalAlert("请输入封禁原因", "error");
+      banReasonInput.focus();
+      return;
+    }
+    var targetUser = banningUser;
+    banSaving = true;
+    banModalConfirmButton.disabled = true;
+    setBanModalAlert("正在封禁...", "warning");
+
+    try {
+      await toggleBan(targetUser, true, reason);
+      closeBanModal(true);
+    } catch (error) {
+      var message = error instanceof Error ? error.message : "封禁失败";
+      setBanModalAlert(message, "error");
+      banSaving = false;
+      banModalConfirmButton.disabled = false;
+    }
   };
 
   const openDeleteModal = (user) => {
@@ -653,6 +770,49 @@
     }
   };
 
+  const toggleBan = async (user, ban, reason) => {
+    var actionText = ban ? "封禁" : "解封";
+    setStatus(actionText + "中...", "warning");
+
+    try {
+      var options = {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        action: actionText,
+        expectedStatus: 200,
+      };
+      if (ban) {
+        options.headers["Content-Type"] = "application/json";
+        options.body = JSON.stringify({ reason: reason });
+      }
+      var endpoint = ban ? "ban" : "unban";
+      var payload = await api.apiRequest("/webui/api/users/" + user.id + "/" + endpoint, options);
+      var result = api.unwrapData(payload);
+
+      var serverResults = Array.isArray(result.server_results) ? result.server_results : [];
+      var lines = [actionText + "成功，用户 " + user.name];
+      if (serverResults.length) {
+        lines.push("服务器黑名单：");
+        for (var i = 0; i < serverResults.length; i++) {
+          var item = serverResults[i];
+          var serverId = String(item.server_id || "?");
+          var serverName = String(item.server_name || "未知服务器");
+          if (item.success) {
+            var extra = item.reason ? "（" + item.reason + "）" : "";
+            lines.push(serverId + "." + serverName + "：成功" + extra);
+          } else {
+            lines.push(serverId + "." + serverName + "：失败，" + (item.reason || "未知错误"));
+          }
+        }
+      }
+      setStatus(lines.join("\n"), "success");
+      await loadUsers({ clearStatus: false });
+    } catch (error) {
+      var message = error instanceof Error ? error.message : actionText + "失败";
+      setStatus(message, "error");
+    }
+  };
+
   const syncWhitelist = async (user) => {
     syncResultMap.set(user.id, {
       status: "loading",
@@ -793,6 +953,25 @@
     }
     if (target.dataset.deleteModalClose === "1") {
       closeDeleteModal();
+    }
+  });
+
+  banModalCloseButton.addEventListener("click", () => {
+    closeBanModal();
+  });
+  banModalCancelButton.addEventListener("click", () => {
+    closeBanModal();
+  });
+  banModalConfirmButton.addEventListener("click", () => {
+    void confirmBanUser();
+  });
+  banModalNode.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    if (target.dataset.banModalClose === "1") {
+      closeBanModal();
     }
   });
 
