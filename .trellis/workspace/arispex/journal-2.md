@@ -227,3 +227,53 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 57: 抢劫系统、更改用户名称、签到奖励调整
+
+**Date**: 2026-04-12
+**Task**: 抢劫系统、更改用户名称、签到奖励调整
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 功能 | 说明 |
+|------|------|
+| 抢劫系统 | 新增「抢劫」命令，5 种结果（大成功/成功/失败/反被抢/警察），13 个可配置参数 |
+| 抢劫排行榜 | 新增 3 个排行榜：抢劫排行榜（净收入）、被抢排行榜、抢劫成功率排行榜 |
+| 更改用户名称 | 新增管理员命令「更改用户名称」，支持用户名/QQ/@用户 |
+| 签到奖励调整 | 调整签到默认参数：最大奖励 100、连续签到每日 10、最大连续奖励 140 |
+
+**新增文件**:
+- `nextbot/plugins/rob.py` — 抢劫命令
+
+**修改文件**:
+- `nextbot/plugins/leaderboard.py` — 3 个抢劫排行榜
+- `nextbot/plugins/user_manager.py` — 更改用户名称命令
+- `nextbot/plugins/economy.py` — 签到奖励默认值调整
+- `nextbot/db.py` — User 新增 5 个抢劫统计字段 + 迁移 + guest 权限
+- `bot.py` — ensure_user_rob_schema 注册
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1890c77` | (see git log) |
+| `ced5eda` | (see git log) |
+| `26dfa6e` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
