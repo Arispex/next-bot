@@ -179,3 +179,51 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 56: 封禁安全修复、用户名大小写不敏感、API 全量查询、更改用户名称
+
+**Date**: 2026-04-12
+**Task**: 封禁安全修复、用户名大小写不敏感、API 全量查询、更改用户名称
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 改动 | 说明 |
+|------|------|
+| Owner 封禁保护 | 封禁命令和 WebUI ban API 新增 Owner 保护，防止封禁 Owner |
+| 用户名大小写不敏感 | 全部 5 处 User.name 查询改为 func.lower() 比较 |
+| API 全量查询 | GET /webui/api/users 支持 per_page=0 一次性获取全部用户 |
+| 更改用户名称 | 新增管理员命令「更改用户名称 <用户/QQ/@> <新名>」 |
+
+**修改文件**:
+- `nextbot/plugins/ban.py` — Owner 封禁保护
+- `nextbot/plugins/user_manager.py` — 更改用户名称命令 + 用户名大小写不敏感
+- `nextbot/message_parser.py` — 用户名解析大小写不敏感
+- `server/routes/webui_users.py` — Owner 封禁保护 + 用户名大小写不敏感 + per_page=0
+- `server/routes/webui_login_requests.py` — 用户名查找大小写不敏感
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `25c15a9` | (see git log) |
+| `4d4e7b0` | (see git log) |
+| `e0b5aec` | (see git log) |
+| `ced5eda` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
