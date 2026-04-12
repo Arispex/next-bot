@@ -16,7 +16,9 @@ from nonebot.log import logger
 from nonebot.matcher import current_matcher
 from nonebot.params import CommandArg
 
-from nextbot.db import CommandConfig, get_session
+from nonebot.adapters.onebot.v11 import MessageSegment as OBV11MessageSegment
+
+from nextbot.db import CommandConfig, User, get_session
 from nextbot.stats import increment_command_execute_total
 from nextbot.time_utils import db_now_utc_naive
 
@@ -345,6 +347,20 @@ def _get_disabled_policy() -> tuple[str, str]:
     return mode, message
 
 
+def _check_user_banned(user_id: str) -> str:
+    session = get_session()
+    try:
+        user = session.query(User).filter(User.user_id == user_id).first()
+        if user is not None and user.is_banned:
+            reason = str(user.ban_reason or "").strip()
+            if reason:
+                return f"你已被封禁\n原因：{reason}\n如有疑问，请联系管理员"
+            return "你已被封禁\n如有疑问，请联系管理员"
+    finally:
+        session.close()
+    return ""
+
+
 def _coerce_enabled(value: Any) -> bool:
     try:
         return _coerce_bool(value)
@@ -466,6 +482,7 @@ def _get_runtime_state(command_key: str) -> RuntimeCommandState:
             admin=False,
             param_schema={},
             param_values={},
+            aliases=[],
             is_registered=False,
         )
 
@@ -481,6 +498,7 @@ def _get_runtime_state(command_key: str) -> RuntimeCommandState:
         admin=registered.admin,
         param_schema=registered.param_schema,
         param_values=_build_default_param_values(registered.param_schema),
+        aliases=[],
         is_registered=True,
     )
 
@@ -941,6 +959,15 @@ def command_control(
                     if mode == "reply" and bot is not None and event is not None:
                         await bot.send(event, message)
                     return None
+
+                bot, event = _resolve_bot_event(resolved_signature, args, kwargs)
+                if bot is not None and event is not None:
+                    ban_msg = _check_user_banned(event.get_user_id())
+                    if ban_msg:
+                        at = OBV11MessageSegment.at(int(event.get_user_id()))
+                        await bot.send(event, at + "\n" + ban_msg)
+                        return None
+
                 return await func(*args, **kwargs)
             except CommandUsageError:
                 bot, event = _resolve_bot_event(resolved_signature, args, kwargs)
