@@ -322,7 +322,7 @@ async def webui_users_create(request: Request) -> JSONResponse:
                 details=[{"field": "user_id", "message": "用户 QQ 已存在"}],
             )
 
-        if session.query(User).filter(User.name == validated.name).first() is not None:
+        if session.query(User).filter(func.lower(User.name) == validated.name.lower()).first() is not None:
             return api_error(
                 status_code=409,
                 code="conflict",
@@ -405,7 +405,7 @@ async def webui_users_update(user_id: int, request: Request) -> JSONResponse:
 
         if (
             session.query(User)
-            .filter(User.name == validated.name, User.id != user_id)
+            .filter(func.lower(User.name) == validated.name.lower(), User.id != user_id)
             .first()
             is not None
         ):

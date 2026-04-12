@@ -11,6 +11,8 @@ from nonebot.adapters.onebot.v11 import MessageSegment as OBV11MessageSegment
 from nonebot.log import logger
 
 from nextbot.access_control import get_group_ids
+from sqlalchemy import func
+
 from nextbot.db import User, get_session
 from server.routes import api_error, api_success, read_json_object
 
@@ -27,7 +29,7 @@ def _pick_onebot_bot() -> OBV11Bot | None:
 def _resolve_user_id_by_name(name: str) -> str | None:
     session = get_session()
     try:
-        user = session.query(User).filter(User.name == name).order_by(User.id.asc()).first()
+        user = session.query(User).filter(func.lower(User.name) == name.lower()).order_by(User.id.asc()).first()
         return str(user.user_id) if user is not None else None
     finally:
         session.close()

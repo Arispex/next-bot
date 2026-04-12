@@ -18,6 +18,8 @@ from nextbot.time_utils import beijing_filename_timestamp, format_beijing_dateti
 from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
 from server.web_server import create_user_info_page
 
+from sqlalchemy import func
+
 from nextbot.db import Server, User, UserSignRecord, get_session
 from nextbot.tshock_api import (
     TShockRequestError,
@@ -148,7 +150,7 @@ async def handle_add_whitelist(
             logger.info(f"账号已注册：user_id={user_id} name={exists.name}")
             await bot.send(event, at + " 注册失败，该账号已注册")
             return
-        name_exists = session.query(User).filter(User.name == name).first()
+        name_exists = session.query(User).filter(func.lower(User.name) == name.lower()).first()
         if name_exists is not None:
             logger.info(f"用户名称已存在：name={name}")
             await bot.send(event, at + " 注册失败，用户名称已被占用")

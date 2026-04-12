@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from sqlalchemy import func
+
 from nextbot.db import User, get_session
 
 from nonebot.log import logger
@@ -128,7 +130,7 @@ def resolve_user_id_arg_with_fallback(
     try:
         matched = (
             session.query(User)
-            .filter(User.name == token)
+            .filter(func.lower(User.name) == token.lower())
             .order_by(User.id.asc())
             .limit(2)
             .all()
