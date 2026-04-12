@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse, Response
 
 from server.page_store import get_page
-from server.pages import admin_list_page, inventory_page, leaderboard_page, menu_page, progress_page, user_info_page
+from server.pages import about_page, admin_list_page, inventory_page, leaderboard_page, menu_page, progress_page, user_info_page
 
 router = APIRouter()
 
@@ -16,6 +16,7 @@ SERVER_DIR = Path(__file__).resolve().parent.parent
 ITEMS_DIR = SERVER_DIR / "assets" / "items"
 DICTS_DIR = SERVER_DIR / "assets" / "dicts"
 BOSS_IMGS_DIR = SERVER_DIR / "assets" / "imgs" / "boss"
+LOGOS_DIR = SERVER_DIR.parent / "logos"
 
 
 def _render_page(
@@ -76,6 +77,11 @@ async def render_admin_list(token: str) -> Response:
     return _render_page(token, page_type="admin_list", renderer=admin_list_page.render)
 
 
+@router.get("/render/about/{token}")
+async def render_about(token: str) -> Response:
+    return _render_page(token, page_type="about", renderer=about_page.render)
+
+
 @router.get("/assets/items/{file_path:path}")
 async def get_item_asset(file_path: str) -> FileResponse:
     resolved_path = _resolve_static_file(ITEMS_DIR, file_path)
@@ -92,3 +98,19 @@ async def get_dict_asset(file_path: str) -> FileResponse:
 async def get_boss_img_asset(file_path: str) -> FileResponse:
     resolved_path = _resolve_static_file(BOSS_IMGS_DIR, file_path)
     return FileResponse(path=resolved_path)
+
+
+@router.get("/assets/imgs/logo-light.png")
+async def get_logo_light_asset() -> FileResponse:
+    logo_path = LOGOS_DIR / "logo__white_background_with_black_text.png"
+    if not logo_path.is_file():
+        raise HTTPException(status_code=404, detail="Logo not found")
+    return FileResponse(path=logo_path)
+
+
+@router.get("/assets/imgs/logo-dark.png")
+async def get_logo_dark_asset() -> FileResponse:
+    logo_path = LOGOS_DIR / "logo__black_background_with_white_text.png"
+    if not logo_path.is_file():
+        raise HTTPException(status_code=404, detail="Logo not found")
+    return FileResponse(path=logo_path)

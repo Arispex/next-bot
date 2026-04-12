@@ -135,7 +135,7 @@ def ensure_default_groups() -> None:
     try:
         guest = session.query(Group).filter(Group.name == "guest").first()
         if guest is None:
-            session.add(Group(name="guest", permissions="economy.sign,economy.transfer,leaderboard.coins,leaderboard.daily_sign,leaderboard.deaths,leaderboard.fishing,leaderboard.online_time,leaderboard.signin,leaderboard.streak,leaderboard.total_online_time,menu.admin,menu.root,menu.search,player_query.inventory.self,player_query.inventory.user,player_query.kick.self,player_query.online,player_query.progress,security.login.confirm,security.login.reject,server.list,user.info.self,user.info.user,user.register,user.whitelist.sync", inherits=""))
+            session.add(Group(name="guest", permissions="about,economy.sign,economy.transfer,leaderboard.coins,leaderboard.daily_sign,leaderboard.deaths,leaderboard.fishing,leaderboard.online_time,leaderboard.signin,leaderboard.streak,leaderboard.total_online_time,menu.admin,menu.root,menu.search,player_query.inventory.self,player_query.inventory.user,player_query.kick.self,player_query.online,player_query.progress,security.login.confirm,security.login.reject,server.list,user.info.self,user.info.user,user.register,user.whitelist.sync", inherits=""))
 
         default = session.query(Group).filter(Group.name == "default").first()
         if default is None:
