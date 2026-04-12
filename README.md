@@ -18,6 +18,8 @@ NextBot 是一个基于 <a href="https://nonebot.dev/">NoneBot2</a> 的 Terraria
 
 Windows 小白向安装教程（含 TShock 插件、NapCat、NextBot 全流程）：[docs/windows_install.md](docs/windows_install.md)
 
+Windows 小白向视频安装教程：[Bilibili](https://b23.tv/eiU2zqO)
+
 ## 相关文档
 
 - [权限与身份组机制](docs/permissions.md)（Owner / 用户独立权限 / 身份组继承的校验流程与管理方法）
