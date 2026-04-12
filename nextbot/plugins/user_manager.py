@@ -38,6 +38,7 @@ add_matcher = on_command("注册账号")
 sync_matcher = on_command("同步白名单")
 info_matcher = on_command("用户信息")
 self_info_matcher = on_command("我的信息")
+rename_matcher = on_command("更改用户名称")
 MAX_USER_NAME_LENGTH = 16
 
 
@@ -345,3 +346,71 @@ async def handle_self_info(
         return
 
     await _render_and_send_user_info(bot, event, user, 365)
+
+
+@rename_matcher.handle()
+@command_control(
+    command_key="admin.rename",
+    display_name="更改用户名称",
+    permission="admin.rename",
+    description="更改指定用户的用户名称",
+    usage="更改用户名称 <用户名称/QQ/@用户> <新用户名>",
+    admin=True,
+)
+@require_permission("admin.rename")
+async def handle_rename(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
+
+    target_user_id, parse_error = resolve_user_id_arg_with_fallback(
+        event, arg, "更改用户名称", arg_index=0,
+    )
+    if parse_error == "missing":
+        raise_command_usage()
+    if parse_error == "name_not_found":
+        await bot.send(event, at + " 更改失败，未找到该用户")
+        return
+    if parse_error == "name_ambiguous":
+        await bot.send(event, at + " 更改失败，用户名存在重复，请使用 QQ 或 @用户")
+        return
+    if parse_error:
+        raise_command_usage()
+
+    args = parse_command_args_with_fallback(event, arg, "更改用户名称")
+    if len(args) != 2:
+        raise_command_usage()
+
+    new_name = args[1].strip()
+    invalid_reason = _validate_user_name(new_name)
+    if invalid_reason is not None:
+        await bot.send(event, at + f" 更改失败，{invalid_reason}")
+        return
+
+    session = get_session()
+    try:
+        user = session.query(User).filter(User.user_id == target_user_id).first()
+        if user is None:
+            await bot.send(event, at + " 更改失败，未找到该用户")
+            return
+
+        old_name = str(user.name)
+        if old_name.lower() == new_name.lower():
+            await bot.send(event, at + " 更改失败，新用户名与当前相同")
+            return
+
+        name_exists = session.query(User).filter(
+            func.lower(User.name) == new_name.lower(),
+            User.user_id != target_user_id,
+        ).first()
+        if name_exists is not None:
+            await bot.send(event, at + " 更改失败，用户名称已被占用")
+            return
+
+        user.name = new_name
+        session.commit()
+    finally:
+        session.close()
+
+    logger.info(
+        f"更改用户名称成功：user_id={target_user_id} old_name={old_name} new_name={new_name}"
+    )
+    await bot.send(event, at + f" 更改成功，用户名称已从 {old_name} 更改为 {new_name}")
