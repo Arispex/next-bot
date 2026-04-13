@@ -26,6 +26,10 @@ def is_success(response: TShockResponse) -> bool:
 
 
 def get_error_reason(response: TShockResponse) -> str:
+    error_msg = str(response.payload.get("error", "")).strip()
+    if error_msg:
+        return error_msg
+
     status_reason_map = {
         "400": "出现错误",
         "401": "未提供令牌",

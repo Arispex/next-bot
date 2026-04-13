@@ -413,4 +413,55 @@ async def handle_rename(bot: Bot, event: Event, arg: Message = CommandArg()) -> 
     logger.info(
         f"更改用户名称成功：user_id={target_user_id} old_name={old_name} new_name={new_name}"
     )
-    await bot.send(event, at + f" 更改成功，用户名称已从 {old_name} 更改为 {new_name}")
+
+    session = get_session()
+    try:
+        servers = session.query(Server).order_by(Server.id.asc()).all()
+    finally:
+        session.close()
+
+    lines: list[str] = [f"更改成功，{old_name}（{target_user_id}）的用户名称已更改为 {new_name}"]
+    if not servers:
+        lines.append("同步服务器白名单结果：暂无服务器")
+    else:
+        lines.append("同步服务器白名单结果：")
+        for server in servers:
+            remove_ok = False
+            add_ok = False
+            remove_msg = ""
+            add_msg = ""
+
+            # 删除旧白名单
+            try:
+                response = await request_server_api(
+                    server, f"/nextbot/whitelist/remove/{old_name}",
+                )
+                remove_ok = is_success(response)
+                if not remove_ok:
+                    remove_msg = get_error_reason(response)
+            except TShockRequestError:
+                remove_msg = "无法连接服务器"
+
+            # 添加新白名单
+            try:
+                response = await request_server_api(
+                    server, f"/nextbot/whitelist/add/{new_name}",
+                )
+                add_ok = is_success(response)
+                if not add_ok:
+                    add_msg = get_error_reason(response)
+            except TShockRequestError:
+                add_msg = "无法连接服务器"
+
+            if remove_ok and add_ok:
+                lines.append(f"{server.id}.{server.name}：同步成功")
+            else:
+                details = []
+                details.append(f"移除旧白名单{'成功' if remove_ok else '失败，' + remove_msg}")
+                details.append(f"添加新白名单{'成功' if add_ok else '失败，' + add_msg}")
+                lines.append(f"{server.id}.{server.name}：{'；'.join(details)}")
+
+        logger.info(
+            f"更改用户名称白名单同步完成：user_id={target_user_id} old_name={old_name} new_name={new_name} server_count={len(servers)}"
+        )
+    await bot.send(event, at + "\n" + "\n".join(lines))
