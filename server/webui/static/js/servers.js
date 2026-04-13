@@ -137,6 +137,13 @@
         { path: "loginConfirmation.pendingExistsMessage", label: "待确认重复提示", type: "text" },
       ],
     },
+    {
+      section: "启动同步",
+      items: [
+        { path: "sync.whitelist", label: "同步白名单", type: "bool" },
+        { path: "sync.blacklist", label: "同步黑名单", type: "bool" },
+      ],
+    },
   ];
 
   let pluginConfigServerId = null;
