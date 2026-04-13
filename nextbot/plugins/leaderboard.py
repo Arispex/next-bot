@@ -44,6 +44,7 @@ total_online_time_leaderboard_matcher = on_command("总在线时长排行榜")
 daily_sign_leaderboard_matcher = on_command("今日签到排行榜")
 rob_income_leaderboard_matcher = on_command("抢劫排行榜")
 rob_loss_leaderboard_matcher = on_command("被抢排行榜")
+rob_penalty_leaderboard_matcher = on_command("抢劫罚款排行榜")
 rob_success_rate_leaderboard_matcher = on_command("抢劫成功率排行榜")
 
 LEADERBOARD_SCREENSHOT_OPTIONS = ScreenshotOptions(
@@ -915,7 +916,7 @@ async def handle_daily_sign_leaderboard(
 
 
 def _rob_net_income(user: User) -> int:
-    return int(user.rob_total_gain or 0) - int(user.rob_total_loss or 0)
+    return int(user.rob_total_gain or 0) - int(user.rob_total_penalty or 0)
 
 
 @rob_income_leaderboard_matcher.handle()
@@ -1064,6 +1065,84 @@ async def handle_rob_loss_leaderboard(
         entries=entries,
         total_pages=total_pages,
         file_prefix="leaderboard-rob-loss",
+        self_entry=self_entry,
+        theme=resolve_render_theme(),
+    )
+
+
+@rob_penalty_leaderboard_matcher.handle()
+@command_control(
+    command_key="leaderboard.rob_penalty",
+    display_name="抢劫罚款排行榜",
+    permission="leaderboard.rob_penalty",
+    description="查看抢劫罚款金额排行榜",
+    usage="抢劫罚款排行榜 [页数]",
+    params={
+        "limit": {
+            "type": "int",
+            "label": "每页名次",
+            "description": "每页显示的名次数",
+            "required": False,
+            "default": 10,
+            "min": 1,
+            "max": 50,
+        },
+    },
+)
+@require_permission("leaderboard.rob_penalty")
+async def handle_rob_penalty_leaderboard(
+    bot: Bot, event: Event, arg: Message = CommandArg()
+) -> None:
+    args = parse_command_args_with_fallback(event, arg, "抢劫罚款排行榜")
+    if len(args) > 1:
+        raise_command_usage()
+
+    page = _parse_page_arg(args, "抢劫罚款排行榜")
+    if page is None:
+        await bot.send(event, "查询失败，页数必须为正整数")
+        return
+
+    limit = max(1, min(int(get_current_param("limit", 10)), 50))
+
+    caller_id = event.get_user_id()
+    session = get_session()
+    try:
+        total_count = session.query(User).filter(User.rob_total_penalty > 0).count()
+        total_pages = max(1, math.ceil(total_count / limit))
+        if page > total_pages:
+            await bot.send(event, f"查询失败，超出总页数（共 {total_pages} 页）")
+            return
+        offset = (page - 1) * limit
+        users = (
+            session.query(User)
+            .filter(User.rob_total_penalty > 0)
+            .order_by(User.rob_total_penalty.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+        entries = [
+            {"rank": offset + i + 1, "name": u.name, "user_id": u.user_id, "value": int(u.rob_total_penalty or 0)}
+            for i, u in enumerate(users)
+        ]
+        caller = session.query(User).filter(User.user_id == caller_id).first()
+        self_entry = None
+        if caller is not None and int(caller.rob_total_penalty or 0) > 0:
+            caller_penalty = int(caller.rob_total_penalty or 0)
+            caller_rank = session.query(User).filter(User.rob_total_penalty > caller_penalty).count() + 1
+            self_entry = {"rank": caller_rank, "name": caller.name, "value": caller_penalty}
+    finally:
+        session.close()
+
+    await _render_and_send(
+        bot, event,
+        title="抢劫罚款排行榜",
+        value_label="罚款金额",
+        page=page,
+        limit=limit,
+        entries=entries,
+        total_pages=total_pages,
+        file_prefix="leaderboard-rob-penalty",
         self_entry=self_entry,
         theme=resolve_render_theme(),
     )

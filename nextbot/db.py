@@ -52,6 +52,7 @@ class User(Base):
     rob_success_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     rob_total_gain: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     rob_total_loss: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    rob_total_penalty: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     last_rob_time: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=db_now_utc_naive
@@ -145,7 +146,7 @@ def ensure_default_groups() -> None:
     try:
         guest = session.query(Group).filter(Group.name == "guest").first()
         if guest is None:
-            session.add(Group(name="guest", permissions="about,ban.list,economy.rob,economy.sign,economy.transfer,leaderboard.coins,leaderboard.daily_sign,leaderboard.deaths,leaderboard.fishing,leaderboard.online_time,leaderboard.rob_income,leaderboard.rob_loss,leaderboard.rob_success_rate,leaderboard.signin,leaderboard.streak,leaderboard.total_online_time,menu.admin,menu.root,menu.search,player_query.inventory.self,player_query.inventory.user,player_query.kick.self,player_query.online,player_query.progress,security.login.confirm,security.login.reject,server.list,user.info.self,user.info.user,user.register,user.whitelist.sync", inherits=""))
+            session.add(Group(name="guest", permissions="about,ban.list,economy.rob,economy.sign,economy.transfer,leaderboard.coins,leaderboard.daily_sign,leaderboard.deaths,leaderboard.fishing,leaderboard.online_time,leaderboard.rob_income,leaderboard.rob_loss,leaderboard.rob_penalty,leaderboard.rob_success_rate,leaderboard.signin,leaderboard.streak,leaderboard.total_online_time,menu.admin,menu.root,menu.search,player_query.inventory.self,player_query.inventory.user,player_query.kick.self,player_query.online,player_query.progress,security.login.confirm,security.login.reject,server.list,user.info.self,user.info.user,user.register,user.whitelist.sync", inherits=""))
 
         default = session.query(Group).filter(Group.name == "default").first()
         if default is None:
@@ -319,7 +320,7 @@ def ensure_user_rob_schema() -> None:
 
         columns = {str(row[1]) for row in rows}
         changed = False
-        for col in ("rob_total_count", "rob_success_count", "rob_total_gain", "rob_total_loss"):
+        for col in ("rob_total_count", "rob_success_count", "rob_total_gain", "rob_total_loss", "rob_total_penalty"):
             if col not in columns:
                 conn.execute(
                     f'ALTER TABLE "user" ADD COLUMN "{col}" INTEGER NOT NULL DEFAULT 0'

@@ -241,7 +241,7 @@ async def handle_rob(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
             robber.coins = robber_coins - amount
             victim.coins = victim_coins + amount
             robber.rob_total_count = int(robber.rob_total_count or 0) + 1
-            robber.rob_total_loss = int(robber.rob_total_loss or 0) + amount
+            robber.rob_total_penalty = int(robber.rob_total_penalty or 0) + amount
             victim.rob_total_gain = int(victim.rob_total_gain or 0) + amount
 
         elif roll <= success_rate + counter_rate + police_rate:
@@ -249,14 +249,14 @@ async def handle_rob(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
             amount = max(1, robber_coins * police_penalty_percent // 100)
             robber.coins = robber_coins - amount
             robber.rob_total_count = int(robber.rob_total_count or 0) + 1
-            robber.rob_total_loss = int(robber.rob_total_loss or 0) + amount
+            robber.rob_total_penalty = int(robber.rob_total_penalty or 0) + amount
 
         else:
             result_type = "fail"
             amount = max(1, robber_coins * fail_penalty_percent // 100)
             robber.coins = robber_coins - amount
             robber.rob_total_count = int(robber.rob_total_count or 0) + 1
-            robber.rob_total_loss = int(robber.rob_total_loss or 0) + amount
+            robber.rob_total_penalty = int(robber.rob_total_penalty or 0) + amount
 
         robber.last_rob_time = now
         session.commit()
