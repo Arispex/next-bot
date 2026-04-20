@@ -18,6 +18,10 @@
   const commandDisabledMessageInput = document.getElementById("field-command-disabled-message");
   const renderThemeInput = document.getElementById("field-render-theme");
   const loginNotifyAllGroupsInput = document.getElementById("field-login-notify-all-groups");
+  const playerNotifyModeInput = document.getElementById("field-player-notify-mode");
+  const playerNotifyGroupIdInput = document.getElementById("field-player-notify-group-id");
+  const playerNotifyOnlineTemplateInput = document.getElementById("field-player-notify-online-template");
+  const playerNotifyOfflineTemplateInput = document.getElementById("field-player-notify-offline-template");
   const tokenToggleButton = document.getElementById("token-toggle-btn");
 
   const requiredNodesReady = Boolean(
@@ -39,6 +43,10 @@
     commandDisabledMessageInput &&
     renderThemeInput &&
     loginNotifyAllGroupsInput &&
+    playerNotifyModeInput &&
+    playerNotifyGroupIdInput &&
+    playerNotifyOnlineTemplateInput &&
+    playerNotifyOfflineTemplateInput &&
     tokenToggleButton
   );
   if (!requiredNodesReady) {
@@ -60,6 +68,10 @@
     command_disabled_message: "命令关闭提示语",
     render_theme: "图片主题",
     login_notify_all_groups: "登入通知范围",
+    player_notify_mode: "上下线通知范围",
+    player_notify_group_id: "上下线通知群号",
+    player_notify_online_template: "上线消息模板",
+    player_notify_offline_template: "下线消息模板",
   };
   const RENDER_THEME_LABELS = {
     auto: "跟随时间",
@@ -276,6 +288,10 @@
       command_disabled_message: commandDisabledMessage,
       render_theme: renderThemeInput.value,
       login_notify_all_groups: loginNotifyAllGroupsInput.value === "true",
+      player_notify_mode: playerNotifyModeInput.value,
+      player_notify_group_id: playerNotifyGroupIdInput.value.trim(),
+      player_notify_online_template: playerNotifyOnlineTemplateInput.value,
+      player_notify_offline_template: playerNotifyOfflineTemplateInput.value,
     };
   };
 
@@ -293,6 +309,14 @@
     commandDisabledMessageInput.value = String(data.command_disabled_message ?? "");
     renderThemeInput.value = String(data.render_theme ?? "auto");
     loginNotifyAllGroupsInput.value = data.login_notify_all_groups ? "true" : "false";
+    playerNotifyModeInput.value = String(data.player_notify_mode ?? "all");
+    playerNotifyGroupIdInput.value = String(data.player_notify_group_id ?? "");
+    playerNotifyOnlineTemplateInput.value = String(
+      data.player_notify_online_template ?? "[{server}]{player} 上线了",
+    );
+    playerNotifyOfflineTemplateInput.value = String(
+      data.player_notify_offline_template ?? "[{server}]{player} 下线了",
+    );
     updateArrayPreviews();
   };
 

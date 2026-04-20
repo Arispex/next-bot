@@ -48,6 +48,10 @@ DEFAULT_ENV_CONTENT = (
     "COMMAND_DISABLED_MESSAGE=该命令暂时关闭~\n"
     "RENDER_THEME=auto\n"
     "LOGIN_NOTIFY_ALL_GROUPS=false\n"
+    "PLAYER_NOTIFY_MODE=all\n"
+    "PLAYER_NOTIFY_GROUP_ID=\n"
+    "PLAYER_NOTIFY_ONLINE_TEMPLATE=[{server}]{player} 上线了\n"
+    "PLAYER_NOTIFY_OFFLINE_TEMPLATE=[{server}]{player} 下线了\n"
 )
 
 

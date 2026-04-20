@@ -14,6 +14,7 @@ from server.routes.webui_commands import router as webui_commands_router
 from server.routes.webui_dashboard import router as webui_dashboard_router
 from server.routes.webui_groups import router as webui_groups_router
 from server.routes.webui_login_requests import router as webui_login_requests_router
+from server.routes.webui_player_events import router as webui_player_events_router
 from server.routes.webui_servers import router as webui_servers_router
 from server.routes.webui_settings import router as webui_settings_router
 from server.routes.webui_users import router as webui_users_router
@@ -206,6 +207,7 @@ def create_app(settings: WebServerSettings | None = None) -> FastAPI:
     app.include_router(webui_dashboard_router)
     app.include_router(webui_servers_router)
     app.include_router(webui_login_requests_router)
+    app.include_router(webui_player_events_router)
     app.include_router(webui_users_router)
     app.include_router(webui_groups_router)
     app.include_router(webui_settings_router)

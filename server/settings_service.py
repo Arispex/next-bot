@@ -47,6 +47,10 @@ _FIELD_SPECS: tuple[FieldSpec, ...] = (
     FieldSpec("command_disabled_message", "COMMAND_DISABLED_MESSAGE"),
     FieldSpec("render_theme", "RENDER_THEME"),
     FieldSpec("login_notify_all_groups", "LOGIN_NOTIFY_ALL_GROUPS"),
+    FieldSpec("player_notify_mode", "PLAYER_NOTIFY_MODE"),
+    FieldSpec("player_notify_group_id", "PLAYER_NOTIFY_GROUP_ID"),
+    FieldSpec("player_notify_online_template", "PLAYER_NOTIFY_ONLINE_TEMPLATE"),
+    FieldSpec("player_notify_offline_template", "PLAYER_NOTIFY_OFFLINE_TEMPLATE"),
 )
 
 _FIELD_BY_NAME: dict[str, FieldSpec] = {item.field: item for item in _FIELD_SPECS}
@@ -58,6 +62,10 @@ _SINGLE_LINE_STRING_FIELDS = {
     "command_disabled_mode",
     "command_disabled_message",
     "render_theme",
+    "player_notify_mode",
+    "player_notify_group_id",
+    "player_notify_online_template",
+    "player_notify_offline_template",
 }
 
 
@@ -262,6 +270,15 @@ def _normalize_field(field: str, value: Any) -> Any:
         return theme
     if field == "login_notify_all_groups":
         return _coerce_bool(value, field=field)
+    if field == "player_notify_mode":
+        mode = _coerce_string(value, field=field, allow_empty=True).lower()
+        if mode not in {"all", "single"}:
+            return "all"
+        return mode
+    if field == "player_notify_group_id":
+        return _coerce_string(value, field=field, allow_empty=True)
+    if field in {"player_notify_online_template", "player_notify_offline_template"}:
+        return _coerce_string(value, field=field, allow_empty=True)
     raise SettingsValidationError("不支持的配置项", field=field)
 
 
@@ -322,6 +339,14 @@ def _load_value_from_config(field: str, config: Any) -> Any:
         raw_value = "auto"
     if field == "login_notify_all_groups":
         return _coerce_bool(raw_value if raw_value is not None else False, field=field)
+    if field == "player_notify_mode" and raw_value is None:
+        raw_value = "all"
+    if field == "player_notify_group_id" and raw_value is None:
+        raw_value = ""
+    if field == "player_notify_online_template" and raw_value is None:
+        raw_value = "[{server}]{player} 上线了"
+    if field == "player_notify_offline_template" and raw_value is None:
+        raw_value = "[{server}]{player} 下线了"
     return _normalize_field(field, raw_value if raw_value is not None else "")
 
 
