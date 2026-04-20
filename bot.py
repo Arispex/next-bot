@@ -52,6 +52,9 @@ DEFAULT_ENV_CONTENT = (
     "PLAYER_NOTIFY_GROUP_ID=\n"
     "PLAYER_NOTIFY_ONLINE_TEMPLATE=[{server}]{player} 上线了\n"
     "PLAYER_NOTIFY_OFFLINE_TEMPLATE=[{server}]{player} 下线了\n"
+    "CHAT_SYNC_MODE=all\n"
+    "CHAT_SYNC_GROUP_ID=\n"
+    "CHAT_SYNC_TEMPLATE=[{server}]{player}：{message}\n"
 )
 
 

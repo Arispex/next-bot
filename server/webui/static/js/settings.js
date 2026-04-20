@@ -22,6 +22,9 @@
   const playerNotifyGroupIdInput = document.getElementById("field-player-notify-group-id");
   const playerNotifyOnlineTemplateInput = document.getElementById("field-player-notify-online-template");
   const playerNotifyOfflineTemplateInput = document.getElementById("field-player-notify-offline-template");
+  const chatSyncModeInput = document.getElementById("field-chat-sync-mode");
+  const chatSyncGroupIdInput = document.getElementById("field-chat-sync-group-id");
+  const chatSyncTemplateInput = document.getElementById("field-chat-sync-template");
   const tokenToggleButton = document.getElementById("token-toggle-btn");
 
   const requiredNodesReady = Boolean(
@@ -47,6 +50,9 @@
     playerNotifyGroupIdInput &&
     playerNotifyOnlineTemplateInput &&
     playerNotifyOfflineTemplateInput &&
+    chatSyncModeInput &&
+    chatSyncGroupIdInput &&
+    chatSyncTemplateInput &&
     tokenToggleButton
   );
   if (!requiredNodesReady) {
@@ -72,6 +78,9 @@
     player_notify_group_id: "上下线通知群号",
     player_notify_online_template: "上线消息模板",
     player_notify_offline_template: "下线消息模板",
+    chat_sync_mode: "消息同步范围",
+    chat_sync_group_id: "消息同步群号",
+    chat_sync_template: "消息同步模板",
   };
   const RENDER_THEME_LABELS = {
     auto: "跟随时间",
@@ -292,6 +301,9 @@
       player_notify_group_id: playerNotifyGroupIdInput.value.trim(),
       player_notify_online_template: playerNotifyOnlineTemplateInput.value,
       player_notify_offline_template: playerNotifyOfflineTemplateInput.value,
+      chat_sync_mode: chatSyncModeInput.value,
+      chat_sync_group_id: chatSyncGroupIdInput.value.trim(),
+      chat_sync_template: chatSyncTemplateInput.value,
     };
   };
 
@@ -316,6 +328,11 @@
     );
     playerNotifyOfflineTemplateInput.value = String(
       data.player_notify_offline_template ?? "[{server}]{player} 下线了",
+    );
+    chatSyncModeInput.value = String(data.chat_sync_mode ?? "all");
+    chatSyncGroupIdInput.value = String(data.chat_sync_group_id ?? "");
+    chatSyncTemplateInput.value = String(
+      data.chat_sync_template ?? "[{server}]{player}：{message}",
     );
     updateArrayPreviews();
   };

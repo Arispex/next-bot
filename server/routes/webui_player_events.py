@@ -15,7 +15,7 @@ from server.routes import api_error, api_success, read_json_object
 
 router = APIRouter()
 
-_ALLOWED_EVENTS = {"online", "offline"}
+_ALLOWED_EVENTS = {"online", "offline", "message"}
 
 
 def _pick_onebot_bot() -> OBV11Bot | None:
@@ -39,12 +39,9 @@ def _resolve_user_id_by_name(name: str) -> str | None:
         session.close()
 
 
-def _resolve_target_groups() -> list[int]:
-    config = nonebot.get_driver().config
-    mode = str(getattr(config, "player_notify_mode", "all") or "").strip().lower()
-    single_gid = str(getattr(config, "player_notify_group_id", "") or "").strip()
-
-    if mode == "single":
+def _resolve_target_groups_by_mode(mode: str, single_gid: str) -> list[int]:
+    mode_norm = mode.strip().lower()
+    if mode_norm == "single":
         if single_gid.isdigit():
             return [int(single_gid)]
         return []
@@ -55,6 +52,20 @@ def _resolve_target_groups() -> list[int]:
         if text.isdigit():
             target.append(int(text))
     return target
+
+
+def _resolve_target_groups() -> list[int]:
+    config = nonebot.get_driver().config
+    mode = str(getattr(config, "player_notify_mode", "all") or "")
+    single_gid = str(getattr(config, "player_notify_group_id", "") or "").strip()
+    return _resolve_target_groups_by_mode(mode, single_gid)
+
+
+def _resolve_chat_target_groups() -> list[int]:
+    config = nonebot.get_driver().config
+    mode = str(getattr(config, "chat_sync_mode", "all") or "")
+    single_gid = str(getattr(config, "chat_sync_group_id", "") or "").strip()
+    return _resolve_target_groups_by_mode(mode, single_gid)
 
 
 @router.post("/webui/api/player-events")
@@ -87,14 +98,25 @@ async def webui_player_events_create(request: Request) -> JSONResponse:
         return api_error(
             status_code=422,
             code="validation_error",
-            message="事件类型仅支持 online 或 offline",
-            details=[{"field": "event", "message": "事件类型仅支持 online 或 offline"}],
+            message="事件类型仅支持 online、offline 或 message",
+            details=[{"field": "event", "message": "事件类型仅支持 online、offline 或 message"}],
         )
+
+    message_text = ""
+    if event == "message":
+        message_text = str(data.get("message") or "").strip()
+        if not message_text:
+            return api_error(
+                status_code=422,
+                code="validation_error",
+                message="消息内容不能为空",
+                details=[{"field": "message", "message": "消息内容不能为空"}],
+            )
 
     bot = _pick_onebot_bot()
     if bot is None:
         logger.warning(
-            f"推送玩家上下线通知失败：player_name={player_name}，server_name={server_name}，event={event}，reason=机器人未连接"
+            f"推送玩家事件失败：player_name={player_name}，server_name={server_name}，event={event}，reason=机器人未连接"
         )
         return api_error(
             status_code=503,
@@ -102,10 +124,13 @@ async def webui_player_events_create(request: Request) -> JSONResponse:
             message="机器人未连接",
         )
 
-    target_groups = _resolve_target_groups()
+    if event == "message":
+        target_groups = _resolve_chat_target_groups()
+    else:
+        target_groups = _resolve_target_groups()
     if not target_groups:
         logger.warning(
-            f"推送玩家上下线通知失败：player_name={player_name}，server_name={server_name}，event={event}，reason=未配置有效通知群"
+            f"推送玩家事件失败：player_name={player_name}，server_name={server_name}，event={event}，reason=未配置有效通知群"
         )
         return api_error(
             status_code=409,
@@ -121,11 +146,19 @@ async def webui_player_events_create(request: Request) -> JSONResponse:
         template = str(
             getattr(config, "player_notify_online_template", "") or ""
         ).strip() or "[{server}]{player} 上线了"
-    else:
+    elif event == "offline":
         template = str(
             getattr(config, "player_notify_offline_template", "") or ""
         ).strip() or "[{server}]{player} 下线了"
-    text = template.replace("{player}", display_name).replace("{server}", server_name)
+    else:
+        template = str(
+            getattr(config, "chat_sync_template", "") or ""
+        ).strip() or "[{server}]{player}：{message}"
+    text = (
+        template.replace("{player}", display_name)
+        .replace("{server}", server_name)
+        .replace("{message}", message_text)
+    )
 
     sent_groups: list[int] = []
     failed_groups: list[int] = []
@@ -135,13 +168,13 @@ async def webui_player_events_create(request: Request) -> JSONResponse:
         except Exception as exc:
             failed_groups.append(gid)
             logger.warning(
-                f"推送玩家上下线通知到群失败：group_id={gid}，player_name={player_name}，event={event}，reason={exc}"
+                f"推送玩家事件到群失败：group_id={gid}，player_name={player_name}，event={event}，reason={exc}"
             )
             continue
         sent_groups.append(gid)
 
     logger.info(
-        f"推送玩家上下线通知完成：player_name={player_name}，server_name={server_name}，event={event}，"
+        f"推送玩家事件完成：player_name={player_name}，server_name={server_name}，event={event}，"
         f"sent={sent_groups}，failed={failed_groups}"
     )
 
