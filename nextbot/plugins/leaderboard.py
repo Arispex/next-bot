@@ -1223,7 +1223,7 @@ async def handle_rob_success_rate_leaderboard(
                 "rank": offset + i + 1,
                 "name": u.name,
                 "user_id": u.user_id,
-                "value": f"{_success_rate(u) * 100:.1f}%",
+                "value": f"{_success_rate(u) * 100:.1f}%（{int(u.rob_success_count or 0)}/{int(u.rob_total_count or 0)}）",
             }
             for i, u in enumerate(page_users)
         ]
@@ -1232,7 +1232,11 @@ async def handle_rob_success_rate_leaderboard(
         if caller is not None and int(caller.rob_total_count or 0) >= min_rob_count:
             caller_rate = _success_rate(caller)
             caller_rank = sum(1 for u in sorted_users if _success_rate(u) > caller_rate) + 1
-            self_entry = {"rank": caller_rank, "name": caller.name, "value": f"{caller_rate * 100:.1f}%"}
+            self_entry = {
+                "rank": caller_rank,
+                "name": caller.name,
+                "value": f"{caller_rate * 100:.1f}%（{int(caller.rob_success_count or 0)}/{int(caller.rob_total_count or 0)}）",
+            }
     finally:
         session.close()
 
