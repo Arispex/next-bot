@@ -46,6 +46,10 @@ rob_income_leaderboard_matcher = on_command("抢劫排行榜")
 rob_loss_leaderboard_matcher = on_command("被抢排行榜")
 rob_penalty_leaderboard_matcher = on_command("抢劫罚款排行榜")
 rob_success_rate_leaderboard_matcher = on_command("抢劫成功率排行榜")
+guess_income_leaderboard_matcher = on_command("猜数字排行榜")
+guess_win_rate_leaderboard_matcher = on_command("猜数字胜率排行榜")
+dice_income_leaderboard_matcher = on_command("掷骰子排行榜")
+dice_win_rate_leaderboard_matcher = on_command("掷骰子胜率排行榜")
 
 LEADERBOARD_SCREENSHOT_OPTIONS = ScreenshotOptions(
     viewport_width=900,
@@ -1241,6 +1245,374 @@ async def handle_rob_success_rate_leaderboard(
         entries=entries,
         total_pages=total_pages,
         file_prefix="leaderboard-rob-rate",
+        self_entry=self_entry,
+        theme=resolve_render_theme(),
+    )
+
+
+def _guess_net_income(user: User) -> int:
+    return int(user.guess_total_gain or 0) - int(user.guess_total_loss or 0)
+
+
+def _dice_net_income(user: User) -> int:
+    return int(user.dice_total_gain or 0) - int(user.dice_total_loss or 0)
+
+
+def _guess_win_rate(user: User) -> float:
+    total = int(user.guess_total_count or 0)
+    if total == 0:
+        return 0.0
+    return int(user.guess_win_count or 0) / total
+
+
+def _dice_win_rate(user: User) -> float:
+    total = int(user.dice_total_count or 0)
+    if total == 0:
+        return 0.0
+    return int(user.dice_win_count or 0) / total
+
+
+@guess_income_leaderboard_matcher.handle()
+@command_control(
+    command_key="leaderboard.guess_number_income",
+    display_name="猜数字排行榜",
+    permission="leaderboard.guess_number_income",
+    description="查看猜数字净收入排行榜",
+    usage="猜数字排行榜 [页数]",
+    params={
+        "limit": {
+            "type": "int",
+            "label": "每页名次",
+            "description": "每页显示的名次数",
+            "required": False,
+            "default": 10,
+            "min": 1,
+            "max": 50,
+        },
+    },
+)
+@require_permission("leaderboard.guess_number_income")
+async def handle_guess_income_leaderboard(
+    bot: Bot, event: Event, arg: Message = CommandArg()
+) -> None:
+    args = parse_command_args_with_fallback(event, arg, "猜数字排行榜")
+    if len(args) > 1:
+        raise_command_usage()
+
+    page = _parse_page_arg(args, "猜数字排行榜")
+    if page is None:
+        await bot.send(event, "查询失败，页数必须为正整数")
+        return
+
+    limit = max(1, min(int(get_current_param("limit", 10)), 50))
+
+    caller_id = event.get_user_id()
+    session = get_session()
+    try:
+        all_users = session.query(User).filter(User.guess_total_count > 0).all()
+        sorted_users = sorted(all_users, key=_guess_net_income, reverse=True)
+        total_count = len(sorted_users)
+        total_pages = max(1, math.ceil(total_count / limit))
+        if page > total_pages:
+            await bot.send(event, f"查询失败，超出总页数（共 {total_pages} 页）")
+            return
+        offset = (page - 1) * limit
+        page_users = sorted_users[offset : offset + limit]
+        entries = [
+            {"rank": offset + i + 1, "name": u.name, "user_id": u.user_id, "value": _guess_net_income(u)}
+            for i, u in enumerate(page_users)
+        ]
+        caller = session.query(User).filter(User.user_id == caller_id).first()
+        self_entry = None
+        if caller is not None and int(caller.guess_total_count or 0) > 0:
+            caller_income = _guess_net_income(caller)
+            caller_rank = sum(1 for u in sorted_users if _guess_net_income(u) > caller_income) + 1
+            self_entry = {"rank": caller_rank, "name": caller.name, "value": caller_income}
+    finally:
+        session.close()
+
+    await _render_and_send(
+        bot, event,
+        title="猜数字排行榜",
+        value_label="净收入",
+        page=page,
+        limit=limit,
+        entries=entries,
+        total_pages=total_pages,
+        file_prefix="leaderboard-guess-income",
+        self_entry=self_entry,
+        theme=resolve_render_theme(),
+    )
+
+
+@guess_win_rate_leaderboard_matcher.handle()
+@command_control(
+    command_key="leaderboard.guess_number_win_rate",
+    display_name="猜数字胜率排行榜",
+    permission="leaderboard.guess_number_win_rate",
+    description="查看猜数字胜率排行榜",
+    usage="猜数字胜率排行榜 [页数]",
+    params={
+        "limit": {
+            "type": "int",
+            "label": "每页名次",
+            "description": "每页显示的名次数",
+            "required": False,
+            "default": 10,
+            "min": 1,
+            "max": 50,
+        },
+        "min_play_count": {
+            "type": "int",
+            "label": "最低参与次数",
+            "description": "上榜需要的最低参与次数",
+            "required": False,
+            "default": 1,
+            "min": 1,
+        },
+    },
+)
+@require_permission("leaderboard.guess_number_win_rate")
+async def handle_guess_win_rate_leaderboard(
+    bot: Bot, event: Event, arg: Message = CommandArg()
+) -> None:
+    args = parse_command_args_with_fallback(event, arg, "猜数字胜率排行榜")
+    if len(args) > 1:
+        raise_command_usage()
+
+    page = _parse_page_arg(args, "猜数字胜率排行榜")
+    if page is None:
+        await bot.send(event, "查询失败，页数必须为正整数")
+        return
+
+    limit = max(1, min(int(get_current_param("limit", 10)), 50))
+    min_play_count = max(1, int(get_current_param("min_play_count", 1)))
+
+    caller_id = event.get_user_id()
+    session = get_session()
+    try:
+        all_users = (
+            session.query(User)
+            .filter(User.guess_total_count >= min_play_count)
+            .all()
+        )
+
+        def _sort_key(u: User) -> tuple[float, int]:
+            return (_guess_win_rate(u), int(u.guess_total_count or 0))
+
+        sorted_users = sorted(all_users, key=_sort_key, reverse=True)
+        total_count = len(sorted_users)
+        total_pages = max(1, math.ceil(total_count / limit))
+        if page > total_pages:
+            await bot.send(event, f"查询失败，超出总页数（共 {total_pages} 页）")
+            return
+        offset = (page - 1) * limit
+        page_users = sorted_users[offset : offset + limit]
+        entries = [
+            {
+                "rank": offset + i + 1,
+                "name": u.name,
+                "user_id": u.user_id,
+                "value": f"{_guess_win_rate(u) * 100:.1f}%（{int(u.guess_win_count or 0)}/{int(u.guess_total_count or 0)}）",
+            }
+            for i, u in enumerate(page_users)
+        ]
+        caller = session.query(User).filter(User.user_id == caller_id).first()
+        self_entry = None
+        if caller is not None and int(caller.guess_total_count or 0) >= min_play_count:
+            caller_rate = _guess_win_rate(caller)
+            caller_key = _sort_key(caller)
+            caller_rank = sum(1 for u in sorted_users if _sort_key(u) > caller_key) + 1
+            self_entry = {
+                "rank": caller_rank,
+                "name": caller.name,
+                "value": f"{caller_rate * 100:.1f}%（{int(caller.guess_win_count or 0)}/{int(caller.guess_total_count or 0)}）",
+            }
+    finally:
+        session.close()
+
+    await _render_and_send(
+        bot, event,
+        title="猜数字胜率排行榜",
+        value_label="胜率",
+        page=page,
+        limit=limit,
+        entries=entries,
+        total_pages=total_pages,
+        file_prefix="leaderboard-guess-win-rate",
+        self_entry=self_entry,
+        theme=resolve_render_theme(),
+    )
+
+
+@dice_income_leaderboard_matcher.handle()
+@command_control(
+    command_key="leaderboard.dice_income",
+    display_name="掷骰子排行榜",
+    permission="leaderboard.dice_income",
+    description="查看掷骰子净收入排行榜",
+    usage="掷骰子排行榜 [页数]",
+    params={
+        "limit": {
+            "type": "int",
+            "label": "每页名次",
+            "description": "每页显示的名次数",
+            "required": False,
+            "default": 10,
+            "min": 1,
+            "max": 50,
+        },
+    },
+)
+@require_permission("leaderboard.dice_income")
+async def handle_dice_income_leaderboard(
+    bot: Bot, event: Event, arg: Message = CommandArg()
+) -> None:
+    args = parse_command_args_with_fallback(event, arg, "掷骰子排行榜")
+    if len(args) > 1:
+        raise_command_usage()
+
+    page = _parse_page_arg(args, "掷骰子排行榜")
+    if page is None:
+        await bot.send(event, "查询失败，页数必须为正整数")
+        return
+
+    limit = max(1, min(int(get_current_param("limit", 10)), 50))
+
+    caller_id = event.get_user_id()
+    session = get_session()
+    try:
+        all_users = session.query(User).filter(User.dice_total_count > 0).all()
+        sorted_users = sorted(all_users, key=_dice_net_income, reverse=True)
+        total_count = len(sorted_users)
+        total_pages = max(1, math.ceil(total_count / limit))
+        if page > total_pages:
+            await bot.send(event, f"查询失败，超出总页数（共 {total_pages} 页）")
+            return
+        offset = (page - 1) * limit
+        page_users = sorted_users[offset : offset + limit]
+        entries = [
+            {"rank": offset + i + 1, "name": u.name, "user_id": u.user_id, "value": _dice_net_income(u)}
+            for i, u in enumerate(page_users)
+        ]
+        caller = session.query(User).filter(User.user_id == caller_id).first()
+        self_entry = None
+        if caller is not None and int(caller.dice_total_count or 0) > 0:
+            caller_income = _dice_net_income(caller)
+            caller_rank = sum(1 for u in sorted_users if _dice_net_income(u) > caller_income) + 1
+            self_entry = {"rank": caller_rank, "name": caller.name, "value": caller_income}
+    finally:
+        session.close()
+
+    await _render_and_send(
+        bot, event,
+        title="掷骰子排行榜",
+        value_label="净收入",
+        page=page,
+        limit=limit,
+        entries=entries,
+        total_pages=total_pages,
+        file_prefix="leaderboard-dice-income",
+        self_entry=self_entry,
+        theme=resolve_render_theme(),
+    )
+
+
+@dice_win_rate_leaderboard_matcher.handle()
+@command_control(
+    command_key="leaderboard.dice_win_rate",
+    display_name="掷骰子胜率排行榜",
+    permission="leaderboard.dice_win_rate",
+    description="查看掷骰子胜率排行榜",
+    usage="掷骰子胜率排行榜 [页数]",
+    params={
+        "limit": {
+            "type": "int",
+            "label": "每页名次",
+            "description": "每页显示的名次数",
+            "required": False,
+            "default": 10,
+            "min": 1,
+            "max": 50,
+        },
+        "min_play_count": {
+            "type": "int",
+            "label": "最低参与次数",
+            "description": "上榜需要的最低参与次数",
+            "required": False,
+            "default": 1,
+            "min": 1,
+        },
+    },
+)
+@require_permission("leaderboard.dice_win_rate")
+async def handle_dice_win_rate_leaderboard(
+    bot: Bot, event: Event, arg: Message = CommandArg()
+) -> None:
+    args = parse_command_args_with_fallback(event, arg, "掷骰子胜率排行榜")
+    if len(args) > 1:
+        raise_command_usage()
+
+    page = _parse_page_arg(args, "掷骰子胜率排行榜")
+    if page is None:
+        await bot.send(event, "查询失败，页数必须为正整数")
+        return
+
+    limit = max(1, min(int(get_current_param("limit", 10)), 50))
+    min_play_count = max(1, int(get_current_param("min_play_count", 1)))
+
+    caller_id = event.get_user_id()
+    session = get_session()
+    try:
+        all_users = (
+            session.query(User)
+            .filter(User.dice_total_count >= min_play_count)
+            .all()
+        )
+
+        def _sort_key(u: User) -> tuple[float, int]:
+            return (_dice_win_rate(u), int(u.dice_total_count or 0))
+
+        sorted_users = sorted(all_users, key=_sort_key, reverse=True)
+        total_count = len(sorted_users)
+        total_pages = max(1, math.ceil(total_count / limit))
+        if page > total_pages:
+            await bot.send(event, f"查询失败，超出总页数（共 {total_pages} 页）")
+            return
+        offset = (page - 1) * limit
+        page_users = sorted_users[offset : offset + limit]
+        entries = [
+            {
+                "rank": offset + i + 1,
+                "name": u.name,
+                "user_id": u.user_id,
+                "value": f"{_dice_win_rate(u) * 100:.1f}%（{int(u.dice_win_count or 0)}/{int(u.dice_total_count or 0)}）",
+            }
+            for i, u in enumerate(page_users)
+        ]
+        caller = session.query(User).filter(User.user_id == caller_id).first()
+        self_entry = None
+        if caller is not None and int(caller.dice_total_count or 0) >= min_play_count:
+            caller_rate = _dice_win_rate(caller)
+            caller_key = _sort_key(caller)
+            caller_rank = sum(1 for u in sorted_users if _sort_key(u) > caller_key) + 1
+            self_entry = {
+                "rank": caller_rank,
+                "name": caller.name,
+                "value": f"{caller_rate * 100:.1f}%（{int(caller.dice_win_count or 0)}/{int(caller.dice_total_count or 0)}）",
+            }
+    finally:
+        session.close()
+
+    await _render_and_send(
+        bot, event,
+        title="掷骰子胜率排行榜",
+        value_label="胜率",
+        page=page,
+        limit=limit,
+        entries=entries,
+        total_pages=total_pages,
+        file_prefix="leaderboard-dice-win-rate",
         self_entry=self_entry,
         theme=resolve_render_theme(),
     )

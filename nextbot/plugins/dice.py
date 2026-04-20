@@ -161,6 +161,12 @@ async def handle_dice(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
 
         net = payout - cost
         user.coins = coins + net
+        user.dice_total_count = int(user.dice_total_count or 0) + 1
+        if net > 0:
+            user.dice_win_count = int(user.dice_win_count or 0) + 1
+            user.dice_total_gain = int(user.dice_total_gain or 0) + net
+        elif net < 0:
+            user.dice_total_loss = int(user.dice_total_loss or 0) + abs(net)
         session.commit()
 
         final_coins = int(user.coins)

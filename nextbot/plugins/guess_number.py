@@ -203,6 +203,12 @@ async def handle_guess_number(bot: Bot, event: Event, arg: Message = CommandArg(
 
         net = payout - cost
         user.coins = coins + net
+        user.guess_total_count = int(user.guess_total_count or 0) + 1
+        if net > 0:
+            user.guess_win_count = int(user.guess_win_count or 0) + 1
+            user.guess_total_gain = int(user.guess_total_gain or 0) + net
+        elif net < 0:
+            user.guess_total_loss = int(user.guess_total_loss or 0) + abs(net)
         session.commit()
 
         final_coins = int(user.coins)
