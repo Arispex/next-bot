@@ -277,3 +277,55 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 58: 新增猜数字/掷骰子排行榜与 v1.1.1 发布
+
+**Date**: 2026-04-20
+**Task**: 新增猜数字/掷骰子排行榜与 v1.1.1 发布
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+本次会话围绕经济小游戏的统计与排行榜扩展，并完成 v1.1.1 版本发布。
+
+| 改动 | 说明 |
+|------|------|
+| 经济小游戏落统计 | 猜数字、掷骰子两个小游戏在 `user` 表新增 8 列（`guess_*` / `dice_*` 各 4 列），每次游玩落 total_count / win_count / total_gain / total_loss |
+| 新增 4 个排行榜 | 猜数字排行榜、猜数字胜率排行榜、掷骰子排行榜、掷骰子胜率排行榜；净收入榜按 `gain - loss` 排序，胜率榜按 `(win_rate, total_count)` 排序保证 tie-break |
+| 胜率榜 value 格式 | 百分比后追加显示 `(胜/总)`，如 `66.7%（6/9）` |
+| 抢劫成功率榜 value 格式对齐 | 原有「抢劫成功率排行榜」同步调整格式，与新榜保持一致 |
+| 新增 guest 权限 | `leaderboard.dice_income` / `leaderboard.dice_win_rate` / `leaderboard.guess_number_income` / `leaderboard.guess_number_win_rate` |
+| 发布 v1.1.1 | 打 tag 并通过 gh CLI 发布 GitHub release，覆盖 v1.1.0 之后 7 个提交（抢劫拆分、WebUI 同步开关、白名单同步、API 错误原因透传、两款小游戏、6 个新榜、格式对齐） |
+
+**Updated Files**:
+- `nextbot/db.py`
+- `bot.py`
+- `nextbot/plugins/dice.py`
+- `nextbot/plugins/guess_number.py`
+- `nextbot/plugins/leaderboard.py`
+
+**Release**: https://github.com/Arispex/nextbot/releases/tag/v1.1.1
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2d08c13` | (see git log) |
+| `fa436a2` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
