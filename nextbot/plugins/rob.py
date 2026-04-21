@@ -200,6 +200,9 @@ async def handle_rob(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
         # 金币检查
         robber_coins = int(robber.coins or 0)
         victim_coins = int(victim.coins or 0)
+        if victim_coins <= 0:
+            await bot.send(event, at + " 抢劫失败，对方身无分文")
+            return
         if robber_coins < min_coins_to_rob:
             await bot.send(event, at + f" 抢劫失败，你的金币不足 {min_coins_to_rob}")
             return
