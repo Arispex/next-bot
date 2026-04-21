@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Integer, String, Text, UniqueConstraint
 from sqlalchemy.engine import Engine, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
@@ -122,6 +122,39 @@ class SystemStat(Base):
     )
 
 
+class RedPacket(Base):
+    __tablename__ = "red_packet"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    sender_user_id: Mapped[str] = mapped_column(String, nullable=False)
+    type: Mapped[str] = mapped_column(String, nullable=False)
+    total_amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    total_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    remaining_amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    remaining_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String, nullable=False, default="active")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=db_now_utc_naive
+    )
+    closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=None)
+
+
+class RedPacketClaim(Base):
+    __tablename__ = "red_packet_claim"
+    __table_args__ = (
+        UniqueConstraint("red_packet_id", "claimer_user_id", name="uq_redpacket_claimer"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    red_packet_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    claimer_user_id: Mapped[str] = mapped_column(String, nullable=False)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    claimed_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=db_now_utc_naive
+    )
+
+
 def get_engine() -> Engine:
     return create_engine(
         DATABASE_URL,
@@ -141,6 +174,7 @@ def init_db() -> None:
     ensure_user_rob_schema()
     ensure_user_guess_schema()
     ensure_user_dice_schema()
+    ensure_red_packet_schema()
     ensure_default_groups()
     ensure_default_stats()
 
@@ -156,7 +190,7 @@ def ensure_default_groups() -> None:
     try:
         guest = session.query(Group).filter(Group.name == "guest").first()
         if guest is None:
-            session.add(Group(name="guest", permissions="about,ban.list,economy.dice,economy.guess_number,economy.rob,economy.sign,economy.transfer,leaderboard.coins,leaderboard.daily_sign,leaderboard.deaths,leaderboard.dice_income,leaderboard.dice_win_rate,leaderboard.fishing,leaderboard.guess_number_income,leaderboard.guess_number_win_rate,leaderboard.online_time,leaderboard.rob_income,leaderboard.rob_loss,leaderboard.rob_penalty,leaderboard.rob_success_rate,leaderboard.signin,leaderboard.streak,leaderboard.total_online_time,menu.admin,menu.root,menu.search,player_query.inventory.self,player_query.inventory.user,player_query.kick.self,player_query.online,player_query.progress,security.login.confirm,security.login.reject,server.list,server.send,user.info.self,user.info.user,user.register,user.whitelist.sync", inherits=""))
+            session.add(Group(name="guest", permissions="about,ban.list,economy.dice,economy.guess_number,economy.red_packet.grab,economy.red_packet.list_all,economy.red_packet.list_own,economy.red_packet.send,economy.red_packet.withdraw,economy.rob,economy.sign,economy.transfer,leaderboard.coins,leaderboard.daily_sign,leaderboard.deaths,leaderboard.dice_income,leaderboard.dice_win_rate,leaderboard.fishing,leaderboard.guess_number_income,leaderboard.guess_number_win_rate,leaderboard.online_time,leaderboard.rob_income,leaderboard.rob_loss,leaderboard.rob_penalty,leaderboard.rob_success_rate,leaderboard.signin,leaderboard.streak,leaderboard.total_online_time,menu.admin,menu.root,menu.search,player_query.inventory.self,player_query.inventory.user,player_query.kick.self,player_query.online,player_query.progress,security.login.confirm,security.login.reject,server.list,server.send,user.info.self,user.info.user,user.register,user.whitelist.sync", inherits=""))
 
         default = session.query(Group).filter(Group.name == "default").first()
         if default is None:
@@ -391,5 +425,45 @@ def ensure_user_dice_schema() -> None:
                 changed = True
         if changed:
             conn.commit()
+    finally:
+        conn.close()
+
+
+def ensure_red_packet_schema() -> None:
+    if not DB_PATH.exists():
+        return
+
+    conn = sqlite3.connect(str(DB_PATH))
+    try:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS "red_packet" (
+                "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                "name" TEXT NOT NULL UNIQUE,
+                "sender_user_id" TEXT NOT NULL,
+                "type" TEXT NOT NULL,
+                "total_amount" INTEGER NOT NULL,
+                "total_count" INTEGER NOT NULL,
+                "remaining_amount" INTEGER NOT NULL,
+                "remaining_count" INTEGER NOT NULL,
+                "status" TEXT NOT NULL DEFAULT 'active',
+                "created_at" DATETIME NOT NULL,
+                "closed_at" DATETIME
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS "red_packet_claim" (
+                "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                "red_packet_id" INTEGER NOT NULL,
+                "claimer_user_id" TEXT NOT NULL,
+                "amount" INTEGER NOT NULL,
+                "claimed_at" DATETIME NOT NULL,
+                CONSTRAINT "uq_redpacket_claimer" UNIQUE ("red_packet_id", "claimer_user_id")
+            )
+            """
+        )
+        conn.commit()
     finally:
         conn.close()

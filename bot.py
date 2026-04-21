@@ -18,6 +18,7 @@ from nextbot.db import (
     ensure_command_config_schema,
     ensure_default_groups,
     ensure_default_stats,
+    ensure_red_packet_schema,
     ensure_sign_record_schema,
     ensure_user_ban_schema,
     ensure_user_dice_schema,
@@ -159,6 +160,7 @@ async def _init_database() -> None:
         ensure_user_rob_schema()
         ensure_user_guess_schema()
         ensure_user_dice_schema()
+        ensure_red_packet_schema()
         ensure_default_groups()
         ensure_default_stats()
         logger.info("表结构检查完成")

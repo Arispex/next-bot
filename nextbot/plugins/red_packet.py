@@ -1,0 +1,486 @@
+from __future__ import annotations
+
+import random
+
+from nonebot import on_command
+from nonebot.adapters import Bot, Event, Message
+from nonebot.adapters.onebot.v11 import MessageSegment as OBV11MessageSegment
+from nonebot.log import logger
+from nonebot.params import CommandArg
+from sqlalchemy import update as sa_update
+from sqlalchemy.exc import IntegrityError
+
+from nextbot.command_config import command_control, get_current_param, raise_command_usage
+from nextbot.db import RedPacket, RedPacketClaim, User, get_session
+from nextbot.message_parser import parse_command_args_with_fallback
+from nextbot.permissions import require_permission
+from nextbot.time_utils import db_now_utc_naive, format_beijing_datetime
+
+send_matcher = on_command("发红包")
+grab_matcher = on_command("抢红包")
+withdraw_matcher = on_command("收回红包")
+list_own_matcher = on_command("我的红包")
+list_all_matcher = on_command("红包列表")
+
+_TYPE_ZH_TO_EN = {"平分": "equal", "拼手气": "lucky"}
+_TYPE_EN_TO_ZH = {v: k for k, v in _TYPE_ZH_TO_EN.items()}
+_STATUS_ZH = {"active": "进行中", "exhausted": "已抢完", "withdrawn": "已收回"}
+
+
+def _draw_equal(remaining_amount: int, remaining_count: int, base: int) -> int:
+    if remaining_count <= 1:
+        return remaining_amount
+    return min(base, remaining_amount - (remaining_count - 1))
+
+
+def _draw_lucky(remaining_amount: int, remaining_count: int) -> int:
+    if remaining_count <= 1:
+        return remaining_amount
+    avg = remaining_amount / remaining_count
+    high = max(1, int(avg * 2))
+    high = min(high, remaining_amount - (remaining_count - 1))
+    if high < 1:
+        return 1
+    return random.randint(1, high)
+
+
+def _claim_slot_atomic(session, packet_id: int, draw_amount: int) -> bool:
+    stmt = (
+        sa_update(RedPacket)
+        .where(RedPacket.id == packet_id)
+        .where(RedPacket.status == "active")
+        .where(RedPacket.remaining_count > 0)
+        .where(RedPacket.remaining_amount >= draw_amount)
+        .values(
+            remaining_count=RedPacket.remaining_count - 1,
+            remaining_amount=RedPacket.remaining_amount - draw_amount,
+        )
+    )
+    result = session.execute(stmt)
+    return result.rowcount > 0
+
+
+def _refund_slot_atomic(session, packet_id: int, draw_amount: int) -> None:
+    stmt = (
+        sa_update(RedPacket)
+        .where(RedPacket.id == packet_id)
+        .values(
+            remaining_count=RedPacket.remaining_count + 1,
+            remaining_amount=RedPacket.remaining_amount + draw_amount,
+        )
+    )
+    session.execute(stmt)
+
+
+@send_matcher.handle()
+@command_control(
+    command_key="economy.red_packet.send",
+    display_name="发红包",
+    permission="economy.red_packet.send",
+    description="发一个红包让别人抢",
+    usage="发红包 <平分/拼手气> <名称> <总金额> <个数>",
+    params={
+        "max_count": {
+            "type": "int",
+            "label": "最大个数",
+            "description": "单个红包最多多少个位置",
+            "required": False,
+            "default": 100,
+            "min": 1,
+            "max": 1000,
+        },
+        "min_amount_per_slot": {
+            "type": "int",
+            "label": "每份最低金额",
+            "description": "每个位置至少分到多少金币",
+            "required": False,
+            "default": 1,
+            "min": 1,
+        },
+    },
+)
+@require_permission("economy.red_packet.send")
+async def handle_send(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
+    args = parse_command_args_with_fallback(event, arg, "发红包")
+    if len(args) != 4:
+        raise_command_usage()
+
+    type_zh = args[0].strip()
+    if type_zh not in _TYPE_ZH_TO_EN:
+        await bot.send(event, at + " 发红包失败，类型仅支持 平分 或 拼手气")
+        return
+    type_en = _TYPE_ZH_TO_EN[type_zh]
+
+    name = args[1].strip()
+    if not name:
+        raise_command_usage()
+
+    try:
+        total_amount = int(args[2])
+        count = int(args[3])
+    except ValueError:
+        await bot.send(event, at + " 发红包失败，总金额和个数必须为正整数")
+        return
+    if total_amount <= 0 or count <= 0:
+        await bot.send(event, at + " 发红包失败，总金额和个数必须为正整数")
+        return
+
+    max_count = max(1, int(get_current_param("max_count", 100)))
+    min_amount_per_slot = max(1, int(get_current_param("min_amount_per_slot", 1)))
+
+    if count > max_count:
+        await bot.send(event, at + f" 发红包失败，个数超过上限 {max_count}")
+        return
+    if total_amount < count * min_amount_per_slot:
+        await bot.send(
+            event,
+            at + f" 发红包失败，总金额不足以每人至少 {min_amount_per_slot} 金币",
+        )
+        return
+
+    user_id = event.get_user_id()
+    session = get_session()
+    try:
+        existing = session.query(RedPacket).filter(RedPacket.name == name).first()
+        if existing is not None:
+            await bot.send(event, at + " 发红包失败，红包名称已被使用过，请换一个")
+            return
+
+        sender = session.query(User).filter(User.user_id == user_id).first()
+        if sender is None:
+            await bot.send(event, at + " 发红包失败，请先注册账号")
+            return
+        sender_coins = int(sender.coins or 0)
+        if sender_coins < total_amount:
+            await bot.send(
+                event,
+                at + f" 发红包失败，金币不足（当前 {sender_coins}，需 {total_amount}）",
+            )
+            return
+
+        sender.coins = sender_coins - total_amount
+        packet = RedPacket(
+            name=name,
+            sender_user_id=user_id,
+            type=type_en,
+            total_amount=total_amount,
+            total_count=count,
+            remaining_amount=total_amount,
+            remaining_count=count,
+            status="active",
+        )
+        session.add(packet)
+        session.commit()
+    finally:
+        session.close()
+
+    logger.info(
+        f"发红包成功：user_id={user_id}，name={name}，type={type_en}，"
+        f"total_amount={total_amount}，count={count}"
+    )
+    await bot.send(
+        event,
+        at
+        + f" 发红包成功，{name}（{type_zh}，总 {total_amount} 金币 / {count} 份）",
+    )
+
+
+@grab_matcher.handle()
+@command_control(
+    command_key="economy.red_packet.grab",
+    display_name="抢红包",
+    permission="economy.red_packet.grab",
+    description="凭红包名称抢红包",
+    usage="抢红包 <名称>",
+)
+@require_permission("economy.red_packet.grab")
+async def handle_grab(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
+    args = parse_command_args_with_fallback(event, arg, "抢红包")
+    if len(args) != 1:
+        raise_command_usage()
+
+    name = args[0].strip()
+    if not name:
+        raise_command_usage()
+
+    user_id = event.get_user_id()
+
+    session = get_session()
+    try:
+        packet = session.query(RedPacket).filter(RedPacket.name == name).first()
+        if packet is None:
+            await bot.send(event, at + " 抢红包失败，红包不存在")
+            return
+        if packet.status != "active":
+            await bot.send(event, at + " 抢红包失败，该红包已关闭")
+            return
+
+        already = (
+            session.query(RedPacketClaim)
+            .filter(RedPacketClaim.red_packet_id == packet.id)
+            .filter(RedPacketClaim.claimer_user_id == user_id)
+            .first()
+        )
+        if already is not None:
+            await bot.send(event, at + " 抢红包失败，你已经抢过这个红包了")
+            return
+
+        remaining_amount = int(packet.remaining_amount)
+        remaining_count = int(packet.remaining_count)
+        if remaining_count <= 0 or remaining_amount <= 0:
+            await bot.send(event, at + " 抢红包失败，该红包已关闭")
+            return
+
+        if packet.type == "lucky":
+            draw_amount = _draw_lucky(remaining_amount, remaining_count)
+        else:
+            base = int(packet.total_amount) // int(packet.total_count)
+            draw_amount = _draw_equal(remaining_amount, remaining_count, base)
+        draw_amount = max(1, draw_amount)
+
+        packet_id = int(packet.id)
+        packet_name = str(packet.name)
+        packet_type = str(packet.type)
+        packet_total_amount = int(packet.total_amount)
+        packet_total_count = int(packet.total_count)
+
+        if not _claim_slot_atomic(session, packet_id, draw_amount):
+            session.rollback()
+            await bot.send(event, at + " 抢红包失败，手慢了一步")
+            return
+
+        claim = RedPacketClaim(
+            red_packet_id=packet_id,
+            claimer_user_id=user_id,
+            amount=draw_amount,
+        )
+        session.add(claim)
+        try:
+            session.flush()
+        except IntegrityError:
+            session.rollback()
+            _refund_slot_atomic(session, packet_id, draw_amount)
+            session.commit()
+            await bot.send(event, at + " 抢红包失败，你已经抢过这个红包了")
+            return
+
+        grabber = session.query(User).filter(User.user_id == user_id).first()
+        if grabber is None:
+            session.rollback()
+            await bot.send(event, at + " 抢红包失败，请先注册账号")
+            return
+        grabber.coins = int(grabber.coins or 0) + draw_amount
+
+        refreshed_packet = session.query(RedPacket).filter(RedPacket.id == packet_id).first()
+        if refreshed_packet is not None and int(refreshed_packet.remaining_count) == 0:
+            refreshed_packet.status = "exhausted"
+            refreshed_packet.closed_at = db_now_utc_naive()
+
+        session.commit()
+        taken_amount = packet_total_amount - (
+            int(refreshed_packet.remaining_amount) if refreshed_packet is not None else 0
+        )
+    finally:
+        session.close()
+
+    type_zh = _TYPE_EN_TO_ZH.get(packet_type, packet_type)
+    logger.info(
+        f"抢红包成功：user_id={user_id}，name={packet_name}，type={packet_type}，"
+        f"amount={draw_amount}，taken={taken_amount}/{packet_total_amount}"
+    )
+    await bot.send(
+        event,
+        at
+        + f" 抢到了 {packet_name}（{type_zh}），获得 {draw_amount} 金币"
+        + f"（已抢 {taken_amount}/{packet_total_amount}）",
+    )
+
+
+@withdraw_matcher.handle()
+@command_control(
+    command_key="economy.red_packet.withdraw",
+    display_name="收回红包",
+    permission="economy.red_packet.withdraw",
+    description="收回自己发出的红包，剩余金额退回",
+    usage="收回红包 <名称>",
+)
+@require_permission("economy.red_packet.withdraw")
+async def handle_withdraw(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
+    args = parse_command_args_with_fallback(event, arg, "收回红包")
+    if len(args) != 1:
+        raise_command_usage()
+
+    name = args[0].strip()
+    if not name:
+        raise_command_usage()
+
+    user_id = event.get_user_id()
+
+    session = get_session()
+    try:
+        packet = session.query(RedPacket).filter(RedPacket.name == name).first()
+        if packet is None:
+            await bot.send(event, at + " 收回红包失败，红包不存在")
+            return
+        if packet.sender_user_id != user_id:
+            await bot.send(event, at + " 收回红包失败，只能收回自己发的红包")
+            return
+        if packet.status != "active":
+            await bot.send(event, at + " 收回红包失败，该红包已关闭")
+            return
+
+        packet_id = int(packet.id)
+        stmt = (
+            sa_update(RedPacket)
+            .where(RedPacket.id == packet_id)
+            .where(RedPacket.status == "active")
+            .values(status="withdrawn", closed_at=db_now_utc_naive())
+        )
+        result = session.execute(stmt)
+        if result.rowcount == 0:
+            session.rollback()
+            await bot.send(event, at + " 收回红包失败，该红包已关闭")
+            return
+
+        refreshed_packet = session.query(RedPacket).filter(RedPacket.id == packet_id).first()
+        refund_amount = int(refreshed_packet.remaining_amount) if refreshed_packet else 0
+
+        sender = session.query(User).filter(User.user_id == user_id).first()
+        if sender is None:
+            session.rollback()
+            await bot.send(event, at + " 收回红包失败，请先注册账号")
+            return
+        sender.coins = int(sender.coins or 0) + refund_amount
+        session.commit()
+    finally:
+        session.close()
+
+    logger.info(
+        f"收回红包成功：user_id={user_id}，name={name}，refund_amount={refund_amount}"
+    )
+    await bot.send(
+        event,
+        at + f" 收回红包 {name} 成功，退回 {refund_amount} 金币",
+    )
+
+
+def _format_packet_line_own(packet: RedPacket) -> str:
+    type_zh = _TYPE_EN_TO_ZH.get(str(packet.type), str(packet.type))
+    status_zh = _STATUS_ZH.get(str(packet.status), str(packet.status))
+    taken = int(packet.total_amount) - int(packet.remaining_amount)
+    created = format_beijing_datetime(packet.created_at)
+    return (
+        f"{packet.name} | {type_zh} | 已抢 {taken}/{packet.total_amount} | "
+        f"{status_zh} | {created}"
+    )
+
+
+def _format_packet_line_all(packet: RedPacket, sender_name: str) -> str:
+    type_zh = _TYPE_EN_TO_ZH.get(str(packet.type), str(packet.type))
+    return (
+        f"{packet.name} | 来自 {sender_name}（{packet.sender_user_id}） | {type_zh} | "
+        f"剩 {packet.remaining_amount}/{packet.total_amount}"
+        f"（{packet.remaining_count}/{packet.total_count} 份）"
+    )
+
+
+@list_own_matcher.handle()
+@command_control(
+    command_key="economy.red_packet.list_own",
+    display_name="我的红包",
+    permission="economy.red_packet.list_own",
+    description="查看自己发出过的红包",
+    usage="我的红包",
+    params={
+        "limit": {
+            "type": "int",
+            "label": "显示条数",
+            "description": "最多显示多少条",
+            "required": False,
+            "default": 10,
+            "min": 1,
+            "max": 50,
+        },
+    },
+)
+@require_permission("economy.red_packet.list_own")
+async def handle_list_own(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
+    limit = max(1, min(int(get_current_param("limit", 10)), 50))
+    user_id = event.get_user_id()
+
+    session = get_session()
+    try:
+        packets = (
+            session.query(RedPacket)
+            .filter(RedPacket.sender_user_id == user_id)
+            .order_by(RedPacket.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+    finally:
+        session.close()
+
+    if not packets:
+        await bot.send(event, at + " 你还没发过红包")
+        return
+
+    lines = ["我发出的红包："] + [_format_packet_line_own(p) for p in packets]
+    await bot.send(event, at + "\n" + "\n".join(lines))
+
+
+@list_all_matcher.handle()
+@command_control(
+    command_key="economy.red_packet.list_all",
+    display_name="红包列表",
+    permission="economy.red_packet.list_all",
+    description="查看当前可抢的红包",
+    usage="红包列表",
+    params={
+        "limit": {
+            "type": "int",
+            "label": "显示条数",
+            "description": "最多显示多少条",
+            "required": False,
+            "default": 10,
+            "min": 1,
+            "max": 50,
+        },
+    },
+)
+@require_permission("economy.red_packet.list_all")
+async def handle_list_all(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
+    at = OBV11MessageSegment.at(int(event.get_user_id()))
+    limit = max(1, min(int(get_current_param("limit", 10)), 50))
+
+    session = get_session()
+    try:
+        packets = (
+            session.query(RedPacket)
+            .filter(RedPacket.status == "active")
+            .order_by(RedPacket.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+        sender_ids = {p.sender_user_id for p in packets}
+        senders = (
+            session.query(User).filter(User.user_id.in_(sender_ids)).all()
+            if sender_ids
+            else []
+        )
+        name_map = {u.user_id: u.name for u in senders}
+    finally:
+        session.close()
+
+    if not packets:
+        await bot.send(event, at + " 当前没有可抢的红包")
+        return
+
+    lines = ["当前红包："]
+    for packet in packets:
+        sender_name = name_map.get(packet.sender_user_id, "未知")
+        lines.append(_format_packet_line_all(packet, sender_name))
+    await bot.send(event, at + "\n" + "\n".join(lines))
