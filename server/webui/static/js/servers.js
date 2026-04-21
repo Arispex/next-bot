@@ -117,6 +117,12 @@
       ],
     },
     {
+      section: "服务器标识",
+      items: [
+        { path: "serverName", label: "服务器名称", type: "text", placeholder: "我的服务器" },
+      ],
+    },
+    {
       section: "白名单",
       items: [
         { path: "whitelist.enabled", label: "启用白名单", type: "bool" },
@@ -142,6 +148,15 @@
       items: [
         { path: "sync.whitelist", label: "同步白名单", type: "bool" },
         { path: "sync.blacklist", label: "同步黑名单", type: "bool" },
+      ],
+    },
+    {
+      section: "玩家事件推送",
+      items: [
+        { path: "playerEvents.enabled", label: "启用玩家事件推送（总开关）", type: "bool" },
+        { path: "playerEvents.online", label: "推送上线事件", type: "bool" },
+        { path: "playerEvents.offline", label: "推送下线事件", type: "bool" },
+        { path: "playerEvents.message", label: "同步聊天消息", type: "bool" },
       ],
     },
   ];
