@@ -126,8 +126,8 @@ rob_matcher = on_command("抢劫")
             "label": "最低金币要求",
             "description": "发起抢劫时双方的最低金币要求",
             "required": False,
-            "default": 0,
-            "min": 0,
+            "default": 1,
+            "min": 1,
         },
     },
 )
@@ -169,7 +169,7 @@ async def handle_rob(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
     crit_rate = max(0, min(int(get_current_param("crit_rate", 10)), 100))
     counter_rate = max(0, min(int(get_current_param("counter_rate", 20)), 100))
     police_rate = max(0, min(int(get_current_param("police_rate", 10)), 100))
-    min_coins_to_rob = max(0, int(get_current_param("min_coins_to_rob", 100)))
+    min_coins_to_rob = max(1, int(get_current_param("min_coins_to_rob", 1)))
 
     session = get_session()
     try:
@@ -202,6 +202,9 @@ async def handle_rob(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
         victim_coins = int(victim.coins or 0)
         if victim_coins <= 0:
             await bot.send(event, at + " 抢劫失败，对方身无分文")
+            return
+        if robber_coins <= 0:
+            await bot.send(event, at + " 抢劫失败，你身无分文")
             return
         if robber_coins < min_coins_to_rob:
             await bot.send(event, at + f" 抢劫失败，你的金币不足 {min_coins_to_rob}")
