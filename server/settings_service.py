@@ -54,6 +54,10 @@ _FIELD_SPECS: tuple[FieldSpec, ...] = (
     FieldSpec("chat_sync_mode", "CHAT_SYNC_MODE"),
     FieldSpec("chat_sync_group_id", "CHAT_SYNC_GROUP_ID"),
     FieldSpec("chat_sync_template", "CHAT_SYNC_TEMPLATE"),
+    FieldSpec("group_welcome_enabled", "GROUP_WELCOME_ENABLED"),
+    FieldSpec("group_welcome_template", "GROUP_WELCOME_TEMPLATE"),
+    FieldSpec("group_farewell_enabled", "GROUP_FAREWELL_ENABLED"),
+    FieldSpec("group_farewell_template", "GROUP_FAREWELL_TEMPLATE"),
 )
 
 _FIELD_BY_NAME: dict[str, FieldSpec] = {item.field: item for item in _FIELD_SPECS}
@@ -110,6 +114,8 @@ def _serialize_env_value(field: str, value: Any) -> str:
         return str(value)
     if isinstance(value, bool):
         return "true" if value else "false"
+    if field in {"group_welcome_template", "group_farewell_template"}:
+        return str(value).replace("\\", "\\\\").replace("\n", "\\n").replace("\r", "")
     return str(value)
 
 
@@ -294,6 +300,10 @@ def _normalize_field(field: str, value: Any) -> Any:
         return _coerce_string(value, field=field, allow_empty=True)
     if field == "chat_sync_template":
         return _coerce_string(value, field=field, allow_empty=True)
+    if field in {"group_welcome_enabled", "group_farewell_enabled"}:
+        return _coerce_bool(value, field=field)
+    if field in {"group_welcome_template", "group_farewell_template"}:
+        return _coerce_string(value, field=field, allow_empty=True)
     raise SettingsValidationError("不支持的配置项", field=field)
 
 
@@ -327,6 +337,11 @@ def _load_value_from_env(field: str, raw_value: str) -> Any:
         return _coerce_port(raw_value, field=field)
     if field == "login_notify_all_groups":
         return _coerce_bool(raw_value, field=field)
+    if field in {"group_welcome_enabled", "group_farewell_enabled"}:
+        return _coerce_bool(raw_value, field=field)
+    if field in {"group_welcome_template", "group_farewell_template"}:
+        unescaped = raw_value.replace("\\n", "\n").replace("\\\\", "\\")
+        return _normalize_field(field, unescaped)
     return _normalize_field(field, raw_value)
 
 
@@ -368,6 +383,18 @@ def _load_value_from_config(field: str, config: Any) -> Any:
         raw_value = ""
     if field == "chat_sync_template" and raw_value is None:
         raw_value = "[{server}]{player}：{message}"
+    if field in {"group_welcome_enabled", "group_farewell_enabled"}:
+        return _coerce_bool(raw_value if raw_value is not None else False, field=field)
+    if field == "group_welcome_template":
+        if raw_value is None:
+            raw_value = "{at} 欢迎加入本群！\n请先阅读群公告~"
+        else:
+            raw_value = str(raw_value).replace("\\n", "\n").replace("\\\\", "\\")
+    if field == "group_farewell_template":
+        if raw_value is None:
+            raw_value = "{nickname}（{user_id}）离开了本群"
+        else:
+            raw_value = str(raw_value).replace("\\n", "\n").replace("\\\\", "\\")
     return _normalize_field(field, raw_value if raw_value is not None else "")
 
 

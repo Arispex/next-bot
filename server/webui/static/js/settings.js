@@ -25,6 +25,10 @@
   const chatSyncModeInput = document.getElementById("field-chat-sync-mode");
   const chatSyncGroupIdInput = document.getElementById("field-chat-sync-group-id");
   const chatSyncTemplateInput = document.getElementById("field-chat-sync-template");
+  const groupWelcomeEnabledInput = document.getElementById("field-group-welcome-enabled");
+  const groupWelcomeTemplateInput = document.getElementById("field-group-welcome-template");
+  const groupFarewellEnabledInput = document.getElementById("field-group-farewell-enabled");
+  const groupFarewellTemplateInput = document.getElementById("field-group-farewell-template");
   const tokenToggleButton = document.getElementById("token-toggle-btn");
 
   const requiredNodesReady = Boolean(
@@ -53,6 +57,10 @@
     chatSyncModeInput &&
     chatSyncGroupIdInput &&
     chatSyncTemplateInput &&
+    groupWelcomeEnabledInput &&
+    groupWelcomeTemplateInput &&
+    groupFarewellEnabledInput &&
+    groupFarewellTemplateInput &&
     tokenToggleButton
   );
   if (!requiredNodesReady) {
@@ -81,6 +89,10 @@
     chat_sync_mode: "消息同步范围",
     chat_sync_group_id: "消息同步群号",
     chat_sync_template: "消息同步模板",
+    group_welcome_enabled: "入群欢迎启用",
+    group_welcome_template: "入群欢迎模板",
+    group_farewell_enabled: "退群送别启用",
+    group_farewell_template: "退群送别模板",
   };
   const RENDER_THEME_LABELS = {
     auto: "跟随时间",
@@ -304,6 +316,10 @@
       chat_sync_mode: chatSyncModeInput.value,
       chat_sync_group_id: chatSyncGroupIdInput.value.trim(),
       chat_sync_template: chatSyncTemplateInput.value,
+      group_welcome_enabled: groupWelcomeEnabledInput.value === "true",
+      group_welcome_template: groupWelcomeTemplateInput.value,
+      group_farewell_enabled: groupFarewellEnabledInput.value === "true",
+      group_farewell_template: groupFarewellTemplateInput.value,
     };
   };
 
@@ -333,6 +349,14 @@
     chatSyncGroupIdInput.value = String(data.chat_sync_group_id ?? "");
     chatSyncTemplateInput.value = String(
       data.chat_sync_template ?? "[{server}]{player}：{message}",
+    );
+    groupWelcomeEnabledInput.value = data.group_welcome_enabled ? "true" : "false";
+    groupWelcomeTemplateInput.value = String(
+      data.group_welcome_template ?? "{at} 欢迎加入本群！\n请先阅读群公告~",
+    );
+    groupFarewellEnabledInput.value = data.group_farewell_enabled ? "true" : "false";
+    groupFarewellTemplateInput.value = String(
+      data.group_farewell_template ?? "{nickname}（{user_id}）离开了本群",
     );
     updateArrayPreviews();
   };

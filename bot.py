@@ -55,6 +55,10 @@ DEFAULT_ENV_CONTENT = (
     "CHAT_SYNC_MODE=all\n"
     "CHAT_SYNC_GROUP_ID=\n"
     "CHAT_SYNC_TEMPLATE=[{server}]{player}：{message}\n"
+    "GROUP_WELCOME_ENABLED=false\n"
+    "GROUP_WELCOME_TEMPLATE={at} 欢迎加入本群！\\n请先阅读群公告~\n"
+    "GROUP_FAREWELL_ENABLED=false\n"
+    "GROUP_FAREWELL_TEMPLATE={nickname}（{user_id}）离开了本群\n"
 )
 
 

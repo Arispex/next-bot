@@ -205,5 +205,37 @@
         </label>
       </div>
     </section>
+
+    <section class="form-section">
+      <h3 class="section-title">入群 / 退群消息</h3>
+      <div class="form-grid">
+        <label class="form-item">
+          <span class="form-label">启用入群欢迎</span>
+          <select id="field-group-welcome-enabled" class="input select">
+            <option value="false">关闭</option>
+            <option value="true">开启</option>
+          </select>
+          <span class="form-help">开启后新成员加入 GROUP_ID 列表里的群时自动发送欢迎消息。</span>
+        </label>
+        <label class="form-item">
+          <span class="form-label">入群欢迎模板</span>
+          <textarea id="field-group-welcome-template" class="input" rows="3" placeholder="{at} 欢迎加入本群！&#10;请先阅读群公告~"></textarea>
+          <span class="form-help">支持占位符：{at}（@新成员）、{nickname}（QQ 昵称，拉取失败时回退为 QQ 号）、{user_id}（QQ 号）。支持多行。</span>
+        </label>
+        <label class="form-item">
+          <span class="form-label">启用退群送别</span>
+          <select id="field-group-farewell-enabled" class="input select">
+            <option value="false">关闭</option>
+            <option value="true">开启</option>
+          </select>
+          <span class="form-help">开启后成员退出 GROUP_ID 列表里的群时自动发送送别消息。</span>
+        </label>
+        <label class="form-item">
+          <span class="form-label">退群送别模板</span>
+          <textarea id="field-group-farewell-template" class="input" rows="2" placeholder="{nickname}（{user_id}）离开了本群"></textarea>
+          <span class="form-help">支持占位符：{nickname}、{user_id}（{at} 在退群场景下无意义，建议不用）。支持多行。</span>
+        </label>
+      </div>
+    </section>
   </div>
 </section>
