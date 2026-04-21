@@ -60,18 +60,6 @@ def _claim_slot_atomic(session, packet_id: int, draw_amount: int) -> bool:
     return result.rowcount > 0
 
 
-def _refund_slot_atomic(session, packet_id: int, draw_amount: int) -> None:
-    stmt = (
-        sa_update(RedPacket)
-        .where(RedPacket.id == packet_id)
-        .values(
-            remaining_count=RedPacket.remaining_count + 1,
-            remaining_amount=RedPacket.remaining_amount + draw_amount,
-        )
-    )
-    session.execute(stmt)
-
-
 @send_matcher.handle()
 @command_control(
     command_key="economy.red_packet.send",
@@ -115,6 +103,9 @@ async def handle_send(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     name = args[1].strip()
     if not name:
         raise_command_usage()
+    if len(name) > 32:
+        await bot.send(event, at + " 发红包失败，红包名称长度不能超过 32 字符")
+        return
 
     try:
         total_amount = int(args[2])
@@ -261,8 +252,6 @@ async def handle_grab(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
             session.flush()
         except IntegrityError:
             session.rollback()
-            _refund_slot_atomic(session, packet_id, draw_amount)
-            session.commit()
             await bot.send(event, at + " 抢红包失败，你已经抢过这个红包了")
             return
 
