@@ -9,6 +9,7 @@ from nonebot.log import logger
 from nonebot.params import CommandArg
 
 from nextbot.access_control import get_owner_ids
+from nextbot.ban_core import apply_ban_to_db, sync_user_to_blacklist
 from nextbot.command_config import command_control, get_current_param, raise_command_usage
 from nextbot.db import Server, User, get_session
 from nextbot.message_parser import parse_command_args_with_fallback, resolve_user_id_arg_with_fallback
@@ -61,7 +62,7 @@ async def handle_ban(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
     if parse_error == "name_ambiguous":
         await bot.send(event, at + " 封禁失败，用户名存在重复，请使用 QQ 或 @用户")
         return
-    if parse_error:
+    if parse_error or target_user_id is None:
         raise_command_usage()
 
     args = parse_command_args_with_fallback(event, arg, "封禁用户")
@@ -71,86 +72,28 @@ async def handle_ban(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
     if not reason:
         raise_command_usage()
 
-    session = get_session()
-    try:
-        user = session.query(User).filter(User.user_id == target_user_id).first()
-        if user is None:
-            await bot.send(event, at + " 封禁失败，未找到该用户")
-            return
-
-        if str(user.user_id) in get_owner_ids():
-            await bot.send(event, at + " 封禁失败，不能封禁 Owner")
-            return
-
-        if user.is_banned:
-            await bot.send(event, at + f" 封禁失败，该用户已被封禁，原因：{user.ban_reason}")
-            return
-
-        user.is_banned = True
-        user.banned_at = db_now_utc_naive()
-        user.ban_reason = reason
-        session.commit()
-
-        user_name = user.name
-        user_qq = user.user_id
-    finally:
-        session.close()
+    result = apply_ban_to_db(target_user_id, reason)
+    if result.code == "not_found":
+        await bot.send(event, at + " 封禁失败，未找到该用户")
+        return
+    if result.code == "owner_protected":
+        await bot.send(event, at + " 封禁失败，不能封禁 Owner")
+        return
+    if result.code == "already_banned":
+        await bot.send(event, at + f" 封禁失败，该用户已被封禁，原因：{result.previous_reason}")
+        return
 
     logger.info(
-        f"用户封禁成功：user_id={user_qq} name={user_name} reason={reason}"
+        f"用户封禁成功：user_id={result.user_qq} name={result.user_name} reason={reason}"
     )
 
-    session = get_session()
-    try:
-        servers = session.query(Server).order_by(Server.id.asc()).all()
-    finally:
-        session.close()
-
-    lines: list[str] = [f"封禁成功，用户 {user_name}（{user_qq}）已被封禁，原因：{reason}"]
-
-    if not servers:
-        lines.append("同步服务器黑名单结果：暂无服务器")
-    else:
-        lines.append("同步服务器黑名单结果：")
-        for server in servers:
-            try:
-                check_response = await request_server_api(
-                    server,
-                    "/nextbot/blacklist",
-                )
-            except TShockRequestError:
-                lines.append(f"{server.id}.{server.name}：添加失败，无法连接服务器")
-                continue
-
-            if is_success(check_response):
-                entries = check_response.payload.get("entries", [])
-                already_exists = any(
-                    str(e.get("username", "")).lower() == user_name.lower()
-                    for e in entries
-                    if isinstance(e, dict)
-                )
-                if already_exists:
-                    lines.append(f"{server.id}.{server.name}：已存在于黑名单中")
-                    continue
-
-            try:
-                response = await request_server_api(
-                    server,
-                    f"/nextbot/blacklist/add/{user_name}",
-                    params={"reason": reason},
-                )
-            except TShockRequestError:
-                lines.append(f"{server.id}.{server.name}：添加失败，无法连接服务器")
-                continue
-
-            if is_success(response):
-                lines.append(f"{server.id}.{server.name}：添加成功")
-            else:
-                error_msg = get_error_reason(response)
-                lines.append(f"{server.id}.{server.name}：添加失败，{error_msg}")
+    lines: list[str] = [
+        f"封禁成功，用户 {result.user_name}（{result.user_qq}）已被封禁，原因：{reason}"
+    ]
+    lines.extend(await sync_user_to_blacklist(result.user_name, reason))
 
     logger.info(
-        f"封禁用户黑名单同步完成：user_id={user_qq} name={user_name} server_count={len(servers)}"
+        f"封禁用户黑名单同步完成：user_id={result.user_qq} name={result.user_name}"
     )
     await bot.send(event, at + "\n" + "\n".join(lines))
 

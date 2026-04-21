@@ -58,6 +58,8 @@ _FIELD_SPECS: tuple[FieldSpec, ...] = (
     FieldSpec("group_welcome_template", "GROUP_WELCOME_TEMPLATE"),
     FieldSpec("group_farewell_enabled", "GROUP_FAREWELL_ENABLED"),
     FieldSpec("group_farewell_template", "GROUP_FAREWELL_TEMPLATE"),
+    FieldSpec("group_auto_ban_on_leave_enabled", "GROUP_AUTO_BAN_ON_LEAVE_ENABLED"),
+    FieldSpec("group_auto_ban_on_leave_notify", "GROUP_AUTO_BAN_ON_LEAVE_NOTIFY"),
 )
 
 _FIELD_BY_NAME: dict[str, FieldSpec] = {item.field: item for item in _FIELD_SPECS}
@@ -304,6 +306,8 @@ def _normalize_field(field: str, value: Any) -> Any:
         return _coerce_bool(value, field=field)
     if field in {"group_welcome_template", "group_farewell_template"}:
         return _coerce_string(value, field=field, allow_empty=True)
+    if field in {"group_auto_ban_on_leave_enabled", "group_auto_ban_on_leave_notify"}:
+        return _coerce_bool(value, field=field)
     raise SettingsValidationError("不支持的配置项", field=field)
 
 
@@ -342,6 +346,8 @@ def _load_value_from_env(field: str, raw_value: str) -> Any:
     if field in {"group_welcome_template", "group_farewell_template"}:
         unescaped = raw_value.replace("\\n", "\n").replace("\\\\", "\\")
         return _normalize_field(field, unescaped)
+    if field in {"group_auto_ban_on_leave_enabled", "group_auto_ban_on_leave_notify"}:
+        return _coerce_bool(raw_value, field=field)
     return _normalize_field(field, raw_value)
 
 
@@ -395,6 +401,8 @@ def _load_value_from_config(field: str, config: Any) -> Any:
             raw_value = "{nickname}（{user_id}）离开了本群"
         else:
             raw_value = str(raw_value).replace("\\n", "\n").replace("\\\\", "\\")
+    if field in {"group_auto_ban_on_leave_enabled", "group_auto_ban_on_leave_notify"}:
+        return _coerce_bool(raw_value if raw_value is not None else False, field=field)
     return _normalize_field(field, raw_value if raw_value is not None else "")
 
 

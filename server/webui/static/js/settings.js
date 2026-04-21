@@ -29,6 +29,8 @@
   const groupWelcomeTemplateInput = document.getElementById("field-group-welcome-template");
   const groupFarewellEnabledInput = document.getElementById("field-group-farewell-enabled");
   const groupFarewellTemplateInput = document.getElementById("field-group-farewell-template");
+  const groupAutoBanOnLeaveEnabledInput = document.getElementById("field-group-auto-ban-on-leave-enabled");
+  const groupAutoBanOnLeaveNotifyInput = document.getElementById("field-group-auto-ban-on-leave-notify");
   const tokenToggleButton = document.getElementById("token-toggle-btn");
 
   const requiredNodesReady = Boolean(
@@ -61,6 +63,8 @@
     groupWelcomeTemplateInput &&
     groupFarewellEnabledInput &&
     groupFarewellTemplateInput &&
+    groupAutoBanOnLeaveEnabledInput &&
+    groupAutoBanOnLeaveNotifyInput &&
     tokenToggleButton
   );
   if (!requiredNodesReady) {
@@ -93,6 +97,8 @@
     group_welcome_template: "入群欢迎模板",
     group_farewell_enabled: "退群送别启用",
     group_farewell_template: "退群送别模板",
+    group_auto_ban_on_leave_enabled: "退群自动封禁",
+    group_auto_ban_on_leave_notify: "退群封禁通知",
   };
   const RENDER_THEME_LABELS = {
     auto: "跟随时间",
@@ -320,6 +326,8 @@
       group_welcome_template: groupWelcomeTemplateInput.value,
       group_farewell_enabled: groupFarewellEnabledInput.value === "true",
       group_farewell_template: groupFarewellTemplateInput.value,
+      group_auto_ban_on_leave_enabled: groupAutoBanOnLeaveEnabledInput.value === "true",
+      group_auto_ban_on_leave_notify: groupAutoBanOnLeaveNotifyInput.value === "true",
     };
   };
 
@@ -358,6 +366,8 @@
     groupFarewellTemplateInput.value = String(
       data.group_farewell_template ?? "{nickname}（{user_id}）离开了本群",
     );
+    groupAutoBanOnLeaveEnabledInput.value = data.group_auto_ban_on_leave_enabled ? "true" : "false";
+    groupAutoBanOnLeaveNotifyInput.value = data.group_auto_ban_on_leave_notify ? "true" : "false";
     updateArrayPreviews();
   };
 

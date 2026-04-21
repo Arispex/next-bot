@@ -14,10 +14,15 @@ from nonebot.adapters.onebot.v11 import (
 )
 from nonebot.log import logger
 
-from nextbot.access_control import get_group_ids
+from nextbot.access_control import get_group_ids, get_owner_ids
+from nextbot.ban_core import apply_ban_to_db, sync_user_to_blacklist
+from nextbot.db import User, get_session
 
 increase_matcher = on_notice()
 decrease_matcher = on_notice()
+auto_ban_on_leave_matcher = on_notice()
+
+_AUTO_BAN_REASON = "退群自动封禁"
 
 
 def _group_allowed(group_id: int) -> bool:
@@ -119,3 +124,76 @@ async def handle_group_decrease(bot: Bot, event: GroupDecreaseNoticeEvent) -> No
         template=template,
         event_label="退群送别",
     )
+
+
+def _lookup_user_name_and_ban_status(user_id: str) -> tuple[str | None, bool]:
+    session = get_session()
+    try:
+        user = session.query(User).filter(User.user_id == user_id).first()
+        if user is None:
+            return None, False
+        return user.name, bool(user.is_banned)
+    finally:
+        session.close()
+
+
+@auto_ban_on_leave_matcher.handle()
+async def handle_auto_ban_on_leave(bot: Bot, event: GroupDecreaseNoticeEvent) -> None:
+    if not isinstance(bot, OBV11Bot):
+        return
+    if not _group_allowed(event.group_id):
+        return
+    config = nonebot.get_driver().config
+    if not bool(getattr(config, "group_auto_ban_on_leave_enabled", False)):
+        return
+
+    user_id = str(event.user_id)
+    if user_id in get_owner_ids():
+        logger.info(
+            f"退群自动封禁跳过 Owner：group_id={event.group_id}，user_id={user_id}"
+        )
+        return
+
+    user_name, already_banned = _lookup_user_name_and_ban_status(user_id)
+    if user_name is None:
+        logger.info(
+            f"退群自动封禁跳过未注册用户：group_id={event.group_id}，user_id={user_id}"
+        )
+        return
+    if already_banned:
+        logger.info(
+            f"退群自动封禁跳过已封禁用户：group_id={event.group_id}，user_id={user_id}"
+        )
+        return
+
+    sub_type = str(event.sub_type or "")
+    reason = f"{_AUTO_BAN_REASON}（{sub_type}）" if sub_type else _AUTO_BAN_REASON
+
+    result = apply_ban_to_db(user_id, reason)
+    if result.code != "banned":
+        logger.warning(
+            f"退群自动封禁未落库：group_id={event.group_id}，user_id={user_id}，code={result.code}"
+        )
+        return
+
+    sync_lines = await sync_user_to_blacklist(result.user_name, reason)
+    logger.info(
+        f"退群自动封禁完成：group_id={event.group_id}，user_id={user_id}，"
+        f"name={result.user_name}，sub_type={sub_type}"
+    )
+
+    if not bool(getattr(config, "group_auto_ban_on_leave_notify", False)):
+        return
+
+    lines = [
+        f"封禁成功，用户 {result.user_name}（{result.user_qq}）已被封禁，原因：{reason}"
+    ]
+    lines.extend(sync_lines)
+    try:
+        await bot.call_api(
+            "send_group_msg", group_id=event.group_id, message="\n".join(lines)
+        )
+    except Exception as exc:
+        logger.warning(
+            f"退群自动封禁通知发送失败：group_id={event.group_id}，user_id={user_id}，reason={exc}"
+        )

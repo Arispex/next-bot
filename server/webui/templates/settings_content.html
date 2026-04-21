@@ -237,5 +237,27 @@
         </label>
       </div>
     </section>
+
+    <section class="form-section">
+      <h3 class="section-title">退群自动封禁</h3>
+      <div class="form-grid">
+        <label class="form-item">
+          <span class="form-label">启用退群自动封禁</span>
+          <select id="field-group-auto-ban-on-leave-enabled" class="input select">
+            <option value="false">关闭</option>
+            <option value="true">开启</option>
+          </select>
+          <span class="form-help">开启后，GROUP_ID 列表里的群成员主动退群或被踢时自动加入黑名单并同步到所有服务器。Owner 永远豁免。此开关独立于「退群送别」，互不影响。</span>
+        </label>
+        <label class="form-item">
+          <span class="form-label">发送封禁结果到群</span>
+          <select id="field-group-auto-ban-on-leave-notify" class="input select">
+            <option value="false">关闭</option>
+            <option value="true">开启</option>
+          </select>
+          <span class="form-help">开启后把封禁结果（与「封禁用户」命令一致的多行消息）发送到对应群。</span>
+        </label>
+      </div>
+    </section>
   </div>
 </section>

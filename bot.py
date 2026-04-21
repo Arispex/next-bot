@@ -59,6 +59,8 @@ DEFAULT_ENV_CONTENT = (
     "GROUP_WELCOME_TEMPLATE={at} 欢迎加入本群！\\n请先阅读群公告~\n"
     "GROUP_FAREWELL_ENABLED=false\n"
     "GROUP_FAREWELL_TEMPLATE={nickname}（{user_id}）离开了本群\n"
+    "GROUP_AUTO_BAN_ON_LEAVE_ENABLED=false\n"
+    "GROUP_AUTO_BAN_ON_LEAVE_NOTIFY=false\n"
 )
 
 
