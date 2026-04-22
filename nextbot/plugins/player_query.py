@@ -188,7 +188,9 @@ async def handle_online(
         return
 
     lines: list[str] = []
-    for server in servers:
+    for i, server in enumerate(servers):
+        if i > 0:
+            lines.append("")
         lines.append(f"{server.id}.{server.name}")
         try:
             response = await request_server_api(
