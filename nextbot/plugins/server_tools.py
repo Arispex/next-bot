@@ -64,7 +64,7 @@ def _extract_response_text(payload: dict[str, object]) -> str:
     permission="server_tools.execute",
     description="在指定服务器执行指令",
     usage="执行 <服务器 ID> <命令>",
-    category="服务器系统",
+    category="服务器工具",
 )
 @require_permission("server_tools.execute")
 async def handle_execute(
@@ -116,7 +116,7 @@ async def handle_execute(
     permission="server_tools.map_image",
     description="生成当前世界地图图片",
     usage="查看地图 <服务器 ID>",
-    category="服务器系统",
+    category="服务器工具",
 )
 @require_permission("server_tools.map_image")
 async def handle_map_image(
@@ -174,7 +174,7 @@ async def handle_map_image(
     permission="server_tools.download_map",
     description="下载当前世界的 .wld 文件",
     usage="下载地图 <服务器 ID>",
-    category="服务器系统",
+    category="服务器工具",
 )
 @require_permission("server_tools.download_map")
 async def handle_download_map(

@@ -27,7 +27,7 @@ test_matcher = on_command("测试连通性")
     permission="server.add",
     description="新增服务器",
     usage="添加服务器 <服务器名称> <IP> <游戏端口> <RestAPI 端口> <RestAPI Token>",
-    category="服务器系统",
+    category="服务器管理",
 )
 @require_permission("server.add")
 async def handle_add_server(
@@ -68,7 +68,7 @@ async def handle_add_server(
     permission="server.delete",
     description="删除服务器",
     usage="删除服务器 <服务器 ID>",
-    category="服务器系统",
+    category="服务器管理",
 )
 @require_permission("server.delete")
 async def handle_delete_server(
@@ -113,7 +113,7 @@ async def handle_delete_server(
     permission="server.list",
     description="输出服务器列表",
     usage="服务器列表",
-    category="服务器系统",
+    category="服务器管理",
 )
 @require_permission("server.list")
 async def handle_list_servers(
@@ -152,7 +152,7 @@ async def handle_list_servers(
     permission="server.test",
     description="测试服务器 REST API 连通性",
     usage="测试连通性 <服务器 ID>",
-    category="服务器系统",
+    category="服务器管理",
 )
 @require_permission("server.test")
 async def handle_test_server(
