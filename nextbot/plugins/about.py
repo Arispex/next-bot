@@ -37,7 +37,7 @@ def _to_base64_image_uri(path: Path) -> str:
     permission="about",
     description="显示项目关于页面",
     usage="关于",
-    category="关于",
+    category="系统功能",
 )
 @require_permission("about")
 async def handle_about(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:

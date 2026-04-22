@@ -29,6 +29,7 @@ from nextbot.tshock_api import (
     is_success,
     request_server_api,
 )
+from nextbot.text_utils import reply_failure
 
 online_matcher = on_command("在线")
 self_kick_matcher = on_command("自踢")
@@ -262,11 +263,11 @@ async def handle_self_kick(
         session.close()
 
     if user is None:
-        await bot.send(event, at + " 执行失败，未注册账号")
+        await bot.send(event, at + " " + reply_failure("执行", "未注册账号"))
         return
 
     if not servers:
-        await bot.send(event, at + " 执行失败，暂无服务器")
+        await bot.send(event, at + " " + reply_failure("执行", "暂无服务器"))
         return
 
     lines: list[str] = []

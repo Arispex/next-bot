@@ -14,6 +14,18 @@ from nextbot.command_config import command_control, get_current_param, raise_com
 from nextbot.db import RedPacket, RedPacketClaim, User, get_session
 from nextbot.message_parser import parse_command_args_with_fallback
 from nextbot.permissions import require_permission
+from nextbot.text_utils import (
+    EMOJI_CHART,
+    EMOJI_COIN,
+    EMOJI_GAME,
+    EMOJI_LIST,
+    EMOJI_RED_PACKET,
+    reply_block,
+    reply_failure,
+    reply_info,
+    reply_list,
+    reply_success,
+)
 from nextbot.time_utils import db_now_utc_naive, format_beijing_datetime
 
 send_matcher = on_command("发红包")
@@ -97,7 +109,7 @@ async def handle_send(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
 
     type_zh = args[0].strip()
     if type_zh not in _TYPE_ZH_TO_EN:
-        await bot.send(event, at + " 发红包失败，类型仅支持 平分 或 拼手气")
+        await bot.send(event, at + " " + reply_failure("发红包", "类型仅支持 平分 或 拼手气"))
         return
     type_en = _TYPE_ZH_TO_EN[type_zh]
 
@@ -105,29 +117,29 @@ async def handle_send(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     if not name:
         raise_command_usage()
     if len(name) > 32:
-        await bot.send(event, at + " 发红包失败，红包名称长度不能超过 32 字符")
+        await bot.send(event, at + " " + reply_failure("发红包", "红包名称长度不能超过 32 字符"))
         return
 
     try:
         total_amount = int(args[2])
         count = int(args[3])
     except ValueError:
-        await bot.send(event, at + " 发红包失败，总金额和个数必须为正整数")
+        await bot.send(event, at + " " + reply_failure("发红包", "总金额和个数必须为正整数"))
         return
     if total_amount <= 0 or count <= 0:
-        await bot.send(event, at + " 发红包失败，总金额和个数必须为正整数")
+        await bot.send(event, at + " " + reply_failure("发红包", "总金额和个数必须为正整数"))
         return
 
     max_count = max(1, int(get_current_param("max_count", 100)))
     min_amount_per_slot = max(1, int(get_current_param("min_amount_per_slot", 1)))
 
     if count > max_count:
-        await bot.send(event, at + f" 发红包失败，个数超过上限 {max_count}")
+        await bot.send(event, at + " " + reply_failure("发红包", f"个数超过上限 {max_count}"))
         return
     if total_amount < count * min_amount_per_slot:
         await bot.send(
             event,
-            at + f" 发红包失败，总金额不足以每人至少 {min_amount_per_slot} 金币",
+            at + " " + reply_failure("发红包", f"总金额不足以每人至少 {min_amount_per_slot} 金币"),
         )
         return
 
@@ -136,18 +148,18 @@ async def handle_send(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     try:
         existing = session.query(RedPacket).filter(RedPacket.name == name).first()
         if existing is not None:
-            await bot.send(event, at + " 发红包失败，红包名称已被使用过，请换一个")
+            await bot.send(event, at + " " + reply_failure("发红包", "红包名称已被使用过，请换一个"))
             return
 
         sender = session.query(User).filter(User.user_id == user_id).first()
         if sender is None:
-            await bot.send(event, at + " 发红包失败，请先注册账号")
+            await bot.send(event, at + " " + reply_failure("发红包", "请先注册账号"))
             return
         sender_coins = int(sender.coins or 0)
         if sender_coins < total_amount:
             await bot.send(
                 event,
-                at + f" 发红包失败，金币不足（当前 {sender_coins}，需 {total_amount}）",
+                at + " " + reply_failure("发红包", f"金币不足（当前 {sender_coins}，需 {total_amount}）"),
             )
             return
 
@@ -173,8 +185,15 @@ async def handle_send(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     )
     await bot.send(
         event,
-        at
-        + f" 发红包成功，{name}（{type_zh}，总 {total_amount} 金币 / {count} 份）",
+        at + " " + reply_block(
+            f"{EMOJI_RED_PACKET} 发红包成功",
+            [
+                f"{EMOJI_LIST} 名称：{name}",
+                f"{EMOJI_GAME} 类型：{type_zh}",
+                f"{EMOJI_COIN} 总金额：{total_amount} 金币 / {count} 份",
+            ],
+            hint=f"输入 `抢红包 {name}` 即可参与",
+        ),
     )
 
 
@@ -204,10 +223,10 @@ async def handle_grab(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     try:
         packet = session.query(RedPacket).filter(RedPacket.name == name).first()
         if packet is None:
-            await bot.send(event, at + " 抢红包失败，红包不存在")
+            await bot.send(event, at + " " + reply_failure("抢红包", "红包不存在"))
             return
         if packet.status != "active":
-            await bot.send(event, at + " 抢红包失败，该红包已关闭")
+            await bot.send(event, at + " " + reply_failure("抢红包", "该红包已关闭"))
             return
 
         already = (
@@ -217,13 +236,13 @@ async def handle_grab(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
             .first()
         )
         if already is not None:
-            await bot.send(event, at + " 抢红包失败，你已经抢过这个红包了")
+            await bot.send(event, at + " " + reply_failure("抢红包", "你已经抢过这个红包了"))
             return
 
         remaining_amount = int(packet.remaining_amount)
         remaining_count = int(packet.remaining_count)
         if remaining_count <= 0 or remaining_amount <= 0:
-            await bot.send(event, at + " 抢红包失败，该红包已关闭")
+            await bot.send(event, at + " " + reply_failure("抢红包", "该红包已关闭"))
             return
 
         if packet.type == "lucky":
@@ -241,7 +260,7 @@ async def handle_grab(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
 
         if not _claim_slot_atomic(session, packet_id, draw_amount):
             session.rollback()
-            await bot.send(event, at + " 抢红包失败，手慢了一步")
+            await bot.send(event, at + " " + reply_failure("抢红包", "手慢了一步"))
             return
 
         claim = RedPacketClaim(
@@ -254,13 +273,13 @@ async def handle_grab(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
             session.flush()
         except IntegrityError:
             session.rollback()
-            await bot.send(event, at + " 抢红包失败，你已经抢过这个红包了")
+            await bot.send(event, at + " " + reply_failure("抢红包", "你已经抢过这个红包了"))
             return
 
         grabber = session.query(User).filter(User.user_id == user_id).first()
         if grabber is None:
             session.rollback()
-            await bot.send(event, at + " 抢红包失败，请先注册账号")
+            await bot.send(event, at + " " + reply_failure("抢红包", "请先注册账号"))
             return
         grabber.coins = int(grabber.coins or 0) + draw_amount
 
@@ -283,9 +302,14 @@ async def handle_grab(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     )
     await bot.send(
         event,
-        at
-        + f" 抢到了 {packet_name}（{type_zh}），获得 {draw_amount} 金币"
-        + f"（已抢 {taken_amount}/{packet_total_amount}）",
+        at + " " + reply_block(
+            f"{EMOJI_RED_PACKET} 抢红包成功",
+            [
+                f"{EMOJI_LIST} 名称：{packet_name}（{type_zh}）",
+                f"{EMOJI_COIN} 获得 {draw_amount} 金币",
+                f"{EMOJI_CHART} 已抢 {taken_amount}/{packet_total_amount}",
+            ],
+        ),
     )
 
 
@@ -315,13 +339,13 @@ async def handle_withdraw(bot: Bot, event: Event, arg: Message = CommandArg()) -
     try:
         packet = session.query(RedPacket).filter(RedPacket.name == name).first()
         if packet is None:
-            await bot.send(event, at + " 收回红包失败，红包不存在")
+            await bot.send(event, at + " " + reply_failure("收回红包", "红包不存在"))
             return
         if packet.sender_user_id != user_id:
-            await bot.send(event, at + " 收回红包失败，只能收回自己发的红包")
+            await bot.send(event, at + " " + reply_failure("收回红包", "只能收回自己发的红包"))
             return
         if packet.status != "active":
-            await bot.send(event, at + " 收回红包失败，该红包已关闭")
+            await bot.send(event, at + " " + reply_failure("收回红包", "该红包已关闭"))
             return
 
         packet_id = int(packet.id)
@@ -334,7 +358,7 @@ async def handle_withdraw(bot: Bot, event: Event, arg: Message = CommandArg()) -
         result = session.execute(stmt)
         if result.rowcount == 0:
             session.rollback()
-            await bot.send(event, at + " 收回红包失败，该红包已关闭")
+            await bot.send(event, at + " " + reply_failure("收回红包", "该红包已关闭"))
             return
 
         refreshed_packet = session.query(RedPacket).filter(RedPacket.id == packet_id).first()
@@ -343,7 +367,7 @@ async def handle_withdraw(bot: Bot, event: Event, arg: Message = CommandArg()) -
         sender = session.query(User).filter(User.user_id == user_id).first()
         if sender is None:
             session.rollback()
-            await bot.send(event, at + " 收回红包失败，请先注册账号")
+            await bot.send(event, at + " " + reply_failure("收回红包", "请先注册账号"))
             return
         sender.coins = int(sender.coins or 0) + refund_amount
         session.commit()
@@ -355,7 +379,10 @@ async def handle_withdraw(bot: Bot, event: Event, arg: Message = CommandArg()) -
     )
     await bot.send(
         event,
-        at + f" 收回红包 {name} 成功，退回 {refund_amount} 金币",
+        at + " " + reply_block(
+            reply_success("收回红包", f"「{name}」"),
+            [f"{EMOJI_COIN} 退回 {refund_amount} 金币"],
+        ),
     )
 
 
@@ -418,11 +445,14 @@ async def handle_list_own(bot: Bot, event: Event, arg: Message = CommandArg()) -
         session.close()
 
     if not packets:
-        await bot.send(event, at + " 你还没发过红包")
+        await bot.send(event, at + " " + reply_info("你还没发过红包"))
         return
 
-    lines = ["我发出的红包："] + [_format_packet_line_own(p) for p in packets]
-    await bot.send(event, at + "\n" + "\n".join(lines))
+    items = [_format_packet_line_own(p) for p in packets]
+    await bot.send(
+        event,
+        at + " " + reply_list("我的红包", items, title_emoji=EMOJI_RED_PACKET),
+    )
 
 
 @list_all_matcher.handle()
@@ -470,11 +500,19 @@ async def handle_list_all(bot: Bot, event: Event, arg: Message = CommandArg()) -
         session.close()
 
     if not packets:
-        await bot.send(event, at + " 当前没有可抢的红包")
+        await bot.send(event, at + " " + reply_info("当前没有可抢的红包"))
         return
 
-    lines = ["当前红包："]
-    for packet in packets:
-        sender_name = name_map.get(packet.sender_user_id, "未知")
-        lines.append(_format_packet_line_all(packet, sender_name))
-    await bot.send(event, at + "\n" + "\n".join(lines))
+    items = [
+        _format_packet_line_all(packet, name_map.get(packet.sender_user_id, "未知"))
+        for packet in packets
+    ]
+    await bot.send(
+        event,
+        at + " " + reply_list(
+            "当前红包",
+            items,
+            title_emoji=EMOJI_RED_PACKET,
+            hint="输入 `抢红包 名称` 参与",
+        ),
+    )

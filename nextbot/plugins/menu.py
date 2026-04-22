@@ -15,6 +15,19 @@ from nextbot.command_config import (
 from nextbot.message_parser import parse_command_args_with_fallback
 from nextbot.render_utils import resolve_render_theme
 from nextbot.permissions import require_permission
+from nextbot.text_utils import (
+    EMOJI_CHART,
+    EMOJI_COIN,
+    EMOJI_GROUP,
+    EMOJI_LIST,
+    EMOJI_LOCK,
+    EMOJI_RED_PACKET,
+    EMOJI_SECURE,
+    EMOJI_SERVER,
+    EMOJI_USER,
+    reply_failure,
+    reply_list,
+)
 from nextbot.time_utils import beijing_filename_timestamp
 from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
 from server.web_server import create_menu_page
@@ -28,7 +41,6 @@ MENU_SCREENSHOT_OPTIONS = ScreenshotOptions(
 )
 
 CATEGORY_ORDER = [
-    "关于",
     "用户系统",
     "经济系统",
     "红包系统",
@@ -41,6 +53,21 @@ CATEGORY_ORDER = [
     "系统功能",
 ]
 _UNCATEGORIZED = "未分类"
+
+CATEGORY_EMOJI = {
+    "用户系统": EMOJI_USER,
+    "经济系统": EMOJI_COIN,
+    "红包系统": EMOJI_RED_PACKET,
+    "排行榜": EMOJI_CHART,
+    "服务器管理": EMOJI_SERVER,
+    "服务器工具": EMOJI_SERVER,
+    "玩家查询": EMOJI_USER,
+    "安全管理": EMOJI_SECURE,
+    "权限管理": EMOJI_LOCK,
+    "系统功能": EMOJI_LIST,
+    _UNCATEGORIZED: EMOJI_LIST,
+    "群组管理": EMOJI_GROUP,
+}
 
 
 def _to_base64_image_uri(path: Path) -> str:
@@ -122,14 +149,22 @@ async def handle_menu(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     cat_names, by_cat = _group_by_category(list_command_configs())
 
     if not cat_names:
-        await bot.send(event, "暂无可用命令")
+        await bot.send(event, reply_failure("查看菜单", "暂无可用命令"))
         return
 
     if not args:
-        lines = ["📋 命令菜单（输入 `菜单 编号` 或 `菜单 分类名` 查看具体命令）"]
-        for i, cat in enumerate(cat_names, 1):
-            lines.append(f"{i}. {cat}（{len(by_cat[cat])} 个命令）")
-        await bot.send(event, "\n".join(lines))
+        items = [
+            f"{CATEGORY_EMOJI.get(cat, EMOJI_LIST)} {i}. {cat}（{len(by_cat[cat])}）"
+            for i, cat in enumerate(cat_names, 1)
+        ]
+        await bot.send(
+            event,
+            reply_list(
+                "命令菜单",
+                items,
+                hint="输入 `菜单 编号` 或 `菜单 分类名` 查看具体命令",
+            ),
+        )
         return
 
     if len(args) != 1:
@@ -148,7 +183,7 @@ async def handle_menu(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
         target_cat = selector
 
     if target_cat is None:
-        await bot.send(event, f"未找到分类：{selector}")
+        await bot.send(event, reply_failure("查看菜单", f"未找到分类「{selector}」"))
         return
 
     render_commands = [
@@ -192,8 +227,8 @@ async def handle_search_command(
     ]
 
     if not matched:
-        await bot.send(event, f"未找到包含「{keyword}」的命令")
+        await bot.send(event, reply_failure("搜索命令", f"未找到包含「{keyword}」的命令"))
         return
 
-    lines = [item["display_name"] for item in matched]
-    await bot.send(event, "\n".join(lines))
+    items = [str(item.get("display_name") or "") for item in matched]
+    await bot.send(event, reply_list(f"搜索「{keyword}」", items))

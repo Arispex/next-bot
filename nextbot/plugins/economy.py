@@ -18,6 +18,15 @@ from nextbot.command_config import (
 from nextbot.db import User, UserSignRecord, get_session
 from nextbot.message_parser import parse_command_args_with_fallback, resolve_user_id_arg_with_fallback
 from nextbot.permissions import require_permission
+from nextbot.text_utils import (
+    EMOJI_CHART,
+    EMOJI_COIN,
+    EMOJI_FIRE,
+    EMOJI_USER,
+    reply_block,
+    reply_failure,
+    reply_success,
+)
 from nextbot.time_utils import beijing_today_text
 
 sign_matcher = on_command("签到")
@@ -137,10 +146,10 @@ async def handle_sign(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     max_streak_bonus = int(get_current_param("max_streak_bonus", 50))
 
     if min_coins < 0 or max_coins < 0 or streak_bonus_per_day < 0 or max_streak_bonus < 0:
-        await bot.send(event, at + " 签到失败，签到奖励配置不能为负数")
+        await bot.send(event, at + " " + reply_failure("签到", "签到奖励配置不能为负数"))
         return
     if min_coins > max_coins:
-        await bot.send(event, at + " 签到失败，签到奖励配置错误：最小值不能大于最大值")
+        await bot.send(event, at + " " + reply_failure("签到", "签到奖励配置错误：最小值不能大于最大值"))
         return
 
     user_id = event.get_user_id()
@@ -149,12 +158,12 @@ async def handle_sign(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     try:
         user = session.query(User).filter(User.user_id == user_id).first()
         if user is None:
-            await bot.send(event, at + " 签到失败，请先注册账号")
+            await bot.send(event, at + " " + reply_failure("签到", "请先注册账号"))
             return
 
         last_sign_date = str(user.last_sign_date or "").strip()
         if bool(user.signed_today) or last_sign_date == today_text:
-            await bot.send(event, at + " 签到失败，今天已经签到过了")
+            await bot.send(event, at + " " + reply_failure("签到", "今天已经签到过了"))
             return
 
         base_reward = random.randint(min_coins, max_coins)
@@ -193,22 +202,28 @@ async def handle_sign(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
             f"streak={streak_result.next_streak} coins={user.coins} today_order={today_order}"
         )
         lines = [
-            "签到成功",
-            f"签到排名：{today_order}",
-            f"获得金币：{base_reward}",
-            f"连续签到：{streak_result.next_streak} 天",
+            f"{EMOJI_CHART} 签到排名：第 {today_order} 位",
+            f"{EMOJI_COIN} 获得金币：{base_reward}",
+            f"{EMOJI_FIRE} 连续签到：{streak_result.next_streak} 天",
         ]
         if enable_streak:
-            lines.append(f"连续签到奖励：{streak_result.streak_reward}")
+            lines.append(f"{EMOJI_COIN} 连续签到奖励：{streak_result.streak_reward}")
         else:
-            lines.append("连续签到奖励：未开启")
+            lines.append(f"{EMOJI_COIN} 连续签到奖励：未开启")
         lines.extend(
             [
-                f"本次总获得：{total_reward}",
-                f"当前金币：{user.coins}",
+                f"{EMOJI_COIN} 本次总获得：{total_reward}",
+                f"{EMOJI_COIN} 当前金币：{user.coins}",
             ]
         )
-        await bot.send(event, at + "\n" + "\n".join(lines))
+        await bot.send(
+            event,
+            at + " " + reply_block(
+                reply_success("签到"),
+                lines,
+                hint="明日继续签到可获得连续奖励",
+            ),
+        )
     finally:
         session.close()
 
@@ -235,45 +250,45 @@ async def handle_transfer(bot: Bot, event: Event, arg: Message = CommandArg()) -
     if parse_error == "missing":
         raise_command_usage()
     if parse_error == "name_not_found":
-        await bot.send(event, at + " 转账失败，用户名称不存在")
+        await bot.send(event, at + " " + reply_failure("转账", "用户名称不存在"))
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, at + " 转账失败，用户名称不唯一，请使用用户 QQ 或 @用户")
+        await bot.send(event, at + " " + reply_failure("转账", "用户名称不唯一，请使用用户 QQ 或 @用户"))
         return
     if target_user_id is None:
-        await bot.send(event, at + " 转账失败，用户参数解析失败")
+        await bot.send(event, at + " " + reply_failure("转账", "用户参数解析失败"))
         return
 
     amount_str = args[1].strip()
     try:
         amount = int(amount_str)
     except ValueError:
-        await bot.send(event, at + " 转账失败，数量必须为整数")
+        await bot.send(event, at + " " + reply_failure("转账", "数量必须为整数"))
         return
     if amount <= 0:
-        await bot.send(event, at + " 转账失败，数量必须大于 0")
+        await bot.send(event, at + " " + reply_failure("转账", "数量必须大于 0"))
         return
 
     sender_id = event.get_user_id()
     if sender_id == target_user_id:
-        await bot.send(event, at + " 转账失败，不能转账给自己")
+        await bot.send(event, at + " " + reply_failure("转账", "不能转账给自己"))
         return
 
     session = get_session()
     try:
         sender = session.query(User).filter(User.user_id == sender_id).first()
         if sender is None:
-            await bot.send(event, at + " 转账失败，请先注册账号")
+            await bot.send(event, at + " " + reply_failure("转账", "请先注册账号"))
             return
 
         target = session.query(User).filter(User.user_id == target_user_id).first()
         if target is None:
-            await bot.send(event, at + " 转账失败，目标用户不存在")
+            await bot.send(event, at + " " + reply_failure("转账", "目标用户不存在"))
             return
 
         sender_coins = int(sender.coins or 0)
         if sender_coins < amount:
-            await bot.send(event, at + f" 转账失败，金币不足（当前：{sender_coins}）")
+            await bot.send(event, at + " " + reply_failure("转账", f"金币不足（当前：{sender_coins}）"))
             return
 
         sender.coins = sender_coins - amount
@@ -287,7 +302,14 @@ async def handle_transfer(bot: Bot, event: Event, arg: Message = CommandArg()) -
         )
         await bot.send(
             event,
-            at + f"\n转账成功\n转出金币：{amount}\n转账对象：{target.name}（{target.user_id}）\n当前余额：{sender.coins}",
+            at + " " + reply_block(
+                reply_success("转账"),
+                [
+                    f"{EMOJI_COIN} 转出金币：{amount}",
+                    f"{EMOJI_USER} 转账对象：{target.name}（{target.user_id}）",
+                    f"{EMOJI_COIN} 当前余额：{sender.coins}",
+                ],
+            ),
         )
     finally:
         session.close()
@@ -319,25 +341,25 @@ async def handle_add_coins(
     if parse_error == "missing":
         raise_command_usage()
     if parse_error == "name_not_found":
-        await bot.send(event, at + " 添加失败，用户名称不存在")
+        await bot.send(event, at + " " + reply_failure("添加", "用户名称不存在"))
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, at + " 添加失败，用户名称不唯一，请使用用户 QQ 或 @用户")
+        await bot.send(event, at + " " + reply_failure("添加", "用户名称不唯一，请使用用户 QQ 或 @用户"))
         return
     if target_user_id is None:
-        await bot.send(event, at + " 添加失败，用户参数解析失败")
+        await bot.send(event, at + " " + reply_failure("添加", "用户参数解析失败"))
         return
 
     amount = _parse_positive_int(args[1])
     if amount is None:
-        await bot.send(event, at + " 添加失败，数量必须为正整数")
+        await bot.send(event, at + " " + reply_failure("添加", "数量必须为正整数"))
         return
 
     session = get_session()
     try:
         user = session.query(User).filter(User.user_id == target_user_id).first()
         if user is None:
-            await bot.send(event, at + " 添加失败，用户不存在")
+            await bot.send(event, at + " " + reply_failure("添加", "用户不存在"))
             return
 
         user.coins += amount
@@ -350,7 +372,13 @@ async def handle_add_coins(
     logger.info(
         f"添加金币成功：user_id={target_user_id} name={user_name} amount={amount} coins={coins}"
     )
-    await bot.send(event, at + f"\n添加成功\n当前金币：{coins}")
+    await bot.send(
+        event,
+        at + " " + reply_block(
+            reply_success("添加金币", f"+{amount}"),
+            [f"{EMOJI_COIN} 当前金币：{coins}"],
+        ),
+    )
 
 
 @remove_coins_matcher.handle()
@@ -379,29 +407,29 @@ async def handle_remove_coins(
     if parse_error == "missing":
         raise_command_usage()
     if parse_error == "name_not_found":
-        await bot.send(event, at + " 扣除失败，用户名称不存在")
+        await bot.send(event, at + " " + reply_failure("扣除", "用户名称不存在"))
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, at + " 扣除失败，用户名称不唯一，请使用用户 QQ 或 @用户")
+        await bot.send(event, at + " " + reply_failure("扣除", "用户名称不唯一，请使用用户 QQ 或 @用户"))
         return
     if target_user_id is None:
-        await bot.send(event, at + " 扣除失败，用户参数解析失败")
+        await bot.send(event, at + " " + reply_failure("扣除", "用户参数解析失败"))
         return
 
     amount = _parse_positive_int(args[1])
     if amount is None:
-        await bot.send(event, at + " 扣除失败，数量必须为正整数")
+        await bot.send(event, at + " " + reply_failure("扣除", "数量必须为正整数"))
         return
 
     session = get_session()
     try:
         user = session.query(User).filter(User.user_id == target_user_id).first()
         if user is None:
-            await bot.send(event, at + " 扣除失败，用户不存在")
+            await bot.send(event, at + " " + reply_failure("扣除", "用户不存在"))
             return
 
         if user.coins < amount:
-            await bot.send(event, at + f" 扣除失败，金币不足，当前仅有 {user.coins}")
+            await bot.send(event, at + " " + reply_failure("扣除", f"金币不足，当前仅有 {user.coins}"))
             return
 
         user.coins -= amount
@@ -414,4 +442,10 @@ async def handle_remove_coins(
     logger.info(
         f"扣除金币成功：user_id={target_user_id} name={user_name} amount={amount} coins={coins}"
     )
-    await bot.send(event, at + f"\n扣除成功\n当前金币：{coins}")
+    await bot.send(
+        event,
+        at + " " + reply_block(
+            reply_success("扣除金币", f"-{amount}"),
+            [f"{EMOJI_COIN} 当前金币：{coins}"],
+        ),
+    )

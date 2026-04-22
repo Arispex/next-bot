@@ -21,6 +21,8 @@ from nextbot.tshock_api import (
     is_success,
     request_server_api,
 )
+from nextbot.text_utils import reply_failure
+
 
 execute_matcher = on_command("执行")
 map_image_matcher = on_command("查看地图")
@@ -84,7 +86,7 @@ async def handle_execute(
         session.close()
 
     if server is None:
-        await bot.send(event, at + " 执行失败，服务器不存在")
+        await bot.send(event, at + " " + reply_failure("执行", "服务器不存在"))
         return
 
     try:
@@ -94,11 +96,11 @@ async def handle_execute(
             params={"cmd": command},
         )
     except TShockRequestError:
-        await bot.send(event, at + " 执行失败，无法连接服务器")
+        await bot.send(event, at + " " + reply_failure("执行", "无法连接服务器"))
         return
 
     if not is_success(response):
-        await bot.send(event, at + f" 执行失败，{get_error_reason(response)}")
+        await bot.send(event, at + " " + reply_failure("执行", f"{get_error_reason(response)}"))
         return
 
     result_text = _extract_response_text(response.payload)

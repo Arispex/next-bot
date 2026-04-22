@@ -12,6 +12,7 @@ from nextbot.db import User, get_session
 from nextbot.message_parser import parse_command_args_with_fallback
 from nextbot.permissions import require_permission
 from nextbot.time_utils import db_now_utc_naive
+from nextbot.text_utils import EMOJI_COIN, EMOJI_GAME, EMOJI_TARGET, reply_block, reply_failure
 
 guess_matcher = on_command("猜数字")
 
@@ -123,28 +124,28 @@ async def handle_guess_number(bot: Bot, event: Event, arg: Message = CommandArg(
     try:
         guess = int(args[0])
     except ValueError:
-        await bot.send(event, at + f" 猜数字失败，请输入 1-{range_max} 的整数")
+        await bot.send(event, at + " " + reply_failure("猜数字", f"请输入 1-{range_max} 的整数"))
         return
     if guess < 1 or guess > range_max:
-        await bot.send(event, at + f" 猜数字失败，数字范围为 1-{range_max}")
+        await bot.send(event, at + " " + reply_failure("猜数字", f"数字范围为 1-{range_max}"))
         return
 
     try:
         cost = int(args[1])
     except ValueError:
-        await bot.send(event, at + " 猜数字失败，投入金币必须为正整数")
+        await bot.send(event, at + " " + reply_failure("猜数字", "投入金币必须为正整数"))
         return
     if cost <= 0:
-        await bot.send(event, at + " 猜数字失败，投入金币必须为正整数")
+        await bot.send(event, at + " " + reply_failure("猜数字", "投入金币必须为正整数"))
         return
 
     min_cost = max(1, int(get_current_param("min_cost", 10)))
     max_cost = max(0, int(get_current_param("max_cost", 0)))
     if cost < min_cost:
-        await bot.send(event, at + f" 猜数字失败，最低投入 {min_cost} 金币")
+        await bot.send(event, at + " " + reply_failure("猜数字", f"最低投入 {min_cost} 金币"))
         return
     if max_cost > 0 and cost > max_cost:
-        await bot.send(event, at + f" 猜数字失败，最高投入 {max_cost} 金币")
+        await bot.send(event, at + " " + reply_failure("猜数字", f"最高投入 {max_cost} 金币"))
         return
 
     user_id = event.get_user_id()
@@ -159,19 +160,19 @@ async def handle_guess_number(bot: Bot, event: Event, arg: Message = CommandArg(
             if elapsed < timedelta(seconds=cooldown_seconds):
                 remaining = timedelta(seconds=cooldown_seconds) - elapsed
                 remaining_s = int(remaining.total_seconds())
-                await bot.send(event, at + f" 猜数字失败，冷却中，还需等待 {remaining_s} 秒")
+                await bot.send(event, at + " " + reply_failure("猜数字", f"冷却中，还需等待 {remaining_s} 秒"))
                 return
 
     session = get_session()
     try:
         user = session.query(User).filter(User.user_id == user_id).first()
         if user is None:
-            await bot.send(event, at + " 猜数字失败，请先注册账号")
+            await bot.send(event, at + " " + reply_failure("猜数字", "请先注册账号"))
             return
 
         coins = int(user.coins or 0)
         if coins < cost:
-            await bot.send(event, at + f" 猜数字失败，金币不足（当前 {coins}）")
+            await bot.send(event, at + " " + reply_failure("猜数字", f"金币不足（当前 {coins}）"))
             return
 
         # 生成答案
@@ -218,20 +219,21 @@ async def handle_guess_number(bot: Bot, event: Event, arg: Message = CommandArg(
 
     _cooldown_map[user_id] = now
 
-    lines = [f"答案是 {answer}，你猜的是 {guess}，差 {diff}"]
+    head_emoji = EMOJI_TARGET if diff == 0 else EMOJI_GAME
+    lines = [f"🎯 答案 {answer}，你猜 {guess}（差 {diff}）"]
     if net > 0:
-        lines.append(f"{result_type}！投入 {cost}，获得 {payout} 金币，净赚 {net} 金币")
+        lines.append(f"{EMOJI_COIN} {result_type}！投入 {cost}，获得 {payout}，净赚 {net} 金币")
     elif net == 0:
-        lines.append(f"{result_type}！投入 {cost}，刚好持平")
+        lines.append(f"⚖️ {result_type}！投入 {cost} 金币，刚好持平")
     else:
         if payout > 0:
-            lines.append(f"{result_type}！投入 {cost}，返还 {payout} 金币，损失 {abs(net)} 金币")
+            lines.append(f"❌ {result_type}！投入 {cost}，返还 {payout}，损失 {abs(net)} 金币")
         else:
-            lines.append(f"{result_type}！投入 {cost}，全部损失")
-    lines.append(f"当前金币：{final_coins}")
+            lines.append(f"❌ {result_type}！投入 {cost} 金币，全部损失")
+    lines.append(f"{EMOJI_COIN} 当前金币：{final_coins}")
 
     logger.info(
         f"猜数字结果：user_id={user_id} guess={guess} answer={answer} diff={diff} "
         f"result={result_type} cost={cost} payout={payout} net={net}"
     )
-    await bot.send(event, at + "\n" + "\n".join(lines))
+    await bot.send(event, at + " " + reply_block(f"{head_emoji} 猜数字", lines))

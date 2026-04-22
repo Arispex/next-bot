@@ -18,6 +18,7 @@ from nextbot.tshock_api import (
     is_success,
     request_server_api,
 )
+from nextbot.text_utils import reply_failure
 
 confirm_login_matcher = on_command("允许登入")
 reject_login_matcher = on_command("拒绝登入")
@@ -113,10 +114,10 @@ async def handle_confirm_login(
     at = OBV11MessageSegment.at(int(user_id))
     user, servers = _load_self_and_servers(user_id)
     if user is None:
-        await bot.send(event, at + " 允许失败，未注册账号")
+        await bot.send(event, at + " " + reply_failure("允许", "未注册账号"))
         return
     if not servers:
-        await bot.send(event, at + " 允许失败，暂无服务器")
+        await bot.send(event, at + " " + reply_failure("允许", "暂无服务器"))
         return
 
     success_count, results = await _broadcast_login_action(
@@ -152,10 +153,10 @@ async def handle_reject_login(
     at = OBV11MessageSegment.at(int(user_id))
     user, servers = _load_self_and_servers(user_id)
     if user is None:
-        await bot.send(event, at + " 拒绝失败，未注册账号")
+        await bot.send(event, at + " " + reply_failure("拒绝", "未注册账号"))
         return
     if not servers:
-        await bot.send(event, at + " 拒绝失败，暂无服务器")
+        await bot.send(event, at + " " + reply_failure("拒绝", "暂无服务器"))
         return
 
     success_count, results = await _broadcast_login_action(

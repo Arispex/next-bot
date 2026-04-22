@@ -21,6 +21,7 @@ from nextbot.permissions import (
 )
 from nextbot.render_utils import resolve_render_theme
 from nextbot.time_utils import beijing_filename_timestamp
+from nextbot.text_utils import reply_failure
 from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
 from server.web_server import create_admin_list_page
 
@@ -70,13 +71,13 @@ async def handle_add_user_perm(
     if parse_error == "missing":
         raise_command_usage()
     if parse_error == "name_not_found":
-        await bot.send(event, at + " 添加失败，用户名称不存在")
+        await bot.send(event, at + " " + reply_failure("添加", "用户名称不存在"))
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, at + " 添加失败，用户名称不唯一，请使用用户 QQ 或 @用户")
+        await bot.send(event, at + " " + reply_failure("添加", "用户名称不唯一，请使用用户 QQ 或 @用户"))
         return
     if user_id is None:
-        await bot.send(event, at + " 添加失败，用户参数解析失败")
+        await bot.send(event, at + " " + reply_failure("添加", "用户参数解析失败"))
         return
 
     permission = args[1]
@@ -84,7 +85,7 @@ async def handle_add_user_perm(
     try:
         user = session.query(User).filter(User.user_id == user_id).first()
         if user is None:
-            await bot.send(event, at + " 添加失败，用户不存在")
+            await bot.send(event, at + " " + reply_failure("添加", "用户不存在"))
             return
 
         user.permissions = add_permission(user.permissions, permission)
@@ -122,13 +123,13 @@ async def handle_remove_user_perm(
     if parse_error == "missing":
         raise_command_usage()
     if parse_error == "name_not_found":
-        await bot.send(event, at + " 删除失败，用户名称不存在")
+        await bot.send(event, at + " " + reply_failure("删除", "用户名称不存在"))
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, at + " 删除失败，用户名称不唯一，请使用用户 QQ 或 @用户")
+        await bot.send(event, at + " " + reply_failure("删除", "用户名称不唯一，请使用用户 QQ 或 @用户"))
         return
     if user_id is None:
-        await bot.send(event, at + " 删除失败，用户参数解析失败")
+        await bot.send(event, at + " " + reply_failure("删除", "用户参数解析失败"))
         return
 
     permission = args[1]
@@ -136,7 +137,7 @@ async def handle_remove_user_perm(
     try:
         user = session.query(User).filter(User.user_id == user_id).first()
         if user is None:
-            await bot.send(event, at + " 删除失败，用户不存在")
+            await bot.send(event, at + " " + reply_failure("删除", "用户不存在"))
             return
 
         user.permissions = remove_permission(user.permissions, permission)
@@ -174,13 +175,13 @@ async def handle_set_user_group(
     if parse_error == "missing":
         raise_command_usage()
     if parse_error == "name_not_found":
-        await bot.send(event, at + " 修改失败，用户名称不存在")
+        await bot.send(event, at + " " + reply_failure("修改", "用户名称不存在"))
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, at + " 修改失败，用户名称不唯一，请使用用户 QQ 或 @用户")
+        await bot.send(event, at + " " + reply_failure("修改", "用户名称不唯一，请使用用户 QQ 或 @用户"))
         return
     if target_user_id is None:
-        await bot.send(event, at + " 修改失败，用户参数解析失败")
+        await bot.send(event, at + " " + reply_failure("修改", "用户参数解析失败"))
         return
 
     group_name = args[1]
@@ -188,12 +189,12 @@ async def handle_set_user_group(
     try:
         user = session.query(User).filter(User.user_id == target_user_id).first()
         if user is None:
-            await bot.send(event, at + " 修改失败，用户不存在")
+            await bot.send(event, at + " " + reply_failure("修改", "用户不存在"))
             return
 
         group = session.query(Group).filter(Group.name == group_name).first()
         if group is None:
-            await bot.send(event, at + " 修改失败，身份组不存在")
+            await bot.send(event, at + " " + reply_failure("修改", "身份组不存在"))
             return
 
         user.group = group_name

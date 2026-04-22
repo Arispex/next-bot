@@ -12,6 +12,13 @@ from nextbot.db import User, get_session
 from nextbot.message_parser import parse_command_args_with_fallback
 from nextbot.permissions import require_permission
 from nextbot.time_utils import db_now_utc_naive
+from nextbot.text_utils import (
+    EMOJI_COIN,
+    EMOJI_FIRE,
+    EMOJI_GAME,
+    reply_block,
+    reply_failure,
+)
 
 dice_matcher = on_command("掷骰子")
 
@@ -89,25 +96,25 @@ async def handle_dice(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
 
     choice = args[0].strip()
     if choice not in _VALID_CHOICES:
-        await bot.send(event, at + " 掷骰子失败，请选择 大、小 或 豹子")
+        await bot.send(event, at + " " + reply_failure("掷骰子", "请选择 大、小 或 豹子"))
         return
 
     try:
         cost = int(args[1])
     except ValueError:
-        await bot.send(event, at + " 掷骰子失败，投入金币必须为正整数")
+        await bot.send(event, at + " " + reply_failure("掷骰子", "投入金币必须为正整数"))
         return
     if cost <= 0:
-        await bot.send(event, at + " 掷骰子失败，投入金币必须为正整数")
+        await bot.send(event, at + " " + reply_failure("掷骰子", "投入金币必须为正整数"))
         return
 
     min_cost = max(1, int(get_current_param("min_cost", 10)))
     max_cost = max(0, int(get_current_param("max_cost", 0)))
     if cost < min_cost:
-        await bot.send(event, at + f" 掷骰子失败，最低投入 {min_cost} 金币")
+        await bot.send(event, at + " " + reply_failure("掷骰子", f"最低投入 {min_cost} 金币"))
         return
     if max_cost > 0 and cost > max_cost:
-        await bot.send(event, at + f" 掷骰子失败，最高投入 {max_cost} 金币")
+        await bot.send(event, at + " " + reply_failure("掷骰子", f"最高投入 {max_cost} 金币"))
         return
 
     user_id = event.get_user_id()
@@ -122,19 +129,19 @@ async def handle_dice(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
             if elapsed < timedelta(seconds=cooldown_seconds):
                 remaining = timedelta(seconds=cooldown_seconds) - elapsed
                 remaining_s = int(remaining.total_seconds())
-                await bot.send(event, at + f" 掷骰子失败，冷却中，还需等待 {remaining_s} 秒")
+                await bot.send(event, at + " " + reply_failure("掷骰子", f"冷却中，还需等待 {remaining_s} 秒"))
                 return
 
     session = get_session()
     try:
         user = session.query(User).filter(User.user_id == user_id).first()
         if user is None:
-            await bot.send(event, at + " 掷骰子失败，请先注册账号")
+            await bot.send(event, at + " " + reply_failure("掷骰子", "请先注册账号"))
             return
 
         coins = int(user.coins or 0)
         if coins < cost:
-            await bot.send(event, at + f" 掷骰子失败，金币不足（当前 {coins}）")
+            await bot.send(event, at + " " + reply_failure("掷骰子", f"金币不足（当前 {coins}）"))
             return
 
         # 掷骰子
@@ -179,28 +186,31 @@ async def handle_dice(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     # 结果描述
     if is_triple:
         result_label = "豹子！"
+        head_emoji = EMOJI_FIRE
     elif total >= 11:
         result_label = "大"
+        head_emoji = EMOJI_GAME
     else:
         result_label = "小"
+        head_emoji = EMOJI_GAME
 
-    lines = [f"骰子：{d1} + {d2} + {d3} = {total}（{result_label}）"]
+    lines = [f"{head_emoji} 骰子：{d1} + {d2} + {d3} = {total}（{result_label}）"]
 
     if choice == "豹子" and not is_triple:
-        lines.append(f"不是豹子！投入 {cost}，全部损失")
+        lines.append(f"❌ 不是豹子！投入 {cost} 金币，全部损失")
     elif choice != "豹子" and is_triple:
-        lines.append(f"豹子通杀！投入 {cost}，全部损失")
+        lines.append(f"❌ 豹子通杀！投入 {cost} 金币，全部损失")
     elif net > 0:
-        lines.append(f"猜对了！投入 {cost}，获得 {payout} 金币，净赚 {net} 金币")
+        lines.append(f"{EMOJI_COIN} 猜对了！投入 {cost}，获得 {payout}，净赚 {net} 金币")
     elif net == 0:
-        lines.append(f"刚好持平！投入 {cost}")
+        lines.append(f"⚖️ 刚好持平！投入 {cost} 金币")
     else:
-        lines.append(f"猜错了！投入 {cost}，全部损失")
+        lines.append(f"❌ 猜错了！投入 {cost} 金币，全部损失")
 
-    lines.append(f"当前金币：{final_coins}")
+    lines.append(f"{EMOJI_COIN} 当前金币：{final_coins}")
 
     logger.info(
         f"掷骰子结果：user_id={user_id} choice={choice} dice={d1},{d2},{d3} total={total} "
         f"triple={is_triple} cost={cost} payout={payout} net={net}"
     )
-    await bot.send(event, at + "\n" + "\n".join(lines))
+    await bot.send(event, at + " " + reply_block(f"{EMOJI_GAME} 掷骰子", lines))

@@ -12,6 +12,7 @@ from nextbot.db import User, get_session
 from nextbot.message_parser import parse_command_args_with_fallback, resolve_user_id_arg_with_fallback
 from nextbot.permissions import require_permission
 from nextbot.time_utils import db_now_utc_naive
+from nextbot.text_utils import reply_failure
 
 rob_matcher = on_command("抢劫")
 
@@ -142,10 +143,10 @@ async def handle_rob(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
     if parse_error == "missing":
         raise_command_usage()
     if parse_error == "name_not_found":
-        await bot.send(event, at + " 抢劫失败，未找到该用户")
+        await bot.send(event, at + " " + reply_failure("抢劫", "未找到该用户"))
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, at + " 抢劫失败，用户名存在重复，请使用 QQ 或 @用户")
+        await bot.send(event, at + " " + reply_failure("抢劫", "用户名存在重复，请使用 QQ 或 @用户"))
         return
     if parse_error:
         raise_command_usage()
@@ -156,7 +157,7 @@ async def handle_rob(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
 
     robber_id = event.get_user_id()
     if robber_id == target_user_id:
-        await bot.send(event, at + " 抢劫失败，不能抢劫自己")
+        await bot.send(event, at + " " + reply_failure("抢劫", "不能抢劫自己"))
         return
 
     cooldown_minutes = max(0, int(get_current_param("cooldown_minutes", 60)))
@@ -176,12 +177,12 @@ async def handle_rob(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
     try:
         robber = session.query(User).filter(User.user_id == robber_id).first()
         if robber is None:
-            await bot.send(event, at + " 抢劫失败，请先注册账号")
+            await bot.send(event, at + " " + reply_failure("抢劫", "请先注册账号"))
             return
 
         victim = session.query(User).filter(User.user_id == target_user_id).first()
         if victim is None:
-            await bot.send(event, at + " 抢劫失败，对方未注册账号")
+            await bot.send(event, at + " " + reply_failure("抢劫", "对方未注册账号"))
             return
 
         # 冷却检查
@@ -194,7 +195,7 @@ async def handle_rob(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
                 remaining_seconds = int(remaining.total_seconds() % 60)
                 await bot.send(
                     event,
-                    at + f" 抢劫失败，冷却中，还需等待 {remaining_minutes} 分 {remaining_seconds} 秒",
+                    at + " " + reply_failure("抢劫", f"冷却中，还需等待 {remaining_minutes} 分 {remaining_seconds} 秒"),
                 )
                 return
 
@@ -202,16 +203,16 @@ async def handle_rob(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
         robber_coins = int(robber.coins or 0)
         victim_coins = int(victim.coins or 0)
         if victim_coins <= 0:
-            await bot.send(event, at + " 抢劫失败，对方身无分文")
+            await bot.send(event, at + " " + reply_failure("抢劫", "对方身无分文"))
             return
         if robber_coins <= 0:
-            await bot.send(event, at + " 抢劫失败，你身无分文")
+            await bot.send(event, at + " " + reply_failure("抢劫", "你身无分文"))
             return
         if robber_coins < min_coins_to_rob:
-            await bot.send(event, at + f" 抢劫失败，你的金币不足 {min_coins_to_rob}")
+            await bot.send(event, at + " " + reply_failure("抢劫", f"你的金币不足 {min_coins_to_rob}"))
             return
         if victim_coins < min_coins_to_rob:
-            await bot.send(event, at + f" 抢劫失败，对方金币不足 {min_coins_to_rob}")
+            await bot.send(event, at + " " + reply_failure("抢劫", f"对方金币不足 {min_coins_to_rob}"))
             return
 
         # 抽签决定结果
@@ -275,11 +276,11 @@ async def handle_rob(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
 
     victim_display = f"{victim_name}（{target_user_id}）"
     messages = {
-        "crit": f"大成功！你趁 {victim_display} 不注意，抢走了 {amount} 金币！",
-        "success": f"你成功从 {victim_display} 手中抢走了 {amount} 金币！",
-        "counter": f"{victim_display} 反应迅速，反而从你手中抢走了 {amount} 金币！",
-        "police": f"你被巡逻的警察当场抓获，罚款 {amount} 金币！",
-        "fail": f"你被 {victim_display} 发现了，慌忙逃跑时丢失了 {amount} 金币",
+        "crit": f"🔥 大成功！你趁 {victim_display} 不注意，抢走了 💰 {amount} 金币",
+        "success": f"✅ 抢劫成功，从 {victim_display} 手中抢走了 💰 {amount} 金币",
+        "counter": f"🚫 {victim_display} 反应迅速，反而从你手中抢走了 💰 {amount} 金币",
+        "police": f"🚨 你被巡逻的警察当场抓获，罚款 💰 {amount} 金币",
+        "fail": f"❌ 你被 {victim_display} 发现了，慌忙逃跑时丢失了 💰 {amount} 金币",
     }
 
     logger.info(

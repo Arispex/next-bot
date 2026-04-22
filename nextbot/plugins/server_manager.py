@@ -14,6 +14,7 @@ from nextbot.tshock_api import (
     is_success,
     request_server_api,
 )
+from nextbot.text_utils import reply_failure
 
 add_matcher = on_command("添加服务器")
 delete_matcher = on_command("删除服务器")
@@ -88,7 +89,7 @@ async def handle_delete_server(
     try:
         server = session.query(Server).filter(Server.id == target_id).first()
         if server is None:
-            await bot.send(event, at + " 删除失败，服务器不存在")
+            await bot.send(event, at + " " + reply_failure("删除", "服务器不存在"))
             return
 
         deleted_id = server.id
@@ -175,7 +176,7 @@ async def handle_test_server(
         session.close()
 
     if server is None:
-        await bot.send(event, at + " 测试失败，服务器不存在")
+        await bot.send(event, at + " " + reply_failure("测试", "服务器不存在"))
         return
 
     try:
@@ -184,7 +185,7 @@ async def handle_test_server(
         logger.info(
             f"测试连通性失败：id={target_id} ip={server.ip} port={server.restapi_port}"
         )
-        await bot.send(event, at + " 测试失败，无法连接服务器")
+        await bot.send(event, at + " " + reply_failure("测试", "无法连接服务器"))
         return
 
     status_code = response.http_status
@@ -198,4 +199,4 @@ async def handle_test_server(
         return
 
     reason = get_error_reason(response)
-    await bot.send(event, at + f" 测试失败，{reason}")
+    await bot.send(event, at + " " + reply_failure("测试", f"{reason}"))

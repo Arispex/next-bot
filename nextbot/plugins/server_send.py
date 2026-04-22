@@ -16,6 +16,8 @@ from nextbot.tshock_api import (
     is_success,
     request_server_api,
 )
+from nextbot.text_utils import reply_failure
+
 
 send_matcher = on_command("发送")
 
@@ -67,10 +69,10 @@ async def handle_send(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
         session.close()
 
     if user is None:
-        await bot.send(event, at + " 发送失败，请先注册账号")
+        await bot.send(event, at + " " + reply_failure("发送", "请先注册账号"))
         return
     if server is None:
-        await bot.send(event, at + " 发送失败，服务器不存在")
+        await bot.send(event, at + " " + reply_failure("发送", "服务器不存在"))
         return
 
     raw_cmd = f"/say {user.name}（{user_id}）：{content}"
@@ -86,11 +88,11 @@ async def handle_send(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
             params={"cmd": raw_cmd},
         )
     except TShockRequestError:
-        await bot.send(event, at + " 发送失败，无法连接服务器")
+        await bot.send(event, at + " " + reply_failure("发送", "无法连接服务器"))
         return
 
     if not is_success(response):
-        await bot.send(event, at + f" 发送失败，{get_error_reason(response)}")
+        await bot.send(event, at + " " + reply_failure("发送", f"{get_error_reason(response)}"))
         return
 
     await bot.send(event, at + " 发送成功")

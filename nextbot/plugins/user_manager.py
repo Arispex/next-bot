@@ -27,6 +27,8 @@ from nextbot.tshock_api import (
     is_success,
     request_server_api,
 )
+from nextbot.text_utils import reply_failure, reply_success
+
 
 USER_INFO_SCREENSHOT_OPTIONS = ScreenshotOptions(
     viewport_width=820,
@@ -142,7 +144,7 @@ async def handle_add_whitelist(
     name = args[0].strip()
     invalid_reason = _validate_user_name(name)
     if invalid_reason is not None:
-        await bot.send(event, at + f" 注册失败，{invalid_reason}")
+        await bot.send(event, at + " " + reply_failure("注册", f"{invalid_reason}"))
         return
 
     session = get_session()
@@ -150,12 +152,12 @@ async def handle_add_whitelist(
         exists = session.query(User).filter(User.user_id == user_id).first()
         if exists is not None:
             logger.info(f"账号已注册：user_id={user_id} name={exists.name}")
-            await bot.send(event, at + " 注册失败，该账号已注册")
+            await bot.send(event, at + " " + reply_failure("注册", "该账号已注册"))
             return
         name_exists = session.query(User).filter(func.lower(User.name) == name.lower()).first()
         if name_exists is not None:
             logger.info(f"用户名称已存在：name={name}")
-            await bot.send(event, at + " 注册失败，用户名称已被占用")
+            await bot.send(event, at + " " + reply_failure("注册", "用户名称已被占用"))
             return
 
         user = User(user_id=user_id, name=name, group="default")
@@ -167,7 +169,7 @@ async def handle_add_whitelist(
     await _sync_whitelist_to_all_servers(user_id, name)
 
     logger.info(f"注册账号成功：user_id={user_id} name={name}")
-    await bot.send(event, at + " 注册成功")
+    await bot.send(event, at + " " + reply_success("注册账号", f"用户名 {name}"))
 
 
 @sync_matcher.handle()
@@ -196,12 +198,12 @@ async def handle_sync_whitelist(
         session.close()
 
     if user is None:
-        await bot.send(event, at + " 同步失败，未注册账号")
+        await bot.send(event, at + " " + reply_failure("同步", "未注册账号"))
         return
 
     results = await _sync_whitelist_to_all_servers(user_id, user.name)
     if not results:
-        await bot.send(event, at + " 同步失败，暂无可同步的服务器")
+        await bot.send(event, at + " " + reply_failure("同步", "暂无可同步的服务器"))
         return
 
     lines: list[str] = []
@@ -371,10 +373,10 @@ async def handle_rename(bot: Bot, event: Event, arg: Message = CommandArg()) -> 
     if parse_error == "missing":
         raise_command_usage()
     if parse_error == "name_not_found":
-        await bot.send(event, at + " 更改失败，未找到该用户")
+        await bot.send(event, at + " " + reply_failure("更改", "未找到该用户"))
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, at + " 更改失败，用户名存在重复，请使用 QQ 或 @用户")
+        await bot.send(event, at + " " + reply_failure("更改", "用户名存在重复，请使用 QQ 或 @用户"))
         return
     if parse_error:
         raise_command_usage()
@@ -386,19 +388,19 @@ async def handle_rename(bot: Bot, event: Event, arg: Message = CommandArg()) -> 
     new_name = args[1].strip()
     invalid_reason = _validate_user_name(new_name)
     if invalid_reason is not None:
-        await bot.send(event, at + f" 更改失败，{invalid_reason}")
+        await bot.send(event, at + " " + reply_failure("更改", f"{invalid_reason}"))
         return
 
     session = get_session()
     try:
         user = session.query(User).filter(User.user_id == target_user_id).first()
         if user is None:
-            await bot.send(event, at + " 更改失败，未找到该用户")
+            await bot.send(event, at + " " + reply_failure("更改", "未找到该用户"))
             return
 
         old_name = str(user.name)
         if old_name.lower() == new_name.lower():
-            await bot.send(event, at + " 更改失败，新用户名与当前相同")
+            await bot.send(event, at + " " + reply_failure("更改", "新用户名与当前相同"))
             return
 
         name_exists = session.query(User).filter(
@@ -406,7 +408,7 @@ async def handle_rename(bot: Bot, event: Event, arg: Message = CommandArg()) -> 
             User.user_id != target_user_id,
         ).first()
         if name_exists is not None:
-            await bot.send(event, at + " 更改失败，用户名称已被占用")
+            await bot.send(event, at + " " + reply_failure("更改", "用户名称已被占用"))
             return
 
         user.name = new_name

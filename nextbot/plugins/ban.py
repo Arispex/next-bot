@@ -18,6 +18,7 @@ from nextbot.render_utils import resolve_render_theme
 from nextbot.time_utils import beijing_filename_timestamp, db_now_utc_naive
 from nextbot.time_utils import format_beijing_datetime
 from nextbot.tshock_api import TShockRequestError, get_error_reason, is_success, request_server_api
+from nextbot.text_utils import reply_failure
 from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
 from server.web_server import create_ban_list_page
 
@@ -57,10 +58,10 @@ async def handle_ban(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
     if parse_error == "missing":
         raise_command_usage()
     if parse_error == "name_not_found":
-        await bot.send(event, at + " 封禁失败，未找到该用户")
+        await bot.send(event, at + " " + reply_failure("封禁", "未找到该用户"))
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, at + " 封禁失败，用户名存在重复，请使用 QQ 或 @用户")
+        await bot.send(event, at + " " + reply_failure("封禁", "用户名存在重复，请使用 QQ 或 @用户"))
         return
     if parse_error or target_user_id is None:
         raise_command_usage()
@@ -74,13 +75,13 @@ async def handle_ban(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
 
     result = apply_ban_to_db(target_user_id, reason)
     if result.code == "not_found":
-        await bot.send(event, at + " 封禁失败，未找到该用户")
+        await bot.send(event, at + " " + reply_failure("封禁", "未找到该用户"))
         return
     if result.code == "owner_protected":
-        await bot.send(event, at + " 封禁失败，不能封禁 Owner")
+        await bot.send(event, at + " " + reply_failure("封禁", "不能封禁 Owner"))
         return
     if result.code == "already_banned":
-        await bot.send(event, at + f" 封禁失败，该用户已被封禁，原因：{result.previous_reason}")
+        await bot.send(event, at + " " + reply_failure("封禁", f"该用户已被封禁，原因：{result.previous_reason}"))
         return
 
     logger.info(
@@ -219,10 +220,10 @@ async def handle_unban(bot: Bot, event: Event, arg: Message = CommandArg()) -> N
     if parse_error == "missing":
         raise_command_usage()
     if parse_error == "name_not_found":
-        await bot.send(event, at + " 解封失败，未找到该用户")
+        await bot.send(event, at + " " + reply_failure("解封", "未找到该用户"))
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, at + " 解封失败，用户名存在重复，请使用 QQ 或 @用户")
+        await bot.send(event, at + " " + reply_failure("解封", "用户名存在重复，请使用 QQ 或 @用户"))
         return
     if parse_error:
         raise_command_usage()
@@ -235,11 +236,11 @@ async def handle_unban(bot: Bot, event: Event, arg: Message = CommandArg()) -> N
     try:
         user = session.query(User).filter(User.user_id == target_user_id).first()
         if user is None:
-            await bot.send(event, at + " 解封失败，未找到该用户")
+            await bot.send(event, at + " " + reply_failure("解封", "未找到该用户"))
             return
 
         if not user.is_banned:
-            await bot.send(event, at + " 解封失败，该用户未被封禁")
+            await bot.send(event, at + " " + reply_failure("解封", "该用户未被封禁"))
             return
 
         user.is_banned = False
