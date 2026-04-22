@@ -27,7 +27,7 @@ from nextbot.tshock_api import (
     is_success,
     request_server_api,
 )
-from nextbot.text_utils import reply_failure, reply_success
+from nextbot.text_utils import EMOJI_USER, reply_block, reply_failure, reply_success
 
 
 USER_INFO_SCREENSHOT_OPTIONS = ScreenshotOptions(
@@ -169,7 +169,16 @@ async def handle_add_whitelist(
     await _sync_whitelist_to_all_servers(user_id, name)
 
     logger.info(f"注册账号成功：user_id={user_id} name={name}")
-    await bot.send(event, at + " " + reply_success("注册账号", f"用户名 {name}"))
+    await bot.send(
+        event,
+        at + "\n" + reply_block(
+            reply_success("注册"),
+            [
+                f"{EMOJI_USER} 用户名称：{name}",
+                f"🆔 QQ：{user_id}",
+            ],
+        ),
+    )
 
 
 @sync_matcher.handle()
