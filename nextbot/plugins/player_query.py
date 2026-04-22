@@ -221,7 +221,7 @@ async def handle_online(
             lines.append("ℹ️ 无玩家在线")
             continue
 
-        lines.append(f"在线玩家({playercount}/{maxplayers})")
+        lines.append(f"在线玩家（{playercount}/{maxplayers}）")
         nicknames: list[str] = []
         for player in players:
             if isinstance(player, dict):
