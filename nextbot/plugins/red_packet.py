@@ -497,6 +497,7 @@ async def handle_list_own(bot: Bot, event: Event, arg: Message = CommandArg()) -
         type_zh = _TYPE_EN_TO_ZH.get(str(packet.type), str(packet.type))
         status_zh = _STATUS_ZH.get(str(packet.status), str(packet.status))
         taken = int(packet.total_amount) - int(packet.remaining_amount)
+        taken_count = int(packet.total_count) - int(packet.remaining_count)
         created = format_beijing_datetime(packet.created_at) if packet.created_at else ""
         entries.append(
             {
@@ -505,6 +506,8 @@ async def handle_list_own(bot: Bot, event: Event, arg: Message = CommandArg()) -
                 "type_zh": type_zh,
                 "total_amount": int(packet.total_amount),
                 "taken": taken,
+                "total_count": int(packet.total_count),
+                "taken_count": taken_count,
                 "status_zh": status_zh,
                 "created": created,
             }

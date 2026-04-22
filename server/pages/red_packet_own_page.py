@@ -23,6 +23,8 @@ def build_payload(
             continue
         total_amount = int(item.get("total_amount", 0))
         taken = int(item.get("taken", 0))
+        total_count = int(item.get("total_count", 0))
+        taken_count = int(item.get("taken_count", 0))
         normalized.append(
             {
                 "index": int(item.get("index", i + 1)),
@@ -30,6 +32,8 @@ def build_payload(
                 "type_zh": str(item.get("type_zh", "")).strip(),
                 "total_amount": total_amount,
                 "taken": taken,
+                "total_count": total_count,
+                "taken_count": taken_count,
                 "status_zh": str(item.get("status_zh", "")).strip(),
                 "created": str(item.get("created", "")).strip(),
             }
