@@ -1,0 +1,57 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+from nextbot.time_utils import beijing_now_text
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+TEMPLATE_PATH = BASE_DIR / "server" / "templates" / "red_packet_own.html"
+
+
+def build_payload(
+    *,
+    page: int,
+    total_pages: int,
+    entries: list[dict[str, Any]],
+    theme: str = "light",
+) -> dict[str, Any]:
+    normalized: list[dict[str, Any]] = []
+    for i, item in enumerate(entries):
+        if not isinstance(item, dict):
+            continue
+        total_amount = int(item.get("total_amount", 0))
+        taken = int(item.get("taken", 0))
+        normalized.append(
+            {
+                "index": int(item.get("index", i + 1)),
+                "name": str(item.get("name", "")).strip(),
+                "type_zh": str(item.get("type_zh", "")).strip(),
+                "total_amount": total_amount,
+                "taken": taken,
+                "status_zh": str(item.get("status_zh", "")).strip(),
+                "created": str(item.get("created", "")).strip(),
+            }
+        )
+    return {
+        "generated_at": beijing_now_text(),
+        "page": int(page),
+        "total_pages": int(total_pages),
+        "entries": normalized,
+        "theme": str(theme).strip() if str(theme).strip() in {"dark", "light"} else "light",
+    }
+
+
+def render(payload: dict[str, Any]) -> bytes:
+    template = TEMPLATE_PATH.read_text(encoding="utf-8")
+    data = {
+        "generated_at": str(payload.get("generated_at", "")),
+        "page": int(payload.get("page", 1)),
+        "total_pages": int(payload.get("total_pages", 1)),
+        "entries": payload.get("entries", []),
+        "theme": str(payload.get("theme", "light")),
+    }
+    data_json = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
+    content = template.replace("__RED_PACKET_OWN_DATA_JSON__", data_json)
+    return content.encode("utf-8")

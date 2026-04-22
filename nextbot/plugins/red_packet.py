@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import base64
+import math
 import random
+from pathlib import Path
 
 from nonebot import on_command
 from nonebot.adapters import Bot, Event, Message
@@ -14,6 +17,7 @@ from nextbot.command_config import command_control, get_current_param, raise_com
 from nextbot.db import RedPacket, RedPacketClaim, User, get_session
 from nextbot.message_parser import parse_command_args_with_fallback
 from nextbot.permissions import require_permission
+from nextbot.render_utils import resolve_render_theme
 from nextbot.text_utils import (
     EMOJI_CHART,
     EMOJI_COIN,
@@ -22,11 +26,11 @@ from nextbot.text_utils import (
     EMOJI_RED_PACKET,
     reply_block,
     reply_failure,
-    reply_info,
-    reply_list,
     reply_success,
 )
-from nextbot.time_utils import db_now_utc_naive, format_beijing_datetime
+from nextbot.time_utils import beijing_filename_timestamp, db_now_utc_naive, format_beijing_datetime
+from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
+from server.web_server import create_red_packet_all_page, create_red_packet_own_page
 
 send_matcher = on_command("发红包")
 grab_matcher = on_command("抢红包")
@@ -37,6 +41,18 @@ list_all_matcher = on_command("红包列表")
 _TYPE_ZH_TO_EN = {"平分": "equal", "拼手气": "lucky"}
 _TYPE_EN_TO_ZH = {v: k for k, v in _TYPE_ZH_TO_EN.items()}
 _STATUS_ZH = {"active": "进行中", "exhausted": "已抢完", "withdrawn": "已收回"}
+
+_RED_PACKET_SCREENSHOT_OPTIONS = ScreenshotOptions(
+    viewport_width=900,
+    viewport_height=800,
+    full_page=True,
+)
+
+
+def _to_base64_image_uri(path: Path) -> str:
+    raw = path.read_bytes()
+    encoded = base64.b64encode(raw).decode("ascii")
+    return f"base64://{encoded}"
 
 
 def _draw_equal(remaining_amount: int, remaining_count: int, base: int) -> int:
@@ -386,24 +402,31 @@ async def handle_withdraw(bot: Bot, event: Event, arg: Message = CommandArg()) -
     )
 
 
-def _format_packet_line_own(packet: RedPacket) -> str:
-    type_zh = _TYPE_EN_TO_ZH.get(str(packet.type), str(packet.type))
-    status_zh = _STATUS_ZH.get(str(packet.status), str(packet.status))
-    taken = int(packet.total_amount) - int(packet.remaining_amount)
-    created = format_beijing_datetime(packet.created_at)
-    return (
-        f"{packet.name} | {type_zh} | 已抢 {taken}/{packet.total_amount} | "
-        f"{status_zh} | {created}"
-    )
+async def _send_red_packet_image(
+    bot: Bot,
+    event: Event,
+    *,
+    page_url: str,
+    file_prefix: str,
+) -> None:
+    screenshot_path = Path("/tmp") / f"{file_prefix}-{beijing_filename_timestamp()}.png"
+    try:
+        await screenshot_url(page_url, screenshot_path, options=_RED_PACKET_SCREENSHOT_OPTIONS)
+    except RenderScreenshotError as exc:
+        await bot.send(event, reply_failure("查询", str(exc)))
+        return
 
+    logger.info(f"红包列表截图成功：file={screenshot_path}")
+    if bot.adapter.get_name() == "OneBot V11":
+        try:
+            image_uri = _to_base64_image_uri(screenshot_path)
+        except OSError:
+            await bot.send(event, reply_failure("查询", "读取截图文件失败"))
+            return
+        await bot.send(event, OBV11MessageSegment.image(file=image_uri))
+        return
 
-def _format_packet_line_all(packet: RedPacket, sender_name: str) -> str:
-    type_zh = _TYPE_EN_TO_ZH.get(str(packet.type), str(packet.type))
-    return (
-        f"{packet.name} | 来自 {sender_name}（{packet.sender_user_id}） | {type_zh} | "
-        f"剩 {packet.remaining_amount}/{packet.total_amount}"
-        f"（{packet.remaining_count}/{packet.total_count} 份）"
-    )
+    await bot.send(event, f"✅ 截图成功，文件：{screenshot_path}")
 
 
 @list_own_matcher.handle()
@@ -412,12 +435,12 @@ def _format_packet_line_all(packet: RedPacket, sender_name: str) -> str:
     display_name="我的红包",
     permission="economy.red_packet.list_own",
     description="查看自己发出过的红包",
-    usage="我的红包",
+    usage="我的红包 [页数]",
     params={
         "limit": {
             "type": "int",
-            "label": "显示条数",
-            "description": "最多显示多少条",
+            "label": "每页条数",
+            "description": "每页显示的红包数量",
             "required": False,
             "default": 10,
             "min": 1,
@@ -428,31 +451,72 @@ def _format_packet_line_all(packet: RedPacket, sender_name: str) -> str:
 )
 @require_permission("economy.red_packet.list_own")
 async def handle_list_own(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
-    at = OBV11MessageSegment.at(int(event.get_user_id()))
+    args = parse_command_args_with_fallback(event, arg, "我的红包")
+    if len(args) > 1:
+        raise_command_usage()
+
+    page = 1
+    if args:
+        try:
+            page = int(args[0])
+        except ValueError:
+            await bot.send(event, reply_failure("查询", "页数必须为正整数"))
+            return
+        if page <= 0:
+            await bot.send(event, reply_failure("查询", "页数必须为正整数"))
+            return
+
     limit = max(1, min(int(get_current_param("limit", 10)), 50))
     user_id = event.get_user_id()
 
     session = get_session()
     try:
+        total = (
+            session.query(RedPacket)
+            .filter(RedPacket.sender_user_id == user_id)
+            .count()
+        )
+        total_pages = max(1, math.ceil(total / limit)) if total > 0 else 1
+        if total > 0 and page > total_pages:
+            await bot.send(event, reply_failure("查询", f"超出总页数（共 {total_pages} 页）"))
+            return
+        offset = (page - 1) * limit
         packets = (
             session.query(RedPacket)
             .filter(RedPacket.sender_user_id == user_id)
             .order_by(RedPacket.created_at.desc())
+            .offset(offset)
             .limit(limit)
             .all()
         )
     finally:
         session.close()
 
-    if not packets:
-        await bot.send(event, at + " " + reply_info("你还没发过红包"))
-        return
+    entries: list[dict[str, object]] = []
+    for i, packet in enumerate(packets):
+        type_zh = _TYPE_EN_TO_ZH.get(str(packet.type), str(packet.type))
+        status_zh = _STATUS_ZH.get(str(packet.status), str(packet.status))
+        taken = int(packet.total_amount) - int(packet.remaining_amount)
+        created = format_beijing_datetime(packet.created_at) if packet.created_at else ""
+        entries.append(
+            {
+                "index": offset + i + 1,
+                "name": str(packet.name),
+                "type_zh": type_zh,
+                "total_amount": int(packet.total_amount),
+                "taken": taken,
+                "status_zh": status_zh,
+                "created": created,
+            }
+        )
 
-    items = [_format_packet_line_own(p) for p in packets]
-    await bot.send(
-        event,
-        at + "\n" + reply_list("我的红包", items, title_emoji=EMOJI_RED_PACKET),
+    page_url = create_red_packet_own_page(
+        page=page, total_pages=total_pages, entries=entries, theme=resolve_render_theme(),
     )
+    logger.info(
+        f"我的红包渲染地址：user_id={user_id} page={page}/{total_pages} total={total} internal_url={page_url}"
+    )
+    await _send_red_packet_image(bot, event, page_url=page_url, file_prefix="red-packet-own")
 
 
 @list_all_matcher.handle()
@@ -461,12 +525,12 @@ async def handle_list_own(bot: Bot, event: Event, arg: Message = CommandArg()) -
     display_name="红包列表",
     permission="economy.red_packet.list_all",
     description="查看当前可抢的红包",
-    usage="红包列表",
+    usage="红包列表 [页数]",
     params={
         "limit": {
             "type": "int",
-            "label": "显示条数",
-            "description": "最多显示多少条",
+            "label": "每页条数",
+            "description": "每页显示的红包数量",
             "required": False,
             "default": 10,
             "min": 1,
@@ -477,15 +541,40 @@ async def handle_list_own(bot: Bot, event: Event, arg: Message = CommandArg()) -
 )
 @require_permission("economy.red_packet.list_all")
 async def handle_list_all(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
-    at = OBV11MessageSegment.at(int(event.get_user_id()))
+    args = parse_command_args_with_fallback(event, arg, "红包列表")
+    if len(args) > 1:
+        raise_command_usage()
+
+    page = 1
+    if args:
+        try:
+            page = int(args[0])
+        except ValueError:
+            await bot.send(event, reply_failure("查询", "页数必须为正整数"))
+            return
+        if page <= 0:
+            await bot.send(event, reply_failure("查询", "页数必须为正整数"))
+            return
+
     limit = max(1, min(int(get_current_param("limit", 10)), 50))
 
     session = get_session()
     try:
+        total = (
+            session.query(RedPacket)
+            .filter(RedPacket.status == "active")
+            .count()
+        )
+        total_pages = max(1, math.ceil(total / limit)) if total > 0 else 1
+        if total > 0 and page > total_pages:
+            await bot.send(event, reply_failure("查询", f"超出总页数（共 {total_pages} 页）"))
+            return
+        offset = (page - 1) * limit
         packets = (
             session.query(RedPacket)
             .filter(RedPacket.status == "active")
             .order_by(RedPacket.created_at.desc())
+            .offset(offset)
             .limit(limit)
             .all()
         )
@@ -499,20 +588,27 @@ async def handle_list_all(bot: Bot, event: Event, arg: Message = CommandArg()) -
     finally:
         session.close()
 
-    if not packets:
-        await bot.send(event, at + " " + reply_info("当前没有可抢的红包"))
-        return
+    entries: list[dict[str, object]] = []
+    for i, packet in enumerate(packets):
+        type_zh = _TYPE_EN_TO_ZH.get(str(packet.type), str(packet.type))
+        entries.append(
+            {
+                "index": offset + i + 1,
+                "name": str(packet.name),
+                "sender_name": name_map.get(packet.sender_user_id, "未知"),
+                "sender_user_id": str(packet.sender_user_id),
+                "type_zh": type_zh,
+                "remaining_amount": int(packet.remaining_amount),
+                "total_amount": int(packet.total_amount),
+                "remaining_count": int(packet.remaining_count),
+                "total_count": int(packet.total_count),
+            }
+        )
 
-    items = [
-        _format_packet_line_all(packet, name_map.get(packet.sender_user_id, "未知"))
-        for packet in packets
-    ]
-    await bot.send(
-        event,
-        at + "\n" + reply_list(
-            "当前红包",
-            items,
-            title_emoji=EMOJI_RED_PACKET,
-            hint="输入 `抢红包 名称` 参与",
-        ),
+    page_url = create_red_packet_all_page(
+        page=page, total_pages=total_pages, entries=entries, theme=resolve_render_theme(),
     )
+    logger.info(
+        f"红包列表渲染地址：page={page}/{total_pages} total={total} internal_url={page_url}"
+    )
+    await _send_red_packet_image(bot, event, page_url=page_url, file_prefix="red-packet-all")

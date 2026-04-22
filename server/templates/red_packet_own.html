@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    [data-theme="dark"] body {
+      background: linear-gradient(160deg, #140a0a 0%, #1a0d09 50%, #0f0605 100%);
+    }
+    [data-theme="dark"] .page-header {
+      background: linear-gradient(90deg, rgba(220,38,38,0.0) 0%, rgba(234,179,8,0.10) 50%, rgba(220,38,38,0.0) 100%);
+      border-color: rgba(234,179,8,0.20);
+    }
+    [data-theme="dark"] .header-title { color: #fbbf24; text-shadow: 0 2px 20px rgba(234,179,8,0.30); }
+    [data-theme="dark"] .header-rule { background: linear-gradient(90deg, #dc2626, #eab308, transparent); }
+    [data-theme="dark"] .header-time { color: #64748b; }
+    [data-theme="dark"] .list-wrap { border-color: rgba(234,179,8,0.08); }
+    [data-theme="dark"] .list-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(234,179,8,0.08);
+    }
+    [data-theme="dark"] .card-name { color: #f1f5f9; }
+    [data-theme="dark"] .card-created { color: #64748b; }
+    [data-theme="dark"] .card-index { color: #3a1f1f; }
+    [data-theme="dark"] .card-stripe { background: linear-gradient(180deg, #dc2626, #eab308); }
+    [data-theme="dark"] .type-pill { background: rgba(234,179,8,0.18); color: #fde68a; }
+    [data-theme="dark"] .status-active { background: rgba(34,197,94,0.18); color: #86efac; }
+    [data-theme="dark"] .status-exhausted { background: rgba(148,163,184,0.18); color: #cbd5e1; }
+    [data-theme="dark"] .status-withdrawn { background: rgba(234,179,8,0.18); color: #fde68a; }
+    [data-theme="dark"] .progress-bg { background: rgba(234,179,8,0.15); }
+    [data-theme="dark"] .progress-label { color: #cbd5e1; }
+    [data-theme="dark"] .progress-total { color: #64748b; }
+    [data-theme="dark"] .rp-icon {
+      background: linear-gradient(135deg, #dc2626, #eab308);
+      box-shadow: 0 6px 18px rgba(220,38,38,0.30);
+    }
+    [data-theme="dark"] .empty-text { color: #64748b; }
+    [data-theme="dark"] .pagination { color: #94a3b8; }
+    [data-theme="dark"] .page-footer { color: #1f2937; }
+
+    [data-theme="light"] body {
+      background: linear-gradient(135deg, #fef5ed 0%, #fff8f1 40%, #fef5ed 100%);
+    }
+    [data-theme="light"] .page-header {
+      background: linear-gradient(90deg, rgba(220,38,38,0.0) 0%, rgba(234,179,8,0.08) 50%, rgba(220,38,38,0.0) 100%);
+      border-color: rgba(234,179,8,0.25);
+    }
+    [data-theme="light"] .header-title { color: #b45309; }
+    [data-theme="light"] .header-rule { background: linear-gradient(90deg, #dc2626, #eab308, transparent); }
+    [data-theme="light"] .header-time { color: #a8a29e; }
+    [data-theme="light"] .list-wrap { border-color: #fde68a; background: white; box-shadow: 0 2px 12px rgba(234,179,8,0.08); }
+    [data-theme="light"] .list-card {
+      background: #ffffff;
+      border: 1px solid #fef3c7;
+    }
+    [data-theme="light"] .card-name { color: #1e293b; }
+    [data-theme="light"] .card-created { color: #a8a29e; }
+    [data-theme="light"] .card-index { color: #fde68a; }
+    [data-theme="light"] .card-stripe { background: linear-gradient(180deg, #dc2626, #f59e0b); }
+    [data-theme="light"] .type-pill { background: #fef3c7; color: #b45309; }
+    [data-theme="light"] .status-active { background: #dcfce7; color: #166534; }
+    [data-theme="light"] .status-exhausted { background: #f1f5f9; color: #475569; }
+    [data-theme="light"] .status-withdrawn { background: #fef3c7; color: #854d0e; }
+    [data-theme="light"] .progress-bg { background: #fef3c7; }
+    [data-theme="light"] .progress-label { color: #334155; }
+    [data-theme="light"] .progress-total { color: #94a3b8; }
+    [data-theme="light"] .rp-icon {
+      background: linear-gradient(135deg, #dc2626, #f59e0b);
+      box-shadow: 0 6px 18px rgba(220,38,38,0.20);
+    }
+    [data-theme="light"] .empty-text { color: #a8a29e; }
+    [data-theme="light"] .pagination { color: #64748b; }
+    [data-theme="light"] .page-footer { color: #e7e5e4; }
+
+    .progress-fill { background: linear-gradient(90deg, #dc2626, #f59e0b); }
+  </style>
+</head>
+<body class="min-h-screen px-8 py-10">
+
+  <div class="page-header mx-auto max-w-[820px] rounded-2xl px-8 py-6 mb-6 border">
+    <div class="flex items-end justify-between">
+      <div>
+        <div class="header-rule h-1 w-16 rounded-full mb-4"></div>
+        <h1 class="header-title text-4xl font-black tracking-tight" style="letter-spacing:-0.02em;">我的红包</h1>
+      </div>
+      <div class="text-right">
+        <div class="header-time text-xs" id="rp-generated-at"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mx-auto max-w-[820px]" id="rp-content"></div>
+
+  <div class="mx-auto max-w-[820px] mt-4 flex flex-col items-center gap-1">
+    <div id="rp-pagination" class="pagination text-sm font-semibold"></div>
+    <div class="page-footer text-xs font-medium tracking-widest">Powered by NextBot</div>
+  </div>
+
+  <script id="rp-data" type="application/json">__RED_PACKET_OWN_DATA_JSON__</script>
+  <script>
+    var data = JSON.parse(document.getElementById("rp-data").textContent);
+    var entries = Array.isArray(data.entries) ? data.entries : [];
+    var page = Number(data.page || 1);
+    var totalPages = Number(data.total_pages || 1);
+    var theme = String(data.theme || "light");
+
+    document.documentElement.setAttribute("data-theme", theme);
+    document.getElementById("rp-generated-at").textContent = data.generated_at || "";
+    document.getElementById("rp-pagination").textContent = "\u7B2C " + page + " \u9875 / \u5171 " + totalPages + " \u9875";
+
+    var content = document.getElementById("rp-content");
+
+    if (!entries.length) {
+      var empty = document.createElement("div");
+      empty.className = "empty-text py-16 text-center text-sm";
+      empty.textContent = "\u4F60\u8FD8\u6CA1\u53D1\u8FC7\u7EA2\u5305";
+      content.appendChild(empty);
+    } else {
+      var listWrap = document.createElement("div");
+      listWrap.className = "list-wrap rounded-2xl overflow-hidden";
+      listWrap.style.display = "grid";
+      listWrap.style.gap = "0";
+
+      for (var i = 0; i < entries.length; i++) {
+        var entry = entries[i];
+        var name = String(entry.name || "").trim() || "\u2014";
+        var typeZh = String(entry.type_zh || "").trim() || "\u7EA2\u5305";
+        var totalAmount = Number(entry.total_amount || 0);
+        var taken = Number(entry.taken || 0);
+        var statusZh = String(entry.status_zh || "").trim();
+        var created = String(entry.created || "").trim();
+        var pct = totalAmount > 0 ? Math.max(0, Math.min(100, (taken / totalAmount) * 100)) : 0;
+
+        var card = document.createElement("div");
+        card.className = "list-card overflow-hidden flex";
+
+        var stripe = document.createElement("div");
+        stripe.className = "card-stripe";
+        stripe.style.width = "4px";
+        stripe.style.flexShrink = "0";
+        card.appendChild(stripe);
+
+        var cardBody = document.createElement("div");
+        cardBody.style.flex = "1";
+        cardBody.style.padding = "14px 18px";
+        cardBody.style.display = "flex";
+        cardBody.style.alignItems = "center";
+        cardBody.style.gap = "14px";
+        cardBody.style.position = "relative";
+
+        // Red-packet icon
+        var iconWrap = document.createElement("div");
+        iconWrap.className = "rp-icon";
+        iconWrap.style.width = "44px";
+        iconWrap.style.height = "44px";
+        iconWrap.style.borderRadius = "12px";
+        iconWrap.style.display = "flex";
+        iconWrap.style.alignItems = "center";
+        iconWrap.style.justifyContent = "center";
+        iconWrap.style.flexShrink = "0";
+        iconWrap.style.fontSize = "22px";
+        iconWrap.textContent = "\uD83E\uDDE7";
+        cardBody.appendChild(iconWrap);
+
+        // Info
+        var info = document.createElement("div");
+        info.style.flex = "1";
+        info.style.minWidth = "0";
+
+        // Top row: name + type pill + status pill
+        var topRow = document.createElement("div");
+        topRow.style.display = "flex";
+        topRow.style.alignItems = "center";
+        topRow.style.gap = "8px";
+        topRow.style.flexWrap = "wrap";
+
+        var nameEl = document.createElement("span");
+        nameEl.className = "card-name";
+        nameEl.style.fontSize = "14px";
+        nameEl.style.fontWeight = "700";
+        nameEl.textContent = name;
+        topRow.appendChild(nameEl);
+
+        var typePill = document.createElement("span");
+        typePill.className = "type-pill";
+        typePill.style.fontSize = "11px";
+        typePill.style.fontWeight = "600";
+        typePill.style.padding = "2px 8px";
+        typePill.style.borderRadius = "999px";
+        typePill.textContent = typeZh;
+        topRow.appendChild(typePill);
+
+        if (statusZh) {
+          var statusPill = document.createElement("span");
+          var statusCls = "status-active";
+          if (statusZh === "\u5DF2\u62A2\u5B8C") statusCls = "status-exhausted";
+          else if (statusZh === "\u5DF2\u6536\u56DE") statusCls = "status-withdrawn";
+          statusPill.className = statusCls;
+          statusPill.style.fontSize = "11px";
+          statusPill.style.fontWeight = "600";
+          statusPill.style.padding = "2px 8px";
+          statusPill.style.borderRadius = "999px";
+          statusPill.textContent = statusZh;
+          topRow.appendChild(statusPill);
+        }
+        info.appendChild(topRow);
+
+        // Progress row
+        var progWrap = document.createElement("div");
+        progWrap.style.marginTop = "8px";
+        progWrap.style.display = "flex";
+        progWrap.style.alignItems = "center";
+        progWrap.style.gap = "8px";
+
+        var progBar = document.createElement("div");
+        progBar.className = "progress-bg";
+        progBar.style.flex = "1";
+        progBar.style.height = "6px";
+        progBar.style.borderRadius = "999px";
+        progBar.style.overflow = "hidden";
+        var progFill = document.createElement("div");
+        progFill.className = "progress-fill";
+        progFill.style.width = pct + "%";
+        progFill.style.height = "100%";
+        progFill.style.borderRadius = "999px";
+        progBar.appendChild(progFill);
+        progWrap.appendChild(progBar);
+
+        var progText = document.createElement("span");
+        progText.className = "progress-label";
+        progText.style.fontSize = "11px";
+        progText.style.fontWeight = "600";
+        progText.style.whiteSpace = "nowrap";
+        var totalSpan = document.createElement("span");
+        totalSpan.className = "progress-total";
+        totalSpan.style.fontWeight = "500";
+        totalSpan.textContent = " / " + totalAmount;
+        progText.textContent = "\u5DF2\u62A2 " + taken;
+        progText.appendChild(totalSpan);
+        progWrap.appendChild(progText);
+
+        info.appendChild(progWrap);
+
+        // Created time
+        if (created) {
+          var timeRow = document.createElement("div");
+          timeRow.style.marginTop = "4px";
+          var timeEl = document.createElement("span");
+          timeEl.className = "card-created";
+          timeEl.style.fontSize = "11px";
+          timeEl.textContent = created;
+          timeRow.appendChild(timeEl);
+          info.appendChild(timeRow);
+        }
+
+        cardBody.appendChild(info);
+
+        // Big index
+        var indexEl = document.createElement("div");
+        indexEl.className = "card-index";
+        indexEl.style.fontSize = "2.5rem";
+        indexEl.style.fontWeight = "900";
+        indexEl.style.opacity = "0.35";
+        indexEl.style.position = "absolute";
+        indexEl.style.right = "18px";
+        indexEl.style.top = "50%";
+        indexEl.style.transform = "translateY(-50%)";
+        indexEl.style.lineHeight = "1";
+        indexEl.style.pointerEvents = "none";
+        indexEl.style.userSelect = "none";
+        indexEl.textContent = String(entry.index || (i + 1));
+        cardBody.appendChild(indexEl);
+
+        card.appendChild(cardBody);
+        listWrap.appendChild(card);
+      }
+      content.appendChild(listWrap);
+    }
+  </script>
+</body>
+</html>
