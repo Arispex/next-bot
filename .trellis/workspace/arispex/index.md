@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 58
-- **Last Active**: 2026-04-20
+- **Total Sessions**: 59
+- **Last Active**: 2026-04-22
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~331 | Active |
+| `journal-2.md` | ~384 | Active |
 | `journal-1.md` | ~1999 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits |
 |---|------|-------|---------|
+| 59 | 2026-04-22 | 菜单二级分类重构 + admin 字段清理 | `eb9e0e0`, `7ac1889` |
 | 58 | 2026-04-20 | 新增猜数字/掷骰子排行榜与 v1.1.1 发布 | `2d08c13`, `fa436a2` |
 | 57 | 2026-04-12 | 抢劫系统、更改用户名称、签到奖励调整 | `1890c77`, `ced5eda`, `26dfa6e` |
 | 56 | 2026-04-12 | 封禁安全修复、用户名大小写不敏感、API 全量查询、更改用户名称 | `25c15a9`, `4d4e7b0`, `e0b5aec`, `ced5eda` |

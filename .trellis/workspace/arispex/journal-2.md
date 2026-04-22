@@ -329,3 +329,56 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 59: 菜单二级分类重构 + admin 字段清理
+
+**Date**: 2026-04-22
+**Task**: 菜单二级分类重构 + admin 字段清理
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+本次会话围绕命令菜单可读性，做了一次较大的重构：把单层「菜单 / 管理菜单」改为「菜单（分类列表）+ 菜单 <分类>（命令网格）」二级结构，并把仅服务于旧菜单的 admin 字段全链路下线。
+
+| 改动 | 说明 |
+|------|------|
+| DB schema | `command_config` 新增 `category` 列（migration `ALTER TABLE ADD COLUMN`），删除 `admin` 列（model 层移除，旧库孤儿列保留） |
+| 装饰器 | `@command_control(category="X")` 新参数，`admin=` 参数下线；`RegisteredCommand` / `RuntimeCommandState` dataclass 同步加 category 删 admin；`_build_meta_hash` 把 category 纳入哈希 |
+| 同步 / 缓存 | `sync_registered_commands_to_db`、`_to_runtime_state`、`_get_runtime_state`、`_serialize_runtime_state`、`update_command_config` 全链路 add category / drop admin |
+| 命令分类 | 65 处 `@command_control` 调用通过脚本批量打上 9 个分类标签：关于 / 用户系统 / 经济系统 / 红包系统 / 排行榜 / 服务器系统 / 安全管理 / 权限管理 / 系统功能；同时 22 处 `admin=True` 一起删除 |
+| 菜单插件重写 | 删 `管理菜单` matcher + handler；`菜单`（无参）→ 文本回复分类列表，`菜单 1` / `菜单 红包系统` → 该分类下命令的截图（复用现有 menu_page 渲染） |
+| 默认权限 | guest 默认权限串移除 `menu.admin` |
+| WebUI | 命令管理页表格列「归属菜单」改为「分类」，删除 admin 切换组件改为只读分类文本；PATCH endpoint 删除 admin 字段；JS `saveSingleCommand` 同步删 admin 参数 |
+
+**Updated Files**:
+- `nextbot/db.py` — CommandConfig category 列 + 删 admin 列 + migration
+- `nextbot/command_config.py` — 装饰器 / dataclass / sync / cache 链路
+- `nextbot/plugins/menu.py` — 二级菜单实现
+- `nextbot/plugins/{about,ban,dice,economy,group_manager,guess_number,leaderboard,permission_manager,player_query,red_packet,rob,security,server_manager,server_send,server_tools,user_manager}.py` — 65 处 category= 添加 + 22 处 admin=True 删除
+- `server/routes/webui_commands.py` — PATCH 删除 admin
+- `server/webui/templates/commands_content.html` — 列头改分类
+- `server/webui/static/js/commands.js` — 列渲染 + saveSingleCommand
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `eb9e0e0` | (see git log) |
+| `7ac1889` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
