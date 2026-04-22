@@ -428,9 +428,9 @@ async def handle_rename(bot: Bot, event: Event, arg: Message = CommandArg()) -> 
 
     lines: list[str] = [f"✅ 更改用户名称成功，{old_name}（{target_user_id}）的用户名称已更改为 {new_name}"]
     if not servers:
-        lines.append("同步服务器白名单结果：暂无服务器")
+        lines.append("🖥️ 同步服务器白名单结果：ℹ️ 暂无服务器")
     else:
-        lines.append("同步服务器白名单结果：")
+        lines.append("🖥️ 同步服务器白名单结果：")
         for server in servers:
             remove_ok = False
             add_ok = False

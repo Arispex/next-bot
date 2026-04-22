@@ -216,7 +216,7 @@ async def handle_online(
             continue
 
         if not players:
-            lines.append("无玩家在线")
+            lines.append("ℹ️ 无玩家在线")
             continue
 
         lines.append(f"在线玩家({playercount}/{maxplayers})")

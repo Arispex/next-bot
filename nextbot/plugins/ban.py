@@ -264,9 +264,9 @@ async def handle_unban(bot: Bot, event: Event, arg: Message = CommandArg()) -> N
     lines: list[str] = [f"✅ 解封成功，用户 {user_name}（{user_qq}）已解除封禁"]
 
     if not servers:
-        lines.append("同步服务器黑名单结果：暂无服务器")
+        lines.append("🖥️ 同步服务器黑名单结果：ℹ️ 暂无服务器")
     else:
-        lines.append("同步服务器黑名单结果：")
+        lines.append("🖥️ 同步服务器黑名单结果：")
         for server in servers:
             try:
                 check_response = await request_server_api(

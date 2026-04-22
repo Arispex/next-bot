@@ -67,10 +67,10 @@ async def sync_user_to_blacklist(user_name: str, reason: str) -> list[str]:
 
     lines: list[str] = []
     if not servers:
-        lines.append("同步服务器黑名单结果：暂无服务器")
+        lines.append("🖥️ 同步服务器黑名单结果：ℹ️ 暂无服务器")
         return lines
 
-    lines.append("同步服务器黑名单结果：")
+    lines.append("🖥️ 同步服务器黑名单结果：")
     for server in servers:
         try:
             check_response = await request_server_api(server, "/nextbot/blacklist")

@@ -24,7 +24,7 @@ from nextbot.time_utils import db_now_utc_naive
 
 _ALLOWED_PARAM_TYPES = {"bool", "int", "float", "string"}
 _DEFAULT_DISABLED_MODE = "reply"
-_DEFAULT_DISABLED_MESSAGE = "该命令暂时关闭"
+_DEFAULT_DISABLED_MESSAGE = "⚠️ 该命令暂时关闭"
 
 
 @dataclass(frozen=True)
@@ -112,12 +112,12 @@ def _get_raw_command() -> str:
 def _build_usage_message(usage: str, *, actual_command: str = "") -> str:
     normalized = _normalize_usage_text(usage)
     if not normalized:
-        return "命令格式错误"
+        return "❌ 命令格式错误"
     if actual_command:
         display_name = normalized.split()[0] if normalized else ""
         if display_name and actual_command != display_name:
             normalized = actual_command + normalized[len(display_name):]
-    return f"格式错误，正确格式：{normalized}"
+    return f"❌ 格式错误，正确格式：{normalized}"
 
 
 def _normalize_param_key(name: str) -> str:
@@ -356,8 +356,8 @@ def _check_user_banned(user_id: str) -> str:
         if user is not None and user.is_banned:
             reason = str(user.ban_reason or "").strip()
             if reason:
-                return f"你已被封禁\n原因：{reason}\n如有疑问，请联系管理员"
-            return "你已被封禁\n如有疑问，请联系管理员"
+                return f"🚫 你已被封禁\n原因：{reason}\n如有疑问，请联系管理员"
+            return "🚫 你已被封禁\n如有疑问，请联系管理员"
     finally:
         session.close()
     return ""
