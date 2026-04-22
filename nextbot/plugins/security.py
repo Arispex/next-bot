@@ -18,7 +18,7 @@ from nextbot.tshock_api import (
     is_success,
     request_server_api,
 )
-from nextbot.text_utils import reply_failure
+from nextbot.text_utils import reply_failure, reply_success
 
 confirm_login_matcher = on_command("允许登入")
 reject_login_matcher = on_command("拒绝登入")
@@ -71,8 +71,8 @@ def _pick_failure_reason(
         if not ok and _NO_PENDING_MARK not in reason
     ]
     if not non_pending_reasons:
-        return f"{action}失败，没有待处理的登入请求"
-    return f"{action}失败，{non_pending_reasons[0]}"
+        return reply_failure(action, "没有待处理的登入请求")
+    return reply_failure(action, non_pending_reasons[0])
 
 
 def _log_results(
@@ -126,7 +126,7 @@ async def handle_confirm_login(
     _log_results("允许登入", user_id, user.name, success_count, results)
 
     if success_count > 0:
-        await bot.send(event, at + " 允许成功，可在 5 分钟内重新连接")
+        await bot.send(event, at + " " + reply_success("允许", "可在 5 分钟内重新连接"))
         return
 
     await bot.send(event, at + " " + _pick_failure_reason("允许", results))
@@ -165,7 +165,7 @@ async def handle_reject_login(
     _log_results("拒绝登入", user_id, user.name, success_count, results)
 
     if success_count > 0:
-        await bot.send(event, at + " 拒绝成功")
+        await bot.send(event, at + " " + reply_success("拒绝"))
         return
 
     await bot.send(event, at + " " + _pick_failure_reason("拒绝", results))

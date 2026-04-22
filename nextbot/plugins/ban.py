@@ -89,7 +89,7 @@ async def handle_ban(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
     )
 
     lines: list[str] = [
-        f"封禁成功，用户 {result.user_name}（{result.user_qq}）已被封禁，原因：{reason}"
+        f"✅ 封禁成功，用户 {result.user_name}（{result.user_qq}）已被封禁，原因：{reason}"
     ]
     lines.extend(await sync_user_to_blacklist(result.user_name, reason))
 
@@ -130,10 +130,10 @@ async def handle_ban_list(bot: Bot, event: Event, arg: Message = CommandArg()) -
         try:
             page = int(args[0])
         except ValueError:
-            await bot.send(event, "查询失败，页数必须为正整数")
+            await bot.send(event, reply_failure("查询", "页数必须为正整数"))
             return
         if page <= 0:
-            await bot.send(event, "查询失败，页数必须为正整数")
+            await bot.send(event, reply_failure("查询", "页数必须为正整数"))
             return
 
     limit = max(1, min(int(get_current_param("limit", 10)), 50))
@@ -158,7 +158,7 @@ async def handle_ban_list(bot: Bot, event: Event, arg: Message = CommandArg()) -
         )
     else:
         if page > total_pages:
-            await bot.send(event, f"查询失败，超出总页数（共 {total_pages} 页）")
+            await bot.send(event, reply_failure("查询", f"超出总页数（共 {total_pages} 页）"))
             return
 
         offset = (page - 1) * limit
@@ -185,7 +185,7 @@ async def handle_ban_list(bot: Bot, event: Event, arg: Message = CommandArg()) -
     try:
         await screenshot_url(page_url, screenshot_path, options=BAN_LIST_SCREENSHOT_OPTIONS)
     except RenderScreenshotError as exc:
-        await bot.send(event, f"查询失败，{exc}")
+        await bot.send(event, reply_failure("查询", f"{exc}"))
         return
 
     logger.info(f"封禁列表截图成功：page={page}/{total_pages} file={screenshot_path}")
@@ -193,7 +193,7 @@ async def handle_ban_list(bot: Bot, event: Event, arg: Message = CommandArg()) -
         try:
             image_uri = _to_base64_image_uri(screenshot_path)
         except OSError:
-            await bot.send(event, "查询失败，读取截图文件失败")
+            await bot.send(event, reply_failure("查询", "读取截图文件失败"))
             return
         await bot.send(event, OBV11MessageSegment.image(file=image_uri))
         return
@@ -261,7 +261,7 @@ async def handle_unban(bot: Bot, event: Event, arg: Message = CommandArg()) -> N
     finally:
         session.close()
 
-    lines: list[str] = [f"解封成功，用户 {user_name}（{user_qq}）已解除封禁"]
+    lines: list[str] = [f"✅ 解封成功，用户 {user_name}（{user_qq}）已解除封禁"]
 
     if not servers:
         lines.append("同步服务器黑名单结果：暂无服务器")

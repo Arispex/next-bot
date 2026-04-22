@@ -21,7 +21,7 @@ from nextbot.tshock_api import (
     is_success,
     request_server_api,
 )
-from nextbot.text_utils import reply_failure
+from nextbot.text_utils import reply_failure, reply_success
 
 
 execute_matcher = on_command("执行")
@@ -105,10 +105,10 @@ async def handle_execute(
 
     result_text = _extract_response_text(response.payload)
     if result_text:
-        await bot.send(event, at + f"\n执行成功，返回内容：\n{result_text}")
+        await bot.send(event, at + "\n" + reply_success("执行") + f"\n📋 返回内容：\n{result_text}")
         return
 
-    await bot.send(event, at + " 执行成功，无返回内容")
+    await bot.send(event, at + " " + reply_success("执行", "无返回内容"))
 
 
 @map_image_matcher.handle()
@@ -140,7 +140,7 @@ async def handle_map_image(
         session.close()
 
     if server is None:
-        await bot.send(event, "查询失败，服务器不存在")
+        await bot.send(event, reply_failure("查询", "服务器不存在"))
         return
 
     try:
@@ -150,23 +150,23 @@ async def handle_map_image(
             timeout=60.0,
         )
     except TShockRequestError:
-        await bot.send(event, "查询失败，无法连接服务器")
+        await bot.send(event, reply_failure("查询", "无法连接服务器"))
         return
 
     if not is_success(response):
-        await bot.send(event, f"查询失败，{get_error_reason(response)}")
+        await bot.send(event, reply_failure("查询", f"{get_error_reason(response)}"))
         return
 
     b64 = response.payload.get("base64")
     if not isinstance(b64, str) or not b64:
-        await bot.send(event, "查询失败，返回数据格式错误")
+        await bot.send(event, reply_failure("查询", "返回数据格式错误"))
         return
 
     logger.info(f"世界地图获取成功：server_id={server.id}")
     if bot.adapter.get_name() == "OneBot V11":
         await bot.send(event, OBV11MessageSegment.image(file=f"base64://{b64}"))
         return
-    await bot.send(event, f"地图数据已获取，文件名：{response.payload.get('fileName', '')}")
+    await bot.send(event, "ℹ️ 地图数据已获取，文件名：" + str(response.payload.get('fileName', '')))
 
 
 @download_map_matcher.handle()
@@ -198,7 +198,7 @@ async def handle_download_map(
         session.close()
 
     if server is None:
-        await bot.send(event, "下载失败，服务器不存在")
+        await bot.send(event, reply_failure("下载", "服务器不存在"))
         return
 
     try:
@@ -208,17 +208,17 @@ async def handle_download_map(
             timeout=60.0,
         )
     except TShockRequestError:
-        await bot.send(event, "下载失败，无法连接服务器")
+        await bot.send(event, reply_failure("下载", "无法连接服务器"))
         return
 
     if not is_success(response):
-        await bot.send(event, f"下载失败，{get_error_reason(response)}")
+        await bot.send(event, reply_failure("下载", f"{get_error_reason(response)}"))
         return
 
     b64 = response.payload.get("base64")
     file_name = response.payload.get("fileName") or "world.wld"
     if not isinstance(b64, str) or not b64:
-        await bot.send(event, "下载失败，返回数据格式错误")
+        await bot.send(event, reply_failure("下载", "返回数据格式错误"))
         return
 
     logger.info(f"世界文件下载成功：server_id={server.id} file={file_name}")
@@ -242,4 +242,4 @@ async def handle_download_map(
     file_data = base64.b64decode(b64)
     file_path = Path("/tmp") / file_name
     file_path.write_bytes(file_data)
-    await bot.send(event, f"文件已保存：{file_path}")
+    await bot.send(event, f"✅ 下载成功，文件已保存：{file_path}")

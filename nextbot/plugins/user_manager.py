@@ -218,7 +218,7 @@ async def handle_sync_whitelist(
     logger.info(
         f"同步白名单完成：user_id={user_id} name={user.name} server_count={len(results)}"
     )
-    await bot.send(event, at + "\n" + "\n".join(lines))
+    await bot.send(event, at + "\n" + reply_success("同步白名单") + "\n" + "\n".join(lines))
 
 
 def _get_sign_dates(user_id: str, days: int) -> list[str]:
@@ -260,7 +260,7 @@ async def _render_and_send_user_info(bot: Bot, event: Event, user: User, days: i
     try:
         await screenshot_url(page_url, screenshot_path, options=USER_INFO_SCREENSHOT_OPTIONS)
     except RenderScreenshotError as exc:
-        await bot.send(event, f"查询失败，{exc}")
+        await bot.send(event, reply_failure("查询", f"{exc}"))
         return
 
     logger.info(f"用户信息截图成功：user_id={user.user_id} file={screenshot_path}")
@@ -269,7 +269,7 @@ async def _render_and_send_user_info(bot: Bot, event: Event, user: User, days: i
             raw = screenshot_path.read_bytes()
             image_uri = f"base64://{base64.b64encode(raw).decode('ascii')}"
         except OSError:
-            await bot.send(event, "查询失败，读取截图文件失败")
+            await bot.send(event, reply_failure("查询", "读取截图文件失败"))
             return
         await bot.send(event, OBV11MessageSegment.image(file=image_uri))
         return
@@ -301,13 +301,13 @@ async def handle_user_info(
     if parse_error == "missing":
         raise_command_usage()
     if parse_error == "name_not_found":
-        await bot.send(event, "查询失败，用户名称不存在")
+        await bot.send(event, reply_failure("查询", "用户名称不存在"))
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, "查询失败，用户名称不唯一，请使用用户 QQ 或 @用户")
+        await bot.send(event, reply_failure("查询", "用户名称不唯一，请使用用户 QQ 或 @用户"))
         return
     if target_user_id is None:
-        await bot.send(event, "查询失败，用户参数解析失败")
+        await bot.send(event, reply_failure("查询", "用户参数解析失败"))
         return
 
     session = get_session()
@@ -317,7 +317,7 @@ async def handle_user_info(
         session.close()
 
     if user is None:
-        await bot.send(event, "查询失败，用户不存在")
+        await bot.send(event, reply_failure("查询", "用户不存在"))
         return
 
     await _render_and_send_user_info(bot, event, user, 365)
@@ -348,7 +348,7 @@ async def handle_self_info(
         session.close()
 
     if user is None:
-        await bot.send(event, "查询失败，未注册账号")
+        await bot.send(event, reply_failure("查询", "未注册账号"))
         return
 
     await _render_and_send_user_info(bot, event, user, 365)
@@ -426,7 +426,7 @@ async def handle_rename(bot: Bot, event: Event, arg: Message = CommandArg()) -> 
     finally:
         session.close()
 
-    lines: list[str] = [f"更改成功，{old_name}（{target_user_id}）的用户名称已更改为 {new_name}"]
+    lines: list[str] = [f"✅ 更改用户名称成功，{old_name}（{target_user_id}）的用户名称已更改为 {new_name}"]
     if not servers:
         lines.append("同步服务器白名单结果：暂无服务器")
     else:

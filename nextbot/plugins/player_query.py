@@ -184,7 +184,7 @@ async def handle_online(
         session.close()
 
     if not servers:
-        await bot.send(event, "查询失败，暂无服务器")
+        await bot.send(event, reply_failure("查询", "暂无服务器"))
         return
 
     lines: list[str] = []
@@ -233,7 +233,7 @@ async def handle_online(
         lines.append(player_names)
 
     logger.info(f"在线查询完成：server_count={len(servers)}")
-    await bot.send(event, "\n".join(lines))
+    await bot.send(event, "🖥️ 服务器在线状态\n" + "\n".join(lines))
 
 
 @self_kick_matcher.handle()
@@ -292,7 +292,7 @@ async def handle_self_kick(
     logger.info(
         f"自踢执行完成：user_id={user_id} name={user.name} server_count={len(servers)}"
     )
-    await bot.send(event, at + "\n" + "\n".join(lines))
+    await bot.send(event, at + "\n🖥️ 自踢结果\n" + "\n".join(lines))
 
 
 @inventory_matcher.handle()
@@ -348,13 +348,13 @@ async def handle_user_inventory(
     if parse_error == "missing":
         raise_command_usage()
     if parse_error == "name_not_found":
-        await bot.send(event, "查询失败，用户名称不存在")
+        await bot.send(event, reply_failure("查询", "用户名称不存在"))
         return
     if parse_error == "name_ambiguous":
-        await bot.send(event, "查询失败，用户名称不唯一，请使用用户 QQ 或 @用户")
+        await bot.send(event, reply_failure("查询", "用户名称不唯一，请使用用户 QQ 或 @用户"))
         return
     if target_user_id is None:
-        await bot.send(event, "查询失败，用户参数解析失败")
+        await bot.send(event, reply_failure("查询", "用户参数解析失败"))
         return
 
     session = get_session()
@@ -365,10 +365,10 @@ async def handle_user_inventory(
         session.close()
 
     if server is None:
-        await bot.send(event, "查询失败，服务器不存在")
+        await bot.send(event, reply_failure("查询", "服务器不存在"))
         return
     if target_user is None:
-        await bot.send(event, "查询失败，用户不存在")
+        await bot.send(event, reply_failure("查询", "用户不存在"))
         return
 
     try:
@@ -377,16 +377,16 @@ async def handle_user_inventory(
             f"/nextbot/users/{target_user.name}/inventory",
         )
     except TShockRequestError:
-        await bot.send(event, "查询失败，无法连接服务器")
+        await bot.send(event, reply_failure("查询", "无法连接服务器"))
         return
 
     if not is_success(response):
-        await bot.send(event, f"查询失败，{get_error_reason(response)}")
+        await bot.send(event, reply_failure("查询", f"{get_error_reason(response)}"))
         return
 
     inventory = response.payload.get("items")
     if not isinstance(inventory, list):
-        await bot.send(event, "查询失败，返回数据格式错误")
+        await bot.send(event, reply_failure("查询", "返回数据格式错误"))
         return
 
     try:
@@ -395,16 +395,16 @@ async def handle_user_inventory(
             f"/nextbot/users/{target_user.name}/stats",
         )
     except TShockRequestError:
-        await bot.send(event, "查询失败，无法连接服务器")
+        await bot.send(event, reply_failure("查询", "无法连接服务器"))
         return
 
     if not is_success(info_response):
-        await bot.send(event, f"查询失败，{get_error_reason(info_response)}")
+        await bot.send(event, reply_failure("查询", f"{get_error_reason(info_response)}"))
         return
 
     info_texts = _parse_user_info_texts(info_response.payload)
     if info_texts is None:
-        await bot.send(event, "查询失败，返回数据格式错误")
+        await bot.send(event, reply_failure("查询", "返回数据格式错误"))
         return
 
     page_url = create_inventory_page(
@@ -430,7 +430,7 @@ async def handle_user_inventory(
         f"internal_url={page_url} public_url={public_page_url}"
     )
     if bool(get_current_param("send_link", False)):
-        await bot.send(event, f"用户背包链接：{public_page_url}")
+        await bot.send(event, f"ℹ️ 用户背包链接：{public_page_url}")
     screenshot_path = Path("/tmp") / (
         f"inventory-{server.id}-{target_user.user_id}-{beijing_filename_timestamp()}.png"
     )
@@ -441,7 +441,7 @@ async def handle_user_inventory(
             options=INVENTORY_SCREENSHOT_OPTIONS,
         )
     except RenderScreenshotError as exc:
-        await bot.send(event, f"查询失败，{exc}")
+        await bot.send(event, reply_failure("查询", f"{exc}"))
         return
 
     logger.info(
@@ -451,7 +451,7 @@ async def handle_user_inventory(
         try:
             image_uri = _to_base64_image_uri(screenshot_path)
         except OSError:
-            await bot.send(event, "查询失败，读取截图文件失败")
+            await bot.send(event, reply_failure("查询", "读取截图文件失败"))
             return
         await bot.send(event, OBV11MessageSegment.image(file=image_uri))
         return
@@ -512,10 +512,10 @@ async def handle_my_inventory(
         session.close()
 
     if server is None:
-        await bot.send(event, "查询失败，服务器不存在")
+        await bot.send(event, reply_failure("查询", "服务器不存在"))
         return
     if user is None:
-        await bot.send(event, "查询失败，用户不存在")
+        await bot.send(event, reply_failure("查询", "用户不存在"))
         return
 
     try:
@@ -524,16 +524,16 @@ async def handle_my_inventory(
             f"/nextbot/users/{user.name}/inventory",
         )
     except TShockRequestError:
-        await bot.send(event, "查询失败，无法连接服务器")
+        await bot.send(event, reply_failure("查询", "无法连接服务器"))
         return
 
     if not is_success(response):
-        await bot.send(event, f"查询失败，{get_error_reason(response)}")
+        await bot.send(event, reply_failure("查询", f"{get_error_reason(response)}"))
         return
 
     inventory = response.payload.get("items")
     if not isinstance(inventory, list):
-        await bot.send(event, "查询失败，返回数据格式错误")
+        await bot.send(event, reply_failure("查询", "返回数据格式错误"))
         return
 
     try:
@@ -542,16 +542,16 @@ async def handle_my_inventory(
             f"/nextbot/users/{user.name}/stats",
         )
     except TShockRequestError:
-        await bot.send(event, "查询失败，无法连接服务器")
+        await bot.send(event, reply_failure("查询", "无法连接服务器"))
         return
 
     if not is_success(info_response):
-        await bot.send(event, f"查询失败，{get_error_reason(info_response)}")
+        await bot.send(event, reply_failure("查询", f"{get_error_reason(info_response)}"))
         return
 
     info_texts = _parse_user_info_texts(info_response.payload)
     if info_texts is None:
-        await bot.send(event, "查询失败，返回数据格式错误")
+        await bot.send(event, reply_failure("查询", "返回数据格式错误"))
         return
 
     page_url = create_inventory_page(
@@ -577,7 +577,7 @@ async def handle_my_inventory(
         f"internal_url={page_url} public_url={public_page_url}"
     )
     if bool(get_current_param("send_link", False)):
-        await bot.send(event, f"我的背包链接：{public_page_url}")
+        await bot.send(event, f"ℹ️ 我的背包链接：{public_page_url}")
 
     screenshot_path = Path("/tmp") / (
         f"inventory-{server.id}-{user.user_id}-{beijing_filename_timestamp()}.png"
@@ -589,7 +589,7 @@ async def handle_my_inventory(
             options=INVENTORY_SCREENSHOT_OPTIONS,
         )
     except RenderScreenshotError as exc:
-        await bot.send(event, f"查询失败，{exc}")
+        await bot.send(event, reply_failure("查询", f"{exc}"))
         return
 
     logger.info(
@@ -599,7 +599,7 @@ async def handle_my_inventory(
         try:
             image_uri = _to_base64_image_uri(screenshot_path)
         except OSError:
-            await bot.send(event, "查询失败，读取截图文件失败")
+            await bot.send(event, reply_failure("查询", "读取截图文件失败"))
             return
         await bot.send(event, OBV11MessageSegment.image(file=image_uri))
         return
@@ -635,7 +635,7 @@ async def handle_world_progress(
         session.close()
 
     if server is None:
-        await bot.send(event, "查询失败，服务器不存在")
+        await bot.send(event, reply_failure("查询", "服务器不存在"))
         return
 
     try:
@@ -644,11 +644,11 @@ async def handle_world_progress(
             "/nextbot/world/progress",
         )
     except TShockRequestError:
-        await bot.send(event, "查询失败，无法连接服务器")
+        await bot.send(event, reply_failure("查询", "无法连接服务器"))
         return
 
     if not is_success(response):
-        await bot.send(event, f"查询失败，{get_error_reason(response)}")
+        await bot.send(event, reply_failure("查询", f"{get_error_reason(response)}"))
         return
 
     progress = {
@@ -657,7 +657,7 @@ async def handle_world_progress(
         if isinstance(v, bool)
     }
     if not progress:
-        await bot.send(event, "查询失败，返回数据格式错误")
+        await bot.send(event, reply_failure("查询", "返回数据格式错误"))
         return
 
     page_url = create_progress_page(
@@ -682,7 +682,7 @@ async def handle_world_progress(
             options=PROGRESS_SCREENSHOT_OPTIONS,
         )
     except RenderScreenshotError as exc:
-        await bot.send(event, f"查询失败，{exc}")
+        await bot.send(event, reply_failure("查询", f"{exc}"))
         return
 
     logger.info(
@@ -692,7 +692,7 @@ async def handle_world_progress(
         try:
             image_uri = _to_base64_image_uri(screenshot_path)
         except OSError:
-            await bot.send(event, "查询失败，读取截图文件失败")
+            await bot.send(event, reply_failure("查询", "读取截图文件失败"))
             return
         await bot.send(event, OBV11MessageSegment.image(file=image_uri))
         return

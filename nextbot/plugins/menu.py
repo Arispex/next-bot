@@ -97,7 +97,7 @@ async def _render_and_send_menu(
             options=MENU_SCREENSHOT_OPTIONS,
         )
     except RenderScreenshotError as exc:
-        await bot.send(event, f"生成失败，{exc}")
+        await bot.send(event, reply_failure("生成", f"{exc}"))
         return
 
     logger.info(
@@ -107,7 +107,7 @@ async def _render_and_send_menu(
         try:
             image_uri = _to_base64_image_uri(screenshot_path)
         except OSError:
-            await bot.send(event, "生成失败，读取截图文件失败")
+            await bot.send(event, reply_failure("生成", "读取截图文件失败"))
             return
         await bot.send(event, OBV11MessageSegment.image(file=image_uri))
         return

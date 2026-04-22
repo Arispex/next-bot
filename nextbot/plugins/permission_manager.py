@@ -21,7 +21,7 @@ from nextbot.permissions import (
 )
 from nextbot.render_utils import resolve_render_theme
 from nextbot.time_utils import beijing_filename_timestamp
-from nextbot.text_utils import reply_failure
+from nextbot.text_utils import reply_failure, reply_success
 from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
 from server.web_server import create_admin_list_page
 
@@ -94,7 +94,7 @@ async def handle_add_user_perm(
         session.close()
 
     logger.info(f"添加用户权限成功：user_id={user_id} permission={permission}")
-    await bot.send(event, at + " 添加成功")
+    await bot.send(event, at + " " + reply_success("添加"))
 
 
 @remove_user_perm_matcher.handle()
@@ -146,7 +146,7 @@ async def handle_remove_user_perm(
         session.close()
 
     logger.info(f"删除用户权限成功：user_id={user_id} permission={permission}")
-    await bot.send(event, at + " 删除成功")
+    await bot.send(event, at + " " + reply_success("删除"))
 
 
 @set_user_group_matcher.handle()
@@ -205,7 +205,7 @@ async def handle_set_user_group(
     logger.info(
         f"修改用户身份组成功：user_id={target_user_id} group={group_name}"
     )
-    await bot.send(event, at + " 修改成功")
+    await bot.send(event, at + " " + reply_success("修改"))
 
 
 @admin_list_matcher.handle()
@@ -235,7 +235,7 @@ async def handle_admin_list(bot: Bot, event: Event, arg: Message = CommandArg())
     keep_order = bool(get_current_param("keep_order", True))
     owner_ids = get_owner_ids_ordered() if keep_order else sorted(get_owner_ids())
     if not owner_ids:
-        await bot.send(event, "查询失败，未配置管理员（owner_id）")
+        await bot.send(event, reply_failure("查询", "未配置管理员（owner_id）"))
         return
 
     logger.info(f"管理员列表查询：owner_count={len(owner_ids)}")
@@ -253,7 +253,7 @@ async def handle_admin_list(bot: Bot, event: Event, arg: Message = CommandArg())
     try:
         await screenshot_url(page_url, screenshot_path, options=ADMIN_LIST_SCREENSHOT_OPTIONS)
     except RenderScreenshotError as exc:
-        await bot.send(event, f"查询失败，{exc}")
+        await bot.send(event, reply_failure("查询", f"{exc}"))
         return
 
     logger.info(f"管理员列表截图成功：file={screenshot_path}")
@@ -262,7 +262,7 @@ async def handle_admin_list(bot: Bot, event: Event, arg: Message = CommandArg())
             raw = screenshot_path.read_bytes()
             image_uri = f"base64://{base64.b64encode(raw).decode('ascii')}"
         except OSError:
-            await bot.send(event, "查询失败，读取截图文件失败")
+            await bot.send(event, reply_failure("查询", "读取截图文件失败"))
             return
         await bot.send(event, OBV11MessageSegment.image(file=image_uri))
         return

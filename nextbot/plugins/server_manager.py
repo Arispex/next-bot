@@ -14,7 +14,7 @@ from nextbot.tshock_api import (
     is_success,
     request_server_api,
 )
-from nextbot.text_utils import reply_failure
+from nextbot.text_utils import reply_failure, reply_success
 
 add_matcher = on_command("添加服务器")
 delete_matcher = on_command("删除服务器")
@@ -59,7 +59,7 @@ async def handle_add_server(
     logger.info(
         f"添加服务器成功：ID={count + 1} name={name} ip={ip} game_port={game_port} restapi_port={restapi_port}"
     )
-    await bot.send(event, at + " 添加成功")
+    await bot.send(event, at + " " + reply_success("添加"))
 
 
 @delete_matcher.handle()
@@ -104,7 +104,7 @@ async def handle_delete_server(
         session.close()
 
     logger.info(f"删除服务器成功：ID={deleted_id}")
-    await bot.send(event, at + " 删除成功")
+    await bot.send(event, at + " " + reply_success("删除"))
 
 
 @list_matcher.handle()
@@ -131,7 +131,7 @@ async def handle_list_servers(
         session.close()
 
     if not servers:
-        await bot.send(event, "暂无服务器")
+        await bot.send(event, "ℹ️ 暂无服务器")
         return
 
     lines: list[str] = []
@@ -141,7 +141,7 @@ async def handle_list_servers(
         lines.append(f"端口：{server.game_port}")
         lines.append("")
 
-    message = "\n".join(lines).rstrip()
+    message = "🖥️ 服务器列表\n" + "\n".join(lines).rstrip()
     logger.info(f"输出服务器列表，共 {len(servers)} 条")
     await bot.send(event, message)
 
@@ -195,7 +195,7 @@ async def handle_test_server(
     )
 
     if is_success(response):
-        await bot.send(event, at + " 测试成功，一切正常")
+        await bot.send(event, at + " " + reply_success("测试", "一切正常"))
         return
 
     reason = get_error_reason(response)

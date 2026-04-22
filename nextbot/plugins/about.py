@@ -12,6 +12,7 @@ from nextbot.message_parser import parse_command_args_with_fallback
 from nextbot.render_utils import resolve_render_theme
 from nextbot.permissions import require_permission
 from nextbot.time_utils import beijing_filename_timestamp
+from nextbot.text_utils import reply_failure
 from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
 from server.web_server import create_about_page
 
@@ -56,7 +57,7 @@ async def handle_about(bot: Bot, event: Event, arg: Message = CommandArg()) -> N
             options=ABOUT_SCREENSHOT_OPTIONS,
         )
     except RenderScreenshotError as exc:
-        await bot.send(event, f"生成失败，{exc}")
+        await bot.send(event, reply_failure("生成", f"{exc}"))
         return
 
     logger.info(f"关于页面截图成功：file={screenshot_path}")
@@ -64,7 +65,7 @@ async def handle_about(bot: Bot, event: Event, arg: Message = CommandArg()) -> N
         try:
             image_uri = _to_base64_image_uri(screenshot_path)
         except OSError:
-            await bot.send(event, "生成失败，读取截图文件失败")
+            await bot.send(event, reply_failure("生成", "读取截图文件失败"))
             return
         await bot.send(event, OBV11MessageSegment.image(file=image_uri))
         return

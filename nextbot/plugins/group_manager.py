@@ -14,7 +14,7 @@ from nextbot.permissions import (
     remove_permission,
     require_permission,
 )
-from nextbot.text_utils import reply_failure
+from nextbot.text_utils import reply_failure, reply_success
 
 list_matcher = on_command("身份组列表")
 add_matcher = on_command("添加身份组")
@@ -47,7 +47,7 @@ async def handle_list_groups(
         session.close()
 
     if not groups:
-        await bot.send(event, "暂无身份组")
+        await bot.send(event, "ℹ️ 暂无身份组")
         return
 
     lines: list[str] = []
@@ -57,7 +57,7 @@ async def handle_list_groups(
         lines.append(f"继承：{group.inherits or '无'}")
         lines.append("")
 
-    message = "\n".join(lines).rstrip()
+    message = "👥 身份组列表\n" + "\n".join(lines).rstrip()
     logger.info(f"输出身份组列表，共 {len(groups)} 条")
     await bot.send(event, message)
 
@@ -94,7 +94,7 @@ async def handle_add_group(
         session.close()
 
     logger.info(f"添加身份组成功：name={name}")
-    await bot.send(event, at + " 添加成功")
+    await bot.send(event, at + " " + reply_success("添加"))
 
 
 @delete_matcher.handle()
@@ -143,7 +143,7 @@ async def handle_delete_group(
         session.close()
 
     logger.info(f"删除身份组成功：name={name}")
-    await bot.send(event, at + " 删除成功")
+    await bot.send(event, at + " " + reply_success("删除"))
 
 
 @inherit_matcher.handle()
@@ -183,7 +183,7 @@ async def handle_inherit_group(
         session.close()
 
     logger.info(f"身份组继承成功：{child} -> {parent}")
-    await bot.send(event, at + " 修改成功")
+    await bot.send(event, at + " " + reply_success("修改"))
 
 
 @clear_inherit_matcher.handle()
@@ -218,7 +218,7 @@ async def handle_clear_inherit_group(
         session.close()
 
     logger.info(f"取消身份组继承成功：name={name}")
-    await bot.send(event, at + " 修改成功")
+    await bot.send(event, at + " " + reply_success("修改"))
 
 
 @add_perm_matcher.handle()
@@ -253,7 +253,7 @@ async def handle_add_group_perm(
         session.close()
 
     logger.info(f"添加身份组权限成功：name={name} permission={permission}")
-    await bot.send(event, at + " 添加成功")
+    await bot.send(event, at + " " + reply_success("添加"))
 
 
 @remove_perm_matcher.handle()
@@ -288,4 +288,4 @@ async def handle_remove_group_perm(
         session.close()
 
     logger.info(f"删除身份组权限成功：name={name} permission={permission}")
-    await bot.send(event, at + " 删除成功")
+    await bot.send(event, at + " " + reply_success("删除"))
