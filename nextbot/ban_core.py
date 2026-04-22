@@ -75,7 +75,7 @@ async def sync_user_to_blacklist(user_name: str, reason: str) -> list[str]:
         try:
             check_response = await request_server_api(server, "/nextbot/blacklist")
         except TShockRequestError:
-            lines.append(f"{server.id}.{server.name}：添加失败，无法连接服务器")
+            lines.append(f"{server.id}.{server.name}：❌ 添加失败，无法连接服务器")
             continue
 
         if is_success(check_response):
@@ -86,7 +86,7 @@ async def sync_user_to_blacklist(user_name: str, reason: str) -> list[str]:
                 if isinstance(e, dict)
             )
             if already_exists:
-                lines.append(f"{server.id}.{server.name}：已存在于黑名单中")
+                lines.append(f"{server.id}.{server.name}：ℹ️ 已存在于黑名单中")
                 continue
 
         try:
@@ -96,13 +96,13 @@ async def sync_user_to_blacklist(user_name: str, reason: str) -> list[str]:
                 params={"reason": reason},
             )
         except TShockRequestError:
-            lines.append(f"{server.id}.{server.name}：添加失败，无法连接服务器")
+            lines.append(f"{server.id}.{server.name}：❌ 添加失败，无法连接服务器")
             continue
 
         if is_success(response):
-            lines.append(f"{server.id}.{server.name}：添加成功")
+            lines.append(f"{server.id}.{server.name}：✅ 添加成功")
         else:
-            lines.append(f"{server.id}.{server.name}：添加失败，{get_error_reason(response)}")
+            lines.append(f"{server.id}.{server.name}：❌ 添加失败，{get_error_reason(response)}")
 
     logger.info(
         f"黑名单同步完成：user_name={user_name} server_count={len(servers)}"

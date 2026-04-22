@@ -123,7 +123,7 @@ async def _render_and_send(
         await bot.send(event, OBV11MessageSegment.image(file=image_uri))
         return
 
-    await bot.send(event, f"截图成功，文件：{screenshot_path}")
+    await bot.send(event, f"✅ 截图成功，文件：{screenshot_path}")
 
 
 @coins_leaderboard_matcher.handle()

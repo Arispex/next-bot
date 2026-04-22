@@ -197,22 +197,22 @@ async def handle_online(
                 params={"players": "true"},
             )
         except TShockRequestError:
-            lines.append("查询失败，无法连接服务器")
+            lines.append("❌ 查询失败，无法连接服务器")
             continue
 
         if not is_success(response):
-            lines.append(f"查询失败，{get_error_reason(response)}")
+            lines.append(f"❌ 查询失败，{get_error_reason(response)}")
             continue
 
         players = response.payload.get("players")
         if not isinstance(players, list):
-            lines.append("查询失败，返回数据格式错误")
+            lines.append("❌ 查询失败，返回数据格式错误")
             continue
 
         playercount = response.payload.get("playercount")
         maxplayers = response.payload.get("maxplayers")
         if not isinstance(playercount, int) or not isinstance(maxplayers, int):
-            lines.append("查询失败，返回数据格式错误")
+            lines.append("❌ 查询失败，返回数据格式错误")
             continue
 
         if not players:
@@ -279,15 +279,15 @@ async def handle_self_kick(
                 params={"cmd": f"/kick {user.name}"},
             )
         except TShockRequestError:
-            lines.append(f"{server.id}.{server.name}：执行失败，无法连接服务器")
+            lines.append(f"{server.id}.{server.name}：❌ 执行失败，无法连接服务器")
             continue
 
         if is_success(response):
-            lines.append(f"{server.id}.{server.name}：执行成功")
+            lines.append(f"{server.id}.{server.name}：✅ 执行成功")
             continue
 
         reason = get_error_reason(response)
-        lines.append(f"{server.id}.{server.name}：执行失败，{reason}")
+        lines.append(f"{server.id}.{server.name}：❌ 执行失败，{reason}")
 
     logger.info(
         f"自踢执行完成：user_id={user_id} name={user.name} server_count={len(servers)}"
@@ -455,7 +455,7 @@ async def handle_user_inventory(
             return
         await bot.send(event, OBV11MessageSegment.image(file=image_uri))
         return
-    await bot.send(event, f"截图成功，文件：{screenshot_path}")
+    await bot.send(event, f"✅ 截图成功，文件：{screenshot_path}")
 
 
 @my_inventory_matcher.handle()
@@ -603,7 +603,7 @@ async def handle_my_inventory(
             return
         await bot.send(event, OBV11MessageSegment.image(file=image_uri))
         return
-    await bot.send(event, f"截图成功，文件：{screenshot_path}")
+    await bot.send(event, f"✅ 截图成功，文件：{screenshot_path}")
 
 
 @progress_matcher.handle()
@@ -696,4 +696,4 @@ async def handle_world_progress(
             return
         await bot.send(event, OBV11MessageSegment.image(file=image_uri))
         return
-    await bot.send(event, f"截图成功，文件：{screenshot_path}")
+    await bot.send(event, f"✅ 截图成功，文件：{screenshot_path}")

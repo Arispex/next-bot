@@ -198,7 +198,7 @@ async def handle_ban_list(bot: Bot, event: Event, arg: Message = CommandArg()) -
         await bot.send(event, OBV11MessageSegment.image(file=image_uri))
         return
 
-    await bot.send(event, f"截图成功，文件：{screenshot_path}")
+    await bot.send(event, f"✅ 截图成功，文件：{screenshot_path}")
 
 
 @unban_matcher.handle()
@@ -274,7 +274,7 @@ async def handle_unban(bot: Bot, event: Event, arg: Message = CommandArg()) -> N
                     "/nextbot/blacklist",
                 )
             except TShockRequestError:
-                lines.append(f"{server.id}.{server.name}：移除失败，无法连接服务器")
+                lines.append(f"{server.id}.{server.name}：❌ 移除失败，无法连接服务器")
                 continue
 
             if is_success(check_response):
@@ -285,7 +285,7 @@ async def handle_unban(bot: Bot, event: Event, arg: Message = CommandArg()) -> N
                     if isinstance(e, dict)
                 )
                 if not exists:
-                    lines.append(f"{server.id}.{server.name}：不在黑名单中")
+                    lines.append(f"{server.id}.{server.name}：ℹ️ 不在黑名单中")
                     continue
 
             try:
@@ -294,14 +294,14 @@ async def handle_unban(bot: Bot, event: Event, arg: Message = CommandArg()) -> N
                     f"/nextbot/blacklist/remove/{user_name}",
                 )
             except TShockRequestError:
-                lines.append(f"{server.id}.{server.name}：移除失败，无法连接服务器")
+                lines.append(f"{server.id}.{server.name}：❌ 移除失败，无法连接服务器")
                 continue
 
             if is_success(response):
-                lines.append(f"{server.id}.{server.name}：移除成功")
+                lines.append(f"{server.id}.{server.name}：✅ 移除成功")
             else:
                 error_msg = get_error_reason(response)
-                lines.append(f"{server.id}.{server.name}：移除失败，{error_msg}")
+                lines.append(f"{server.id}.{server.name}：❌ 移除失败，{error_msg}")
 
     logger.info(
         f"解封用户黑名单同步完成：user_id={user_qq} name={user_name} server_count={len(servers)}"

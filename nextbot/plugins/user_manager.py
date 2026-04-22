@@ -209,11 +209,11 @@ async def handle_sync_whitelist(
     lines: list[str] = []
     for server, success, reason in results:
         if success and reason == "already":
-            lines.append(f"{server.id}.{server.name}：已在白名单中")
+            lines.append(f"{server.id}.{server.name}：ℹ️ 已在白名单中")
         elif success:
-            lines.append(f"{server.id}.{server.name}：同步成功")
+            lines.append(f"{server.id}.{server.name}：✅ 同步成功")
         else:
-            lines.append(f"{server.id}.{server.name}：同步失败，{reason}")
+            lines.append(f"{server.id}.{server.name}：❌ 同步失败，{reason}")
 
     logger.info(
         f"同步白名单完成：user_id={user_id} name={user.name} server_count={len(results)}"
@@ -273,7 +273,7 @@ async def _render_and_send_user_info(bot: Bot, event: Event, user: User, days: i
             return
         await bot.send(event, OBV11MessageSegment.image(file=image_uri))
         return
-    await bot.send(event, f"截图成功，文件：{screenshot_path}")
+    await bot.send(event, f"✅ 截图成功，文件：{screenshot_path}")
 
 
 @info_matcher.handle()
@@ -460,11 +460,15 @@ async def handle_rename(bot: Bot, event: Event, arg: Message = CommandArg()) -> 
                 add_msg = "无法连接服务器"
 
             if remove_ok and add_ok:
-                lines.append(f"{server.id}.{server.name}：同步成功")
+                lines.append(f"{server.id}.{server.name}：✅ 同步成功")
             else:
                 details = []
-                details.append(f"移除旧白名单{'成功' if remove_ok else '失败，' + remove_msg}")
-                details.append(f"添加新白名单{'成功' if add_ok else '失败，' + add_msg}")
+                details.append(
+                    f"移除旧白名单 {'✅ 成功' if remove_ok else '❌ 失败，' + remove_msg}"
+                )
+                details.append(
+                    f"添加新白名单 {'✅ 成功' if add_ok else '❌ 失败，' + add_msg}"
+                )
                 lines.append(f"{server.id}.{server.name}：{'；'.join(details)}")
 
         logger.info(

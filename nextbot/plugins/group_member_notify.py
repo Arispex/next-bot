@@ -186,7 +186,7 @@ async def handle_auto_ban_on_leave(bot: Bot, event: GroupDecreaseNoticeEvent) ->
         return
 
     lines = [
-        f"封禁成功，用户 {result.user_name}（{result.user_qq}）已被封禁，原因：{reason}"
+        f"✅ 封禁成功，用户 {result.user_name}（{result.user_qq}）已被封禁，原因：{reason}"
     ]
     lines.extend(sync_lines)
     try:

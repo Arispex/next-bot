@@ -112,7 +112,7 @@ async def _render_and_send_menu(
         await bot.send(event, OBV11MessageSegment.image(file=image_uri))
         return
 
-    await bot.send(event, f"截图成功，文件：{screenshot_path}")
+    await bot.send(event, f"✅ 截图成功，文件：{screenshot_path}")
 
 
 def _group_by_category(items: list[dict]) -> tuple[list[str], dict[str, list[dict]]]:

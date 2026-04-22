@@ -266,4 +266,4 @@ async def handle_admin_list(bot: Bot, event: Event, arg: Message = CommandArg())
             return
         await bot.send(event, OBV11MessageSegment.image(file=image_uri))
         return
-    await bot.send(event, f"截图成功，文件：{screenshot_path}")
+    await bot.send(event, f"✅ 截图成功，文件：{screenshot_path}")
