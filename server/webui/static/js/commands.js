@@ -675,14 +675,11 @@
     }
   };
 
-  const saveSingleCommand = async ({ commandKey, enabled, admin, paramValues }) => {
+  const saveSingleCommand = async ({ commandKey, enabled, paramValues }) => {
     const data = {};
 
     if (enabled !== undefined) {
       data.enabled = Boolean(enabled);
-    }
-    if (admin !== undefined) {
-      data.admin = Boolean(admin);
     }
     if (paramValues !== undefined) {
       data.param_values = cloneValue(paramValues || {});

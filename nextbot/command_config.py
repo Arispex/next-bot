@@ -37,7 +37,6 @@ class RegisteredCommand:
     handler_name: str
     permission: str
     default_enabled: bool
-    admin: bool
     param_schema: dict[str, dict[str, Any]]
     category: str
     meta_hash: str
@@ -53,7 +52,6 @@ class RuntimeCommandState:
     handler_name: str
     permission: str
     enabled: bool
-    admin: bool
     param_schema: dict[str, dict[str, Any]]
     param_values: dict[str, Any]
     aliases: list[str]
@@ -405,14 +403,6 @@ def _to_runtime_state(row: CommandConfig) -> RuntimeCommandState:
         schema=schema,
         old_values=_parse_json_object(row.param_values_json),
     )
-    registered = _registry.get(row.command_key)
-    admin_db = row.admin
-    if admin_db is not None:
-        admin_value = bool(admin_db)
-    elif registered is not None:
-        admin_value = bool(registered.admin)
-    else:
-        admin_value = False
     aliases: list[str] = []
     try:
         raw_aliases = json.loads(row.aliases_json or "[]")
@@ -430,7 +420,6 @@ def _to_runtime_state(row: CommandConfig) -> RuntimeCommandState:
         handler_name=row.handler_name,
         permission=row.permission,
         enabled=bool(row.enabled),
-        admin=admin_value,
         param_schema=schema,
         param_values=values,
         aliases=aliases,
@@ -484,7 +473,6 @@ def _get_runtime_state(command_key: str) -> RuntimeCommandState:
             handler_name="",
             permission="",
             enabled=True,
-            admin=False,
             param_schema={},
             param_values={},
             aliases=[],
@@ -501,7 +489,6 @@ def _get_runtime_state(command_key: str) -> RuntimeCommandState:
         handler_name=registered.handler_name,
         permission=registered.permission,
         enabled=registered.default_enabled,
-        admin=registered.admin,
         param_schema=registered.param_schema,
         param_values=_build_default_param_values(registered.param_schema),
         aliases=[],
@@ -558,7 +545,6 @@ def _serialize_runtime_state(item: RuntimeCommandState) -> dict[str, Any]:
         "handler_name": item.handler_name,
         "permission": item.permission,
         "enabled": item.enabled,
-        "admin": item.admin,
         "param_schema": _clone_dict(item.param_schema),
         "param_values": _clone_dict(item.param_values),
         "aliases": list(item.aliases),
@@ -599,7 +585,6 @@ def update_command_config(
     command_key: str,
     *,
     enabled: Any = None,
-    admin: Any = None,
     param_values: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     normalized_key = str(command_key).strip()
@@ -614,16 +599,6 @@ def update_command_config(
             raise CommandConfigValidationError(
                 "参数校验失败",
                 errors=[{"field": "enabled", "message": str(exc)}],
-            ) from exc
-
-    normalized_admin: bool | None = None
-    if admin is not None:
-        try:
-            normalized_admin = _coerce_bool(admin)
-        except CommandConfigValidationError as exc:
-            raise CommandConfigValidationError(
-                "参数校验失败",
-                errors=[{"field": "admin", "message": str(exc)}],
             ) from exc
 
     normalized_params: dict[str, Any] | None = None
@@ -691,8 +666,6 @@ def update_command_config(
 
         if normalized_enabled is not None:
             row.enabled = normalized_enabled
-        if normalized_admin is not None:
-            row.admin = normalized_admin
         row.param_values_json = _json_dumps(current_values)
         row.updated_at = now
         session.commit()
@@ -733,7 +706,6 @@ def sync_registered_commands_to_db() -> None:
                     handler_name=command.handler_name,
                     permission=command.permission,
                     enabled=command.default_enabled,
-                    admin=command.admin,
                     param_schema_json=schema_json,
                     param_values_json=_json_dumps(_build_default_param_values(schema)),
                     category=command.category,
@@ -760,8 +732,6 @@ def sync_registered_commands_to_db() -> None:
             row.meta_hash = command.meta_hash
             row.last_synced_at = now
             row.updated_at = now
-            if row.admin is None:
-                row.admin = command.admin
             row.category = command.category
 
         for row in rows:
@@ -889,7 +859,6 @@ def command_control(
     description: str = "",
     usage: str = "",
     default_enabled: bool = True,
-    admin: bool = False,
     params: dict[str, dict[str, Any]] | None = None,
     category: str = "",
 ):
@@ -901,7 +870,6 @@ def command_control(
     normalized_permission = str(permission).strip()
     normalized_description = str(description).strip()
     normalized_usage = str(usage).strip()
-    normalized_admin = bool(admin)
     normalized_schema = _normalize_param_schema(params)
     normalized_category = str(category).strip()
 
@@ -929,7 +897,6 @@ def command_control(
             handler_name=handler_name,
             permission=normalized_permission,
             default_enabled=bool(default_enabled),
-            admin=normalized_admin,
             param_schema=_clone_dict(normalized_schema),
             category=normalized_category,
             meta_hash=meta_hash,

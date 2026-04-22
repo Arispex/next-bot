@@ -47,7 +47,6 @@ async def _fetch_nickname_via_bot(bot: Bot, qq: str) -> str:
 @add_user_perm_matcher.handle()
 @command_control(
     command_key="permission.user.add",
-    admin=True,
     display_name="添加用户权限",
     permission="permission.user.add",
     description="为用户增加单独权限",
@@ -100,7 +99,6 @@ async def handle_add_user_perm(
 @remove_user_perm_matcher.handle()
 @command_control(
     command_key="permission.user.remove",
-    admin=True,
     display_name="删除用户权限",
     permission="permission.user.remove",
     description="从用户移除单独权限",
@@ -153,7 +151,6 @@ async def handle_remove_user_perm(
 @set_user_group_matcher.handle()
 @command_control(
     command_key="permission.user.group.set",
-    admin=True,
     display_name="修改用户身份组",
     permission="permission.user.group.set",
     description="调整用户所属身份组",
@@ -214,7 +211,6 @@ async def handle_set_user_group(
 @command_control(
     command_key="permission.admin.list",
     display_name="管理员列表",
-    admin=True,
     permission="permission.admin.list",
     description="查看 Bot 管理员列表",
     usage="管理员列表",

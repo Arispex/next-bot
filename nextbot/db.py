@@ -86,7 +86,6 @@ class CommandConfig(Base):
     handler_name: Mapped[str] = mapped_column(String, nullable=False, default="")
     permission: Mapped[str] = mapped_column(String, nullable=False, default="")
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    admin: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True, default=None)
     param_schema_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
     param_values_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
     aliases_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
@@ -242,11 +241,6 @@ def ensure_command_config_schema() -> None:
         if "usage" not in columns:
             conn.execute(
                 'ALTER TABLE "command_config" ADD COLUMN "usage" TEXT NOT NULL DEFAULT ""'
-            )
-            changed = True
-        if "admin" not in columns:
-            conn.execute(
-                'ALTER TABLE "command_config" ADD COLUMN "admin" INTEGER'
             )
             changed = True
         if "aliases_json" not in columns:

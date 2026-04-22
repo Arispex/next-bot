@@ -359,7 +359,6 @@ async def handle_self_info(
     permission="admin.rename",
     description="更改指定用户的用户名称",
     usage="更改用户名称 <用户名称/QQ/@用户> <新用户名>",
-    admin=True,
     category="用户系统",
 )
 @require_permission("admin.rename")

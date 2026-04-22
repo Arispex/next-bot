@@ -300,7 +300,6 @@ async def handle_transfer(bot: Bot, event: Event, arg: Message = CommandArg()) -
     permission="economy.coins.add",
     description="为指定用户增加金币",
     usage="添加金币 <用户 QQ/@用户/用户名称> <数量>",
-    admin=True,
     category="经济系统",
 )
 @require_permission("economy.coins.add")
@@ -361,7 +360,6 @@ async def handle_add_coins(
     permission="economy.coins.remove",
     description="为指定用户扣减金币",
     usage="扣除金币 <用户 QQ/@用户/用户名称> <数量>",
-    admin=True,
     category="经济系统",
 )
 @require_permission("economy.coins.remove")

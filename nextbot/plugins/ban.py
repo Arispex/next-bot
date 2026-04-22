@@ -45,7 +45,6 @@ def _to_base64_image_uri(path: Path) -> str:
     permission="admin.ban",
     description="封禁用户并将其加入所有服务器黑名单",
     usage="封禁用户 <用户名称/QQ/@用户> <原因>",
-    admin=True,
     category="安全管理",
 )
 @require_permission("admin.ban")
@@ -208,7 +207,6 @@ async def handle_ban_list(bot: Bot, event: Event, arg: Message = CommandArg()) -
     permission="admin.unban",
     description="解除封禁用户并将其从所有服务器黑名单移除",
     usage="解封用户 <用户名称/QQ/@用户>",
-    admin=True,
     category="安全管理",
 )
 @require_permission("admin.unban")
