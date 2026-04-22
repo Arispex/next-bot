@@ -185,7 +185,7 @@ async def handle_send(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     )
     await bot.send(
         event,
-        at + " " + reply_block(
+        at + "\n" + reply_block(
             f"{EMOJI_RED_PACKET} 发红包成功",
             [
                 f"{EMOJI_LIST} 名称：{name}",
@@ -302,7 +302,7 @@ async def handle_grab(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     )
     await bot.send(
         event,
-        at + " " + reply_block(
+        at + "\n" + reply_block(
             f"{EMOJI_RED_PACKET} 抢红包成功",
             [
                 f"{EMOJI_LIST} 名称：{packet_name}（{type_zh}）",
@@ -379,7 +379,7 @@ async def handle_withdraw(bot: Bot, event: Event, arg: Message = CommandArg()) -
     )
     await bot.send(
         event,
-        at + " " + reply_block(
+        at + "\n" + reply_block(
             reply_success("收回红包", f"「{name}」"),
             [f"{EMOJI_COIN} 退回 {refund_amount} 金币"],
         ),
@@ -451,7 +451,7 @@ async def handle_list_own(bot: Bot, event: Event, arg: Message = CommandArg()) -
     items = [_format_packet_line_own(p) for p in packets]
     await bot.send(
         event,
-        at + " " + reply_list("我的红包", items, title_emoji=EMOJI_RED_PACKET),
+        at + "\n" + reply_list("我的红包", items, title_emoji=EMOJI_RED_PACKET),
     )
 
 
@@ -509,7 +509,7 @@ async def handle_list_all(bot: Bot, event: Event, arg: Message = CommandArg()) -
     ]
     await bot.send(
         event,
-        at + " " + reply_list(
+        at + "\n" + reply_list(
             "当前红包",
             items,
             title_emoji=EMOJI_RED_PACKET,

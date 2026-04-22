@@ -218,7 +218,7 @@ async def handle_sign(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
         )
         await bot.send(
             event,
-            at + " " + reply_block(
+            at + "\n" + reply_block(
                 reply_success("签到"),
                 lines,
                 hint="明日继续签到可获得连续奖励",
@@ -302,7 +302,7 @@ async def handle_transfer(bot: Bot, event: Event, arg: Message = CommandArg()) -
         )
         await bot.send(
             event,
-            at + " " + reply_block(
+            at + "\n" + reply_block(
                 reply_success("转账"),
                 [
                     f"{EMOJI_COIN} 转出金币：{amount}",
@@ -374,7 +374,7 @@ async def handle_add_coins(
     )
     await bot.send(
         event,
-        at + " " + reply_block(
+        at + "\n" + reply_block(
             reply_success("添加金币", f"+{amount}"),
             [f"{EMOJI_COIN} 当前金币：{coins}"],
         ),
@@ -444,7 +444,7 @@ async def handle_remove_coins(
     )
     await bot.send(
         event,
-        at + " " + reply_block(
+        at + "\n" + reply_block(
             reply_success("扣除金币", f"-{amount}"),
             [f"{EMOJI_COIN} 当前金币：{coins}"],
         ),

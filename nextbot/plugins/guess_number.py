@@ -236,4 +236,4 @@ async def handle_guess_number(bot: Bot, event: Event, arg: Message = CommandArg(
         f"猜数字结果：user_id={user_id} guess={guess} answer={answer} diff={diff} "
         f"result={result_type} cost={cost} payout={payout} net={net}"
     )
-    await bot.send(event, at + " " + reply_block(f"{head_emoji} 猜数字", lines))
+    await bot.send(event, at + "\n" + reply_block(f"{head_emoji} 猜数字", lines))

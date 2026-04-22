@@ -213,4 +213,4 @@ async def handle_dice(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
         f"掷骰子结果：user_id={user_id} choice={choice} dice={d1},{d2},{d3} total={total} "
         f"triple={is_triple} cost={cost} payout={payout} net={net}"
     )
-    await bot.send(event, at + " " + reply_block(f"{EMOJI_GAME} 掷骰子", lines))
+    await bot.send(event, at + "\n" + reply_block(f"{EMOJI_GAME} 掷骰子", lines))
