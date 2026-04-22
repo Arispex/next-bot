@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from nonebot.log import logger
 
 from server.page_store import create_page
-from server.pages import about_page, admin_list_page, ban_list_page, inventory_page, leaderboard_page, menu_page, progress_page, red_packet_all_page, red_packet_own_page, user_info_page
+from server.pages import about_page, admin_list_page, ban_list_page, inventory_page, leaderboard_page, menu_page, progress_page, red_packet_all_page, red_packet_own_page, tutorial_page, user_info_page
 from server.routes.render import router as render_router
 from server.routes.webui_commands import router as webui_commands_router
 from server.routes.webui_dashboard import router as webui_dashboard_router
@@ -217,6 +217,22 @@ def create_red_packet_all_page(
     token = create_page("red_packet_all", payload)
     settings = get_server_settings()
     return f"{_build_internal_base_url(settings)}/render/red_packet_all/{token}"
+
+
+def create_tutorial_page(
+    *,
+    tutorial: dict[str, Any],
+    self_user_id: str,
+    theme: str = "light",
+) -> str:
+    payload = tutorial_page.build_payload(
+        tutorial=tutorial,
+        self_user_id=self_user_id,
+        theme=theme,
+    )
+    token = create_page("tutorial", payload)
+    settings = get_server_settings()
+    return f"{_build_internal_base_url(settings)}/render/tutorial/{token}"
 
 
 def create_app(settings: WebServerSettings | None = None) -> FastAPI:
