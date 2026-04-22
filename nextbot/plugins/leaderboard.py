@@ -143,6 +143,7 @@ async def _render_and_send(
             "max": 50,
         },
     },
+    category="排行榜",
 )
 @require_permission("leaderboard.coins")
 async def handle_coins_leaderboard(
@@ -220,6 +221,7 @@ async def handle_coins_leaderboard(
             "max": 50,
         },
     },
+    category="排行榜",
 )
 @require_permission("leaderboard.streak")
 async def handle_streak_leaderboard(
@@ -297,6 +299,7 @@ async def handle_streak_leaderboard(
             "max": 50,
         },
     },
+    category="排行榜",
 )
 @require_permission("leaderboard.signin")
 async def handle_signin_leaderboard(
@@ -374,6 +377,7 @@ async def handle_signin_leaderboard(
             "max": 50,
         },
     },
+    category="排行榜",
 )
 @require_permission("leaderboard.deaths")
 async def handle_deaths_leaderboard(
@@ -484,6 +488,7 @@ async def handle_deaths_leaderboard(
             "max": 50,
         },
     },
+    category="排行榜",
 )
 @require_permission("leaderboard.fishing")
 async def handle_fishing_leaderboard(
@@ -594,6 +599,7 @@ async def handle_fishing_leaderboard(
             "max": 50,
         },
     },
+    category="排行榜",
 )
 @require_permission("leaderboard.online_time")
 async def handle_online_time_leaderboard(
@@ -708,6 +714,7 @@ async def handle_online_time_leaderboard(
             "max": 50,
         },
     },
+    category="排行榜",
 )
 @require_permission("leaderboard.total_online_time")
 async def handle_total_online_time_leaderboard(
@@ -827,6 +834,7 @@ def _format_sign_time(created_at) -> str:
             "max": 50,
         },
     },
+    category="排行榜",
 )
 @require_permission("leaderboard.daily_sign")
 async def handle_daily_sign_leaderboard(
@@ -941,6 +949,7 @@ def _rob_net_income(user: User) -> int:
             "max": 50,
         },
     },
+    category="排行榜",
 )
 @require_permission("leaderboard.rob_income")
 async def handle_rob_income_leaderboard(
@@ -1014,6 +1023,7 @@ async def handle_rob_income_leaderboard(
             "max": 50,
         },
     },
+    category="排行榜",
 )
 @require_permission("leaderboard.rob_loss")
 async def handle_rob_loss_leaderboard(
@@ -1092,6 +1102,7 @@ async def handle_rob_loss_leaderboard(
             "max": 50,
         },
     },
+    category="排行榜",
 )
 @require_permission("leaderboard.rob_penalty")
 async def handle_rob_penalty_leaderboard(
@@ -1178,6 +1189,7 @@ async def handle_rob_penalty_leaderboard(
             "min": 1,
         },
     },
+    category="排行榜",
 )
 @require_permission("leaderboard.rob_success_rate")
 async def handle_rob_success_rate_leaderboard(
@@ -1294,6 +1306,7 @@ def _dice_win_rate(user: User) -> float:
             "max": 50,
         },
     },
+    category="排行榜",
 )
 @require_permission("leaderboard.guess_number_income")
 async def handle_guess_income_leaderboard(
@@ -1375,6 +1388,7 @@ async def handle_guess_income_leaderboard(
             "min": 1,
         },
     },
+    category="排行榜",
 )
 @require_permission("leaderboard.guess_number_win_rate")
 async def handle_guess_win_rate_leaderboard(
@@ -1467,6 +1481,7 @@ async def handle_guess_win_rate_leaderboard(
             "max": 50,
         },
     },
+    category="排行榜",
 )
 @require_permission("leaderboard.dice_income")
 async def handle_dice_income_leaderboard(
@@ -1548,6 +1563,7 @@ async def handle_dice_income_leaderboard(
             "min": 1,
         },
     },
+    category="排行榜",
 )
 @require_permission("leaderboard.dice_win_rate")
 async def handle_dice_win_rate_leaderboard(

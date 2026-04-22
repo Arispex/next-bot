@@ -30,6 +30,7 @@ remove_perm_matcher = on_command("删除身份组权限")
     permission="group.list",
     description="显示所有身份组",
     usage="身份组列表",
+    category="权限管理",
 )
 @require_permission("group.list")
 async def handle_list_groups(
@@ -69,6 +70,7 @@ async def handle_list_groups(
     permission="group.add",
     description="新增身份组",
     usage="添加身份组 <身份组名称>",
+    category="权限管理",
 )
 @require_permission("group.add")
 async def handle_add_group(
@@ -104,6 +106,7 @@ async def handle_add_group(
     permission="group.delete",
     description="删除身份组",
     usage="删除身份组 <身份组名称>",
+    category="权限管理",
 )
 @require_permission("group.delete")
 async def handle_delete_group(
@@ -153,6 +156,7 @@ async def handle_delete_group(
     permission="group.inherit.add",
     description="设置身份组继承关系",
     usage="继承身份组 <身份组名称> <要继承的身份组名称>",
+    category="权限管理",
 )
 @require_permission("group.inherit.add")
 async def handle_inherit_group(
@@ -193,6 +197,7 @@ async def handle_inherit_group(
     permission="group.inherit.clear",
     description="清空身份组继承关系",
     usage="取消继承身份组 <身份组名称>",
+    category="权限管理",
 )
 @require_permission("group.inherit.clear")
 async def handle_clear_inherit_group(
@@ -228,6 +233,7 @@ async def handle_clear_inherit_group(
     permission="group.permission.add",
     description="为身份组添加权限",
     usage="添加身份组权限 <身份组名称> <权限名称>",
+    category="权限管理",
 )
 @require_permission("group.permission.add")
 async def handle_add_group_perm(
@@ -263,6 +269,7 @@ async def handle_add_group_perm(
     permission="group.permission.remove",
     description="从身份组移除权限",
     usage="删除身份组权限 <身份组名称> <权限名称>",
+    category="权限管理",
 )
 @require_permission("group.permission.remove")
 async def handle_remove_group_perm(

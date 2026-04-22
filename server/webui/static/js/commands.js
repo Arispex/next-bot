@@ -359,53 +359,8 @@
       statusCell.appendChild(switchNode);
 
       const adminCell = document.createElement("td");
-      const adminSwitch = document.createElement("label");
-      adminSwitch.className = "switch";
-
-      const adminInput = document.createElement("input");
-      adminInput.type = "checkbox";
-      adminInput.checked = Boolean(command.admin);
-
-      const adminTrack = document.createElement("span");
-      adminTrack.className = "switch-track";
-
-      const adminText = document.createElement("span");
-      adminText.textContent = adminInput.checked ? "管理菜单" : "普通菜单";
-
-      adminInput.addEventListener("change", async () => {
-        const nextAdmin = Boolean(adminInput.checked);
-        const previousAdmin = !nextAdmin;
-
-        command.admin = nextAdmin;
-        adminText.textContent = nextAdmin ? "管理菜单" : "普通菜单";
-        adminInput.disabled = true;
-        setStatus("正在保存...", "info");
-
-        try {
-          const { reloaded } = await saveSingleCommand({
-            commandKey: command.command_key,
-            admin: nextAdmin,
-          });
-          if (reloaded) {
-            setStatus("保存成功", "success");
-          } else {
-            setStatus("保存成功，已立即生效；列表刷新失败，请手动刷新页面确认最新状态", "warning");
-          }
-        } catch (error) {
-          command.admin = previousAdmin;
-          adminInput.checked = previousAdmin;
-          adminText.textContent = previousAdmin ? "管理菜单" : "普通菜单";
-          const message = error instanceof Error ? error.message : "保存失败";
-          setStatus(message, "error");
-        } finally {
-          adminInput.disabled = false;
-        }
-      });
-
-      adminSwitch.appendChild(adminInput);
-      adminSwitch.appendChild(adminTrack);
-      adminSwitch.appendChild(adminText);
-      adminCell.appendChild(adminSwitch);
+      const categoryText = String(command.category || "").trim() || "未分类";
+      adminCell.textContent = categoryText;
 
       const schema = command.param_schema && typeof command.param_schema === "object"
         ? command.param_schema

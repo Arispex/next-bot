@@ -39,6 +39,7 @@ class RegisteredCommand:
     default_enabled: bool
     admin: bool
     param_schema: dict[str, dict[str, Any]]
+    category: str
     meta_hash: str
 
 
@@ -56,6 +57,7 @@ class RuntimeCommandState:
     param_schema: dict[str, dict[str, Any]]
     param_values: dict[str, Any]
     aliases: list[str]
+    category: str
     is_registered: bool
 
 
@@ -317,6 +319,7 @@ def _build_meta_hash(
     handler_name: str,
     permission: str,
     param_schema: dict[str, dict[str, Any]],
+    category: str,
 ) -> str:
     payload = {
         "command_key": command_key,
@@ -327,6 +330,7 @@ def _build_meta_hash(
         "handler_name": handler_name,
         "permission": permission,
         "param_schema": param_schema,
+        "category": category,
     }
     return hashlib.sha256(_json_dumps(payload).encode("utf-8")).hexdigest()
 
@@ -430,6 +434,7 @@ def _to_runtime_state(row: CommandConfig) -> RuntimeCommandState:
         param_schema=schema,
         param_values=values,
         aliases=aliases,
+        category=str(row.category or ""),
         is_registered=bool(row.is_registered),
     )
 
@@ -483,6 +488,7 @@ def _get_runtime_state(command_key: str) -> RuntimeCommandState:
             param_schema={},
             param_values={},
             aliases=[],
+            category="",
             is_registered=False,
         )
 
@@ -499,6 +505,7 @@ def _get_runtime_state(command_key: str) -> RuntimeCommandState:
         param_schema=registered.param_schema,
         param_values=_build_default_param_values(registered.param_schema),
         aliases=[],
+        category=registered.category,
         is_registered=True,
     )
 
@@ -555,6 +562,7 @@ def _serialize_runtime_state(item: RuntimeCommandState) -> dict[str, Any]:
         "param_schema": _clone_dict(item.param_schema),
         "param_values": _clone_dict(item.param_values),
         "aliases": list(item.aliases),
+        "category": item.category,
         "is_registered": item.is_registered,
     }
 
@@ -728,6 +736,7 @@ def sync_registered_commands_to_db() -> None:
                     admin=command.admin,
                     param_schema_json=schema_json,
                     param_values_json=_json_dumps(_build_default_param_values(schema)),
+                    category=command.category,
                     is_registered=True,
                     meta_hash=command.meta_hash,
                     last_synced_at=now,
@@ -753,6 +762,7 @@ def sync_registered_commands_to_db() -> None:
             row.updated_at = now
             if row.admin is None:
                 row.admin = command.admin
+            row.category = command.category
 
         for row in rows:
             if row.command_key in touched_keys:
@@ -881,6 +891,7 @@ def command_control(
     default_enabled: bool = True,
     admin: bool = False,
     params: dict[str, dict[str, Any]] | None = None,
+    category: str = "",
 ):
     normalized_key = str(command_key).strip()
     if not normalized_key:
@@ -892,6 +903,7 @@ def command_control(
     normalized_usage = str(usage).strip()
     normalized_admin = bool(admin)
     normalized_schema = _normalize_param_schema(params)
+    normalized_category = str(category).strip()
 
     def decorator(func):
         module_path = str(getattr(func, "__module__", "")).strip()
@@ -905,6 +917,7 @@ def command_control(
             handler_name=handler_name,
             permission=normalized_permission,
             param_schema=normalized_schema,
+            category=normalized_category,
         )
 
         registered = RegisteredCommand(
@@ -918,6 +931,7 @@ def command_control(
             default_enabled=bool(default_enabled),
             admin=normalized_admin,
             param_schema=_clone_dict(normalized_schema),
+            category=normalized_category,
             meta_hash=meta_hash,
         )
 

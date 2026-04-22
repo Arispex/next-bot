@@ -46,6 +46,7 @@ def _parse_send_arg_text(text: str) -> tuple[int, str] | None:
     permission="server.send",
     description="在指定服务器的游戏内广播一条 QQ 消息",
     usage="发送 <服务器 ID> <内容>",
+    category="服务器系统",
 )
 @require_permission("server.send")
 async def handle_send(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:

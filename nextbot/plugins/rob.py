@@ -130,6 +130,7 @@ rob_matcher = on_command("抢劫")
             "min": 1,
         },
     },
+    category="经济系统",
 )
 @require_permission("economy.rob")
 async def handle_rob(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:

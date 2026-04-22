@@ -20,7 +20,6 @@ from server.screenshot import RenderScreenshotError, ScreenshotOptions, screensh
 from server.web_server import create_menu_page
 
 menu_matcher = on_command("菜单")
-admin_menu_matcher = on_command("管理菜单")
 search_command_matcher = on_command("搜索命令")
 MENU_SCREENSHOT_OPTIONS = ScreenshotOptions(
     viewport_width=1920,
@@ -28,6 +27,18 @@ MENU_SCREENSHOT_OPTIONS = ScreenshotOptions(
     full_page=True,
 )
 
+CATEGORY_ORDER = [
+    "关于",
+    "用户系统",
+    "经济系统",
+    "红包系统",
+    "排行榜",
+    "服务器系统",
+    "安全管理",
+    "权限管理",
+    "系统功能",
+]
+_UNCATEGORIZED = "未分类"
 
 
 def _to_base64_image_uri(path: Path) -> str:
@@ -75,22 +86,68 @@ async def _render_and_send_menu(
     await bot.send(event, f"截图成功，文件：{screenshot_path}")
 
 
+def _group_by_category(items: list[dict]) -> tuple[list[str], dict[str, list[dict]]]:
+    by_cat: dict[str, list[dict]] = {}
+    for item in items:
+        if not item.get("is_registered"):
+            continue
+        cat = str(item.get("category") or "").strip() or _UNCATEGORIZED
+        by_cat.setdefault(cat, []).append(item)
+    for cmds in by_cat.values():
+        cmds.sort(key=lambda c: str(c.get("command_key", "")))
+
+    ordered = [c for c in CATEGORY_ORDER if c in by_cat]
+    extras = sorted(c for c in by_cat if c not in CATEGORY_ORDER and c != _UNCATEGORIZED)
+    if _UNCATEGORIZED in by_cat:
+        extras.append(_UNCATEGORIZED)
+    cat_names = ordered + extras
+    return cat_names, by_cat
+
+
 @menu_matcher.handle()
 @command_control(
     command_key="menu.root",
     display_name="菜单",
     permission="menu.root",
-    description="显示普通用户命令菜单截图",
-    usage="菜单",
+    description="查看分类菜单 / 某分类下的命令",
+    usage="菜单 [分类编号/分类名]",
+    category="系统功能",
 )
 @require_permission("menu.root")
 async def handle_menu(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
     args = parse_command_args_with_fallback(event, arg, "菜单")
-    if args:
+
+    cat_names, by_cat = _group_by_category(list_command_configs())
+
+    if not cat_names:
+        await bot.send(event, "暂无可用命令")
+        return
+
+    if not args:
+        lines = ["📋 命令菜单（输入 `菜单 编号` 或 `菜单 分类名` 查看具体命令）"]
+        for i, cat in enumerate(cat_names, 1):
+            lines.append(f"{i}. {cat}（{len(by_cat[cat])} 个命令）")
+        await bot.send(event, "\n".join(lines))
+        return
+
+    if len(args) != 1:
         raise_command_usage()
 
-    all_items = list_command_configs()
-    all_items.sort(key=lambda item: str(item.get("command_key", "")))
+    selector = args[0].strip()
+    if not selector:
+        raise_command_usage()
+
+    target_cat: str | None = None
+    if selector.isdigit():
+        idx = int(selector)
+        if 1 <= idx <= len(cat_names):
+            target_cat = cat_names[idx - 1]
+    if target_cat is None and selector in by_cat:
+        target_cat = selector
+
+    if target_cat is None:
+        await bot.send(event, f"未找到分类：{selector}")
+        return
 
     render_commands = [
         {
@@ -99,42 +156,10 @@ async def handle_menu(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
             "usage": str(item.get("usage", "")).strip(),
             "permission": str(item.get("permission", "")).strip(),
         }
-        for item in all_items
-        if not bool(item.get("admin", False))
+        for item in by_cat[target_cat]
     ]
 
-    await _render_and_send_menu(bot, event, "菜单", render_commands)
-
-
-@admin_menu_matcher.handle()
-@command_control(
-    command_key="menu.admin",
-    display_name="管理菜单",
-    permission="menu.admin",
-    description="显示管理员命令菜单截图",
-    usage="管理菜单",
-)
-@require_permission("menu.admin")
-async def handle_admin_menu(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
-    args = parse_command_args_with_fallback(event, arg, "管理菜单")
-    if args:
-        raise_command_usage()
-
-    all_items = list_command_configs()
-    all_items.sort(key=lambda item: str(item.get("command_key", "")))
-
-    render_commands = [
-        {
-            "display_name": str(item.get("display_name", "")).strip(),
-            "description": str(item.get("description", "")).strip(),
-            "usage": str(item.get("usage", "")).strip(),
-            "permission": str(item.get("permission", "")).strip(),
-        }
-        for item in all_items
-        if bool(item.get("admin", False))
-    ]
-
-    await _render_and_send_menu(bot, event, "管理菜单", render_commands)
+    await _render_and_send_menu(bot, event, target_cat, render_commands)
 
 
 @search_command_matcher.handle()
@@ -144,6 +169,7 @@ async def handle_admin_menu(bot: Bot, event: Event, arg: Message = CommandArg())
     permission="menu.search",
     description="按关键词搜索命令名称",
     usage="搜索命令 <关键词>",
+    category="系统功能",
 )
 @require_permission("menu.search")
 async def handle_search_command(

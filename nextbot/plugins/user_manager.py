@@ -127,6 +127,7 @@ async def _sync_whitelist_to_all_servers(
     permission="user.register",
     description="注册当前 QQ 对应的账号",
     usage="注册账号 <用户名称>",
+    category="用户系统",
 )
 @require_permission("user.register")
 async def handle_add_whitelist(
@@ -176,6 +177,7 @@ async def handle_add_whitelist(
     permission="user.whitelist.sync",
     description="将当前用户同步到所有服务器白名单",
     usage="同步白名单",
+    category="用户系统",
 )
 @require_permission("user.whitelist.sync")
 async def handle_sync_whitelist(
@@ -279,6 +281,7 @@ async def _render_and_send_user_info(bot: Bot, event: Event, user: User, days: i
     permission="user.info.user",
     description="查询指定用户信息并生成截图",
     usage="用户信息 <用户 QQ/@用户/用户名称>",
+    category="用户系统",
 )
 @require_permission("user.info.user")
 async def handle_user_info(
@@ -325,6 +328,7 @@ async def handle_user_info(
     permission="user.info.self",
     description="查询当前用户信息并生成截图",
     usage="我的信息",
+    category="用户系统",
 )
 @require_permission("user.info.self")
 async def handle_self_info(
@@ -356,6 +360,7 @@ async def handle_self_info(
     description="更改指定用户的用户名称",
     usage="更改用户名称 <用户名称/QQ/@用户> <新用户名>",
     admin=True,
+    category="用户系统",
 )
 @require_permission("admin.rename")
 async def handle_rename(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:

@@ -166,6 +166,7 @@ def _to_public_render_url(url: str) -> str:
     permission="player_query.online",
     description="查询服务器在线状态与在线玩家列表",
     usage="在线",
+    category="服务器系统",
 )
 @require_permission("player_query.online")
 async def handle_online(
@@ -241,6 +242,7 @@ async def handle_online(
     permission="player_query.kick.self",
     description="对所有服务器执行当前用户的踢出命令",
     usage="自踢",
+    category="服务器系统",
 )
 @require_permission("player_query.kick.self")
 async def handle_self_kick(
@@ -322,6 +324,7 @@ async def handle_self_kick(
             "default": False,
         },
     },
+    category="服务器系统",
 )
 @require_permission("player_query.inventory.user")
 async def handle_user_inventory(
@@ -484,6 +487,7 @@ async def handle_user_inventory(
             "default": False,
         },
     },
+    category="服务器系统",
 )
 @require_permission("player_query.inventory.self")
 async def handle_my_inventory(
@@ -608,6 +612,7 @@ async def handle_my_inventory(
     permission="player_query.progress",
     description="查询世界进度并生成截图",
     usage="进度 <服务器 ID>",
+    category="服务器系统",
 )
 @require_permission("player_query.progress")
 async def handle_world_progress(

@@ -52,6 +52,7 @@ async def _fetch_nickname_via_bot(bot: Bot, qq: str) -> str:
     permission="permission.user.add",
     description="为用户增加单独权限",
     usage="添加用户权限 <用户 QQ/@用户/用户名称> <权限名称>",
+    category="权限管理",
 )
 @require_permission("permission.user.add")
 async def handle_add_user_perm(
@@ -104,6 +105,7 @@ async def handle_add_user_perm(
     permission="permission.user.remove",
     description="从用户移除单独权限",
     usage="删除用户权限 <用户 QQ/@用户/用户名称> <权限名称>",
+    category="权限管理",
 )
 @require_permission("permission.user.remove")
 async def handle_remove_user_perm(
@@ -156,6 +158,7 @@ async def handle_remove_user_perm(
     permission="permission.user.group.set",
     description="调整用户所属身份组",
     usage="修改用户身份组 <用户 QQ/@用户/用户名称> <身份组名称>",
+    category="权限管理",
 )
 @require_permission("permission.user.group.set")
 async def handle_set_user_group(
@@ -224,6 +227,7 @@ async def handle_set_user_group(
             "default": True,
         },
     },
+    category="权限管理",
 )
 @require_permission("permission.admin.list")
 async def handle_admin_list(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:

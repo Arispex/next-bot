@@ -86,6 +86,7 @@ def _claim_slot_atomic(session, packet_id: int, draw_amount: int) -> bool:
             "min": 1,
         },
     },
+    category="红包系统",
 )
 @require_permission("economy.red_packet.send")
 async def handle_send(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
@@ -184,6 +185,7 @@ async def handle_send(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     permission="economy.red_packet.grab",
     description="凭红包名称抢红包",
     usage="抢红包 <名称>",
+    category="红包系统",
 )
 @require_permission("economy.red_packet.grab")
 async def handle_grab(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
@@ -294,6 +296,7 @@ async def handle_grab(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     permission="economy.red_packet.withdraw",
     description="收回自己发出的红包，剩余金额退回",
     usage="收回红包 <名称>",
+    category="红包系统",
 )
 @require_permission("economy.red_packet.withdraw")
 async def handle_withdraw(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
@@ -394,6 +397,7 @@ def _format_packet_line_all(packet: RedPacket, sender_name: str) -> str:
             "max": 50,
         },
     },
+    category="红包系统",
 )
 @require_permission("economy.red_packet.list_own")
 async def handle_list_own(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
@@ -439,6 +443,7 @@ async def handle_list_own(bot: Bot, event: Event, arg: Message = CommandArg()) -
             "max": 50,
         },
     },
+    category="红包系统",
 )
 @require_permission("economy.red_packet.list_all")
 async def handle_list_all(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:

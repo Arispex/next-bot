@@ -108,6 +108,7 @@ _cooldown_map: dict[str, datetime] = {}
             "min": 0,
         },
     },
+    category="经济系统",
 )
 @require_permission("economy.guess_number")
 async def handle_guess_number(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:

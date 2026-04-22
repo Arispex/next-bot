@@ -99,6 +99,7 @@ def _log_results(
     permission="security.login.confirm",
     description="允许当前账号的待确认登入请求",
     usage="允许登入",
+    category="安全管理",
 )
 @require_permission("security.login.confirm")
 async def handle_confirm_login(
@@ -137,6 +138,7 @@ async def handle_confirm_login(
     permission="security.login.reject",
     description="拒绝当前账号的待确认登入请求",
     usage="拒绝登入",
+    category="安全管理",
 )
 @require_permission("security.login.reject")
 async def handle_reject_login(
