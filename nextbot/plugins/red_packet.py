@@ -396,8 +396,11 @@ async def handle_withdraw(bot: Bot, event: Event, arg: Message = CommandArg()) -
     await bot.send(
         event,
         at + "\n" + reply_block(
-            reply_success("收回红包", f"「{name}」"),
-            [f"{EMOJI_COIN} 退回 {refund_amount} 金币"],
+            reply_success("收回"),
+            [
+                f"{EMOJI_RED_PACKET} 红包：{name}",
+                f"{EMOJI_COIN} 退回：{refund_amount} 金币",
+            ],
         ),
     )
 

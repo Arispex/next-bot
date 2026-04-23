@@ -17,6 +17,7 @@ from nonebot.log import logger
 from nextbot.access_control import get_group_ids, get_owner_ids
 from nextbot.ban_core import apply_ban_to_db, sync_user_to_blacklist
 from nextbot.db import User, get_session
+from nextbot.text_utils import EMOJI_USER, reply_success
 
 increase_matcher = on_notice()
 decrease_matcher = on_notice()
@@ -186,7 +187,9 @@ async def handle_auto_ban_on_leave(bot: Bot, event: GroupDecreaseNoticeEvent) ->
         return
 
     lines = [
-        f"✅ 封禁成功，用户 {result.user_name}（{result.user_qq}）已被封禁，原因：{reason}"
+        reply_success("封禁"),
+        f"{EMOJI_USER} 用户：{result.user_name}（{result.user_qq}）",
+        f"📋 原因：{reason}",
     ]
     lines.extend(sync_lines)
     try:
