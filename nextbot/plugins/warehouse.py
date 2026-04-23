@@ -11,7 +11,7 @@ from nonebot.log import logger
 from nonebot.params import CommandArg
 
 from nextbot.command_config import command_control, get_current_param, raise_command_usage
-from nextbot.db import WAREHOUSE_CAPACITY, User, WarehouseItem, get_session
+from nextbot.db import WAREHOUSE_CAPACITY, Server, User, WarehouseItem, get_session
 from nextbot.message_parser import (
     parse_command_args_with_fallback,
     resolve_user_id_arg_with_fallback,
@@ -22,6 +22,7 @@ from nextbot.render_utils import resolve_render_theme
 from nextbot.text_utils import (
     EMOJI_CHART,
     EMOJI_COIN,
+    EMOJI_SERVER,
     EMOJI_TARGET,
     EMOJI_USER,
     EMOJI_WAREHOUSE,
@@ -30,6 +31,7 @@ from nextbot.text_utils import (
     reply_success,
 )
 from nextbot.time_utils import beijing_filename_timestamp, db_now_utc_naive
+from nextbot.tshock_api import TShockRequestError, get_error_reason, is_success, request_server_api
 from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
 from server.web_server import create_warehouse_page
 
@@ -161,6 +163,14 @@ def _load_user_by_name(name: str) -> User | None:
         session.close()
 
 
+def _load_server(server_id: int) -> Server | None:
+    session = get_session()
+    try:
+        return session.query(Server).filter(Server.id == server_id).first()
+    finally:
+        session.close()
+
+
 def _load_warehouse_slots(user_id: str) -> list[dict]:
     session = get_session()
     try:
@@ -220,6 +230,7 @@ add_matcher = on_command("添加仓库物品")
 remove_matcher = on_command("删除仓库物品")
 drop_matcher = on_command("丢弃物品")
 recycle_matcher = on_command("回收物品")
+claim_matcher = on_command("领取物品")
 
 
 @list_self_matcher.handle()
@@ -1011,6 +1022,340 @@ async def _recycle_many(
                 f"{EMOJI_CHART} 回收比例：{int(ratio * 100)}%",
                 f"{EMOJI_COIN} 获得金币：{total_refund}",
                 f"{EMOJI_COIN} 当前金币：{coins_after}",
+                f"{EMOJI_CHART} 已使用：{used_after} / {WAREHOUSE_CAPACITY}",
+            ],
+        ),
+    )
+
+
+def _is_progress_satisfied(min_tier: str, progress: dict[str, bool]) -> bool:
+    if not min_tier or min_tier == "none":
+        return True
+    return bool(progress.get(min_tier, False))
+
+
+async def _check_player_online(
+    server: Server, player_name: str,
+) -> tuple[bool | None, str]:
+    """返回 (在线?, 错误原因)。None 表示查询失败；True/False 表示在线状态。"""
+    try:
+        resp = await request_server_api(
+            server, "/v2/server/status", params={"players": "true"},
+        )
+    except TShockRequestError:
+        return None, "无法连接服务器"
+    if not is_success(resp):
+        return None, get_error_reason(resp)
+    players = resp.payload.get("players")
+    if not isinstance(players, list):
+        return None, "返回数据格式错误"
+    name_lower = player_name.lower()
+    for p in players:
+        if isinstance(p, dict):
+            nickname = str(p.get("nickname", "")).strip()
+        else:
+            nickname = str(p).strip()
+        if nickname.lower() == name_lower:
+            return True, ""
+    return False, ""
+
+
+async def _load_world_progress(
+    server: Server,
+) -> tuple[dict[str, bool] | None, str]:
+    try:
+        resp = await request_server_api(server, "/nextbot/world/progress")
+    except TShockRequestError:
+        return None, "无法连接服务器"
+    if not is_success(resp):
+        return None, get_error_reason(resp)
+    progress = {k: bool(v) for k, v in resp.payload.items() if isinstance(v, bool)}
+    if not progress:
+        return None, "返回数据格式错误"
+    return progress, ""
+
+
+async def _issue_give_command(
+    server: Server,
+    *,
+    player_name: str,
+    item_id: int,
+    prefix_id: int,
+    quantity: int,
+) -> tuple[bool, str]:
+    if prefix_id > 0:
+        cmd = f"/give {item_id} {player_name} {quantity} {prefix_id}"
+    else:
+        cmd = f"/give {item_id} {player_name} {quantity}"
+    try:
+        resp = await request_server_api(server, "/v3/server/rawcmd", params={"cmd": cmd})
+    except TShockRequestError:
+        return False, "无法连接服务器"
+    if not is_success(resp):
+        return False, get_error_reason(resp)
+    return True, ""
+
+
+@claim_matcher.handle()
+@command_control(
+    command_key="warehouse.claim_self",
+    display_name="领取物品",
+    permission="warehouse.claim_self",
+    description="从仓库领取物品到指定服务器，需玩家在线且服务器进度满足要求",
+    usage="领取物品 <服务器ID> <格子表达式> [数量]",
+    category="仓库系统",
+)
+@require_permission("warehouse.claim_self")
+async def handle_claim(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
+    user_id = event.get_user_id()
+    at = OBV11MessageSegment.at(int(user_id))
+
+    args = parse_command_args_with_fallback(event, arg, "领取物品")
+    if not (2 <= len(args) <= 3):
+        raise_command_usage()
+
+    try:
+        server_id = int(args[0])
+    except ValueError:
+        await bot.send(event, at + " " + reply_failure("领取", "服务器 ID 必须为整数"))
+        return
+
+    try:
+        slot_indexes, is_single = _parse_slot_expression(args[1])
+    except ValueError as exc:
+        await bot.send(event, at + " " + reply_failure("领取", str(exc)))
+        return
+
+    quantity_arg: int | None = None
+    if len(args) == 3:
+        if not is_single:
+            await bot.send(event, at + " " + reply_failure("领取", "多格操作不支持数量参数，请使用单格"))
+            return
+        try:
+            quantity_arg = int(args[2])
+        except ValueError:
+            await bot.send(event, at + " " + reply_failure("领取", "数量必须为正整数"))
+            return
+        if quantity_arg < 1:
+            await bot.send(event, at + " " + reply_failure("领取", "数量必须为正整数"))
+            return
+
+    user = _load_user(user_id)
+    if user is None:
+        await bot.send(event, at + " " + reply_failure("领取", "未注册账号"))
+        return
+
+    server = _load_server(server_id)
+    if server is None:
+        await bot.send(event, at + " " + reply_failure("领取", "服务器不存在"))
+        return
+
+    player_name = str(user.name)
+    online, reason = await _check_player_online(server, player_name)
+    if online is None:
+        await bot.send(event, at + " " + reply_failure("领取", reason))
+        return
+    if not online:
+        await bot.send(event, at + " " + reply_failure("领取", "未在该服务器在线，请先加入游戏"))
+        return
+
+    progress, reason = await _load_world_progress(server)
+    if progress is None:
+        await bot.send(event, at + " " + reply_failure("领取", reason))
+        return
+
+    server_label = f"{server.id}.{server.name}"
+    if is_single:
+        await _claim_single(
+            bot, event, at, user_id, player_name,
+            server, server_label, slot_indexes[0], quantity_arg, progress,
+        )
+    else:
+        await _claim_many(
+            bot, event, at, user_id, player_name,
+            server, server_label, slot_indexes, progress,
+        )
+
+
+async def _claim_single(
+    bot: Bot, event: Event, at: object,
+    user_id: str, player_name: str,
+    server: Server, server_label: str,
+    slot_index: int, quantity_arg: int | None,
+    progress: dict[str, bool],
+) -> None:
+    session = get_session()
+    try:
+        item = (
+            session.query(WarehouseItem)
+            .filter(
+                WarehouseItem.user_id == user_id,
+                WarehouseItem.slot_index == slot_index,
+            )
+            .first()
+        )
+        if item is None:
+            await bot.send(event, at + " " + reply_failure("领取", "该格子为空"))
+            return
+
+        current_qty = int(item.quantity)
+        item_id = int(item.item_id)
+        prefix_id = int(item.prefix_id)
+        min_tier = str(item.min_tier or "")
+
+        if not _is_progress_satisfied(min_tier, progress):
+            tier_zh = PROGRESSION_KEY_TO_ZH.get(min_tier, min_tier)
+            await bot.send(
+                event,
+                at + " " + reply_failure("领取", f"服务器进度不足（需要：{tier_zh}）"),
+            )
+            return
+
+        if quantity_arg is not None and quantity_arg > current_qty:
+            await bot.send(
+                event,
+                at + " " + reply_failure("领取", f"数量超过该格当前数量（{current_qty}）"),
+            )
+            return
+
+        claim_qty = quantity_arg if quantity_arg is not None else current_qty
+
+        ok, reason = await _issue_give_command(
+            server, player_name=player_name, item_id=item_id,
+            prefix_id=prefix_id, quantity=claim_qty,
+        )
+        if not ok:
+            await bot.send(
+                event,
+                at + " " + reply_failure("领取", f"发送物品失败，{reason}"),
+            )
+            return
+
+        if claim_qty >= current_qty:
+            session.delete(item)
+            remaining = 0
+        else:
+            item.quantity = current_qty - claim_qty
+            remaining = int(item.quantity)
+        session.commit()
+        used_after = (
+            session.query(WarehouseItem)
+            .filter(WarehouseItem.user_id == user_id)
+            .count()
+        )
+    finally:
+        session.close()
+
+    logger.info(
+        f"领取仓库物品成功：user_id={user_id} server_id={server.id} slot={slot_index} "
+        f"item={item_id} prefix={prefix_id} qty={claim_qty} remaining={remaining}"
+    )
+    slot_line = f"{EMOJI_WAREHOUSE} 格子：#{slot_index}"
+    if remaining > 0:
+        slot_line = f"{EMOJI_WAREHOUSE} 格子：#{slot_index}（剩余 {remaining} 件）"
+    await bot.send(
+        event,
+        at + "\n" + reply_block(
+            reply_success("领取"),
+            [
+                f"🎁 物品：{_format_item_label(item_id, prefix_id, claim_qty)}",
+                f"{EMOJI_SERVER} 服务器：{server_label}",
+                f"{EMOJI_USER} 玩家：{player_name}",
+                slot_line,
+                f"{EMOJI_CHART} 已使用：{used_after} / {WAREHOUSE_CAPACITY}",
+            ],
+        ),
+    )
+
+
+async def _claim_many(
+    bot: Bot, event: Event, at: object,
+    user_id: str, player_name: str,
+    server: Server, server_label: str,
+    slot_indexes: list[int],
+    progress: dict[str, bool],
+) -> None:
+    session = get_session()
+    try:
+        items = (
+            session.query(WarehouseItem)
+            .filter(
+                WarehouseItem.user_id == user_id,
+                WarehouseItem.slot_index.in_(slot_indexes),
+            )
+            .all()
+        )
+        item_map = {int(it.slot_index): it for it in items}
+
+        skipped_empty = 0
+        skipped_progress = 0
+        skipped_give_failed = 0
+        processed = 0
+        total_qty = 0
+        delete_targets: list[WarehouseItem] = []
+
+        for s in slot_indexes:
+            it = item_map.get(s)
+            if it is None:
+                skipped_empty += 1
+                continue
+            min_tier = str(it.min_tier or "")
+            if not _is_progress_satisfied(min_tier, progress):
+                skipped_progress += 1
+                continue
+            ok, _ = await _issue_give_command(
+                server, player_name=player_name,
+                item_id=int(it.item_id), prefix_id=int(it.prefix_id),
+                quantity=int(it.quantity),
+            )
+            if not ok:
+                skipped_give_failed += 1
+                continue
+            total_qty += int(it.quantity)
+            delete_targets.append(it)
+            processed += 1
+
+        if processed == 0:
+            await bot.send(event, at + " " + reply_failure("领取", "未找到任何可领取的格子"))
+            return
+
+        for it in delete_targets:
+            session.delete(it)
+        session.commit()
+        used_after = (
+            session.query(WarehouseItem)
+            .filter(WarehouseItem.user_id == user_id)
+            .count()
+        )
+    finally:
+        session.close()
+
+    logger.info(
+        f"批量领取仓库物品：user_id={user_id} server_id={server.id} "
+        f"processed={processed} skipped_empty={skipped_empty} "
+        f"skipped_progress={skipped_progress} skipped_give_failed={skipped_give_failed} "
+        f"total_qty={total_qty}"
+    )
+    process_line = f"{EMOJI_WAREHOUSE} 处理格子：{processed} 个"
+    skip_parts: list[str] = []
+    if skipped_empty > 0:
+        skip_parts.append(f"{skipped_empty} 个空")
+    if skipped_progress > 0:
+        skip_parts.append(f"{skipped_progress} 个进度不足")
+    if skipped_give_failed > 0:
+        skip_parts.append(f"{skipped_give_failed} 个发送失败")
+    if skip_parts:
+        process_line = f"{EMOJI_WAREHOUSE} 处理格子：{processed} 个（跳过 {'、'.join(skip_parts)}）"
+
+    await bot.send(
+        event,
+        at + "\n" + reply_block(
+            reply_success("领取"),
+            [
+                f"{EMOJI_SERVER} 服务器：{server_label}",
+                f"{EMOJI_USER} 玩家：{player_name}",
+                process_line,
+                f"🎁 共领取：{total_qty} 件物品",
                 f"{EMOJI_CHART} 已使用：{used_after} / {WAREHOUSE_CAPACITY}",
             ],
         ),
