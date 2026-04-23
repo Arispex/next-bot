@@ -458,3 +458,65 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 61: 新增「使用教程 仓库系统」并收紧仓库截图高度
+
+**Date**: 2026-04-23
+**Task**: 新增「使用教程 仓库系统」并收紧仓库截图高度
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 模块 | 改动 |
+|---|---|
+| 仓库截图 | 移除 `min-h-screen`、收紧 body / header / grid padding、cell 比例 3/4 → 4/5、viewport 1800 → 600；图片显著变矮，无下方留白 |
+| 使用教程 | 新增「仓库系统」教程（共 7 步），与「新手教程」并列 |
+
+**新教程结构**：
+- 第 1 步：什么是仓库（来源：抽奖 / 商店；容量 100；进度门槛概念）
+- 第 2 步：查看仓库（我的仓库 / 用户仓库，只放 user 气泡，desc + tip 说明会出图）
+- 第 3 步：看懂仓库截图（卡片元素逐项解释 + 进度颜色阶段）
+- 第 4 步：格子表达式（5 种写法 + 多格不支持数量参数的提醒）
+- 第 5 步：领取仓库物品（5 个示例覆盖单格 / 数量 / 区间 / 列表 / 全部 + 成功 + 进度不足失败示例）
+- 第 6 步：回收仓库物品（公式 + 5 个示例 + 真实成功回复）
+- 第 7 步：丢弃仓库物品（5 个示例 + 真实成功回复）
+
+**对齐源码的关键点**：
+- 成功回复字段顺序与 emoji 经源码逐行核对（领取：🎁→🖥️→👤→📦→📊；回收：🎁→📦→💰单价→📊比例→💰获得→💰当前→📊；丢弃：🎁→📦→📊）
+- 失败回复格式 `@你 ❌ XX失败，原因` 单行
+- 沿用「@你」pronoun 风格（与新手教程一致）
+- 跳过管理员独占的添加 / 删除命令
+
+**Updated Files**:
+- `nextbot/plugins/warehouse.py`（截图 viewport 调小）
+- `server/templates/warehouse.html`（移除 min-h-screen + padding 收紧 + cell 比例调整）
+- `nextbot/plugins/tutorial_data.py`（追加 `"仓库系统"` 教程项，7 step）
+
+**用户反馈**：
+- 第一轮：图片太高 → 改 cell 比例 + 收紧 padding
+- 第二轮：水印下面还有空白 → 改 viewport_height 1800 → 600
+- 第三轮：第 5/6/7 步示例太单一 → 每步扩到 5 个示例（覆盖单格 / +数量 / 区间 / 列表 / 全部）
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0955d45` | (see git log) |
+| `6d11b04` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
