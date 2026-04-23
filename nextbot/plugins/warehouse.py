@@ -39,7 +39,7 @@ from server.web_server import create_warehouse_page
 
 WAREHOUSE_SCREENSHOT_OPTIONS = ScreenshotOptions(
     viewport_width=1200,
-    viewport_height=1800,
+    viewport_height=600,
     full_page=True,
 )
 

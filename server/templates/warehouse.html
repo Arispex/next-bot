@@ -96,12 +96,12 @@
     }
   </style>
 </head>
-<body class="min-h-screen px-8 py-10">
+<body class="px-8 py-6">
 
-  <div class="page-header mx-auto max-w-[1080px] rounded-2xl px-8 py-6 mb-6 border">
+  <div class="page-header mx-auto max-w-[1080px] rounded-2xl px-8 py-4 mb-4 border">
     <div class="flex items-start justify-between gap-6">
       <div style="flex:0 0 auto;">
-        <div class="header-rule h-1 w-16 rounded-full mb-4"></div>
+        <div class="header-rule h-1 w-16 rounded-full mb-3"></div>
         <h1 class="header-title text-4xl font-black tracking-tight" style="letter-spacing:-0.02em;">用户仓库</h1>
       </div>
       <div style="flex:1 1 auto; text-align:center; align-self:center;">
@@ -115,11 +115,11 @@
     </div>
   </div>
 
-  <div class="grid-card mx-auto max-w-[1080px] rounded-2xl p-5">
-    <div id="wh-grid" style="display:grid; grid-template-columns:repeat(10, 1fr); gap:10px;"></div>
+  <div class="grid-card mx-auto max-w-[1080px] rounded-2xl p-4">
+    <div id="wh-grid" style="display:grid; grid-template-columns:repeat(10, 1fr); gap:8px;"></div>
   </div>
 
-  <div class="mx-auto max-w-[1080px] mt-6 flex flex-col items-center gap-1">
+  <div class="mx-auto max-w-[1080px] mt-4 flex flex-col items-center gap-1">
     <div class="page-footer text-xs font-medium tracking-widest">Powered by NextBot</div>
   </div>
 
@@ -167,7 +167,7 @@
         const cell = document.createElement("div");
         cell.className = "slot rounded-xl" + (occupied ? " occupied" : "");
         cell.style.position = "relative";
-        cell.style.aspectRatio = "3 / 4";
+        cell.style.aspectRatio = "4 / 5";
         cell.style.padding = "16px 6px 6px 6px";
         cell.style.display = "flex";
         cell.style.flexDirection = "column";
