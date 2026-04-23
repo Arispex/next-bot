@@ -28,6 +28,7 @@ def _normalize_slots(slots: list[dict[str, Any]]) -> list[dict[str, Any]]:
             item_id = max(0, int(raw.get("item_id", 0)))
             prefix_id = max(0, int(raw.get("prefix_id", 0)))
             quantity = max(0, int(raw.get("quantity", 0)))
+            value = max(0, int(raw.get("value", 0)))
         except (TypeError, ValueError):
             continue
         min_tier = str(raw.get("min_tier", "")).strip()
@@ -36,6 +37,7 @@ def _normalize_slots(slots: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "item_id": item_id,
             "prefix_id": prefix_id,
             "quantity": quantity,
+            "value": value,
             "min_tier": min_tier,
             "min_tier_zh": PROGRESSION_KEY_TO_ZH.get(min_tier, min_tier),
             "min_tier_rank": PROGRESSION_RANK.get(min_tier, -1),
@@ -52,6 +54,7 @@ def _normalize_slots(slots: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     "item_id": 0,
                     "prefix_id": 0,
                     "quantity": 0,
+                    "value": 0,
                     "min_tier": "",
                     "min_tier_zh": "",
                     "min_tier_rank": -1,

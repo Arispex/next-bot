@@ -43,6 +43,7 @@
     fieldItemId: null,
     fieldPrefixId: null,
     fieldQuantity: null,
+    fieldValue: null,
     fieldMinTier: null,
   };
 
@@ -330,6 +331,22 @@
           tierEl.style.whiteSpace = "nowrap";
           cell.appendChild(tierEl);
         }
+
+        if (Number(slot.value || 0) > 0) {
+          const valueEl = document.createElement("div");
+          valueEl.textContent = "💰 " + slot.value;
+          valueEl.style.fontSize = "9px";
+          valueEl.style.fontWeight = "700";
+          valueEl.style.color = "#b45309";
+          valueEl.style.lineHeight = "1.2";
+          valueEl.style.marginTop = "1px";
+          valueEl.style.maxWidth = "100%";
+          valueEl.style.overflow = "hidden";
+          valueEl.style.textOverflow = "ellipsis";
+          valueEl.style.whiteSpace = "nowrap";
+          valueEl.style.textAlign = "center";
+          cell.appendChild(valueEl);
+        }
       }
 
       els.grid.appendChild(cell);
@@ -344,6 +361,7 @@
     els.fieldItemId.value = slot ? String(slot.item_id) : "";
     els.fieldPrefixId.value = slot ? String(slot.prefix_id) : "0";
     els.fieldQuantity.value = slot ? String(slot.quantity) : "1";
+    els.fieldValue.value = slot ? String(slot.value || 0) : "0";
     populateTierSelect(slot ? slot.min_tier : "");
     els.modalDelete.style.display = slot ? "inline-block" : "none";
     els.modal.style.display = "flex";
@@ -363,11 +381,13 @@
     const itemId = parseInt(els.fieldItemId.value, 10);
     const prefixId = parseInt(els.fieldPrefixId.value, 10);
     const quantity = parseInt(els.fieldQuantity.value, 10);
+    const value = parseInt(els.fieldValue.value, 10);
     const minTier = els.fieldMinTier.value;
 
     if (isNaN(itemId) || itemId < 1) return showModalAlert("物品 ID 必须为正整数");
     if (isNaN(prefixId) || prefixId < 0) return showModalAlert("前缀 ID 必须为非负整数");
     if (isNaN(quantity) || quantity < 1) return showModalAlert("数量必须为正整数");
+    if (isNaN(value) || value < 0) return showModalAlert("单价必须为非负整数");
     if (!minTier) return showModalAlert("请选择最低进度");
 
     try {
@@ -376,7 +396,7 @@
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ item_id: itemId, prefix_id: prefixId, quantity: quantity, min_tier: minTier }),
+          body: JSON.stringify({ item_id: itemId, prefix_id: prefixId, quantity: quantity, value: value, min_tier: minTier }),
           action: "保存",
           expectedStatus: 200,
         }
@@ -436,6 +456,7 @@
     els.fieldItemId = $("wh-field-item-id");
     els.fieldPrefixId = $("wh-field-prefix-id");
     els.fieldQuantity = $("wh-field-quantity");
+    els.fieldValue = $("wh-field-value");
     els.fieldMinTier = $("wh-field-min-tier");
   }
 

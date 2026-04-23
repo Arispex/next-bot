@@ -51,6 +51,7 @@ async def list_warehouse(request: Request) -> JSONResponse:
                 "item_id": int(it.item_id),
                 "prefix_id": int(it.prefix_id),
                 "quantity": int(it.quantity),
+                "value": int(it.value or 0),
                 "min_tier": str(it.min_tier),
                 "min_tier_label": PROGRESSION_KEY_TO_ZH.get(str(it.min_tier), str(it.min_tier)),
             }
@@ -94,6 +95,13 @@ def _validate_slot_payload(data: dict[str, Any]) -> tuple[dict[str, Any] | None,
     if quantity < 1:
         details.append({"field": "quantity", "message": "quantity 必须为正整数"})
 
+    try:
+        value = int(data.get("value", 0))
+    except (TypeError, ValueError):
+        value = -1
+    if value < 0:
+        details.append({"field": "value", "message": "value 必须为非负整数"})
+
     min_tier = str(data.get("min_tier", "")).strip()
     if min_tier not in PROGRESSION_KEY_TO_ZH:
         details.append({"field": "min_tier", "message": "min_tier 不在进度列表中"})
@@ -110,6 +118,7 @@ def _validate_slot_payload(data: dict[str, Any]) -> tuple[dict[str, Any] | None,
         "item_id": item_id,
         "prefix_id": prefix_id,
         "quantity": quantity,
+        "value": value,
         "min_tier": min_tier,
     }, None
 
@@ -156,6 +165,7 @@ async def upsert_slot(user_id: str, slot_index: int, request: Request) -> JSONRe
                     item_id=validated["item_id"],
                     prefix_id=validated["prefix_id"],
                     quantity=validated["quantity"],
+                    value=validated["value"],
                     min_tier=validated["min_tier"],
                     created_at=db_now_utc_naive(),
                 )
@@ -165,6 +175,7 @@ async def upsert_slot(user_id: str, slot_index: int, request: Request) -> JSONRe
             existing.item_id = validated["item_id"]
             existing.prefix_id = validated["prefix_id"]
             existing.quantity = validated["quantity"]
+            existing.value = validated["value"]
             existing.min_tier = validated["min_tier"]
             action = "update"
         session.commit()
@@ -173,7 +184,8 @@ async def upsert_slot(user_id: str, slot_index: int, request: Request) -> JSONRe
 
     logger.info(
         f"WebUI 仓库 {action}：user_id={user_id} slot={slot_index} "
-        f"item={validated['item_id']} qty={validated['quantity']} tier={validated['min_tier']}"
+        f"item={validated['item_id']} qty={validated['quantity']} "
+        f"value={validated['value']} tier={validated['min_tier']}"
     )
     return api_success(
         data={
@@ -181,6 +193,7 @@ async def upsert_slot(user_id: str, slot_index: int, request: Request) -> JSONRe
             "item_id": validated["item_id"],
             "prefix_id": validated["prefix_id"],
             "quantity": validated["quantity"],
+            "value": validated["value"],
             "min_tier": validated["min_tier"],
             "min_tier_label": PROGRESSION_KEY_TO_ZH[validated["min_tier"]],
         },

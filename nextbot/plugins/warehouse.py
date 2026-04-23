@@ -10,7 +10,7 @@ from nonebot.adapters.onebot.v11 import MessageSegment as OBV11MessageSegment
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
-from nextbot.command_config import command_control, raise_command_usage
+from nextbot.command_config import command_control, get_current_param, raise_command_usage
 from nextbot.db import WAREHOUSE_CAPACITY, User, WarehouseItem, get_session
 from nextbot.message_parser import (
     parse_command_args_with_fallback,
@@ -21,6 +21,7 @@ from nextbot.progression import PROGRESSION_KEY_TO_ZH, TIER_OPTIONS, parse_tier
 from nextbot.render_utils import resolve_render_theme
 from nextbot.text_utils import (
     EMOJI_CHART,
+    EMOJI_COIN,
     EMOJI_TARGET,
     EMOJI_USER,
     EMOJI_WAREHOUSE,
@@ -34,7 +35,7 @@ from server.web_server import create_warehouse_page
 
 WAREHOUSE_SCREENSHOT_OPTIONS = ScreenshotOptions(
     viewport_width=1200,
-    viewport_height=1600,
+    viewport_height=1800,
     full_page=True,
 )
 
@@ -132,6 +133,7 @@ def _load_warehouse_slots(user_id: str) -> list[dict]:
                 "prefix_id": int(r.prefix_id),
                 "quantity": int(r.quantity),
                 "min_tier": str(r.min_tier),
+                "value": int(r.value or 0),
             }
             for r in rows
         ]
@@ -173,6 +175,7 @@ list_user_matcher = on_command("用户仓库")
 add_matcher = on_command("添加仓库物品")
 remove_matcher = on_command("删除仓库物品")
 drop_matcher = on_command("丢弃物品")
+recycle_matcher = on_command("回收物品")
 
 
 @list_self_matcher.handle()
@@ -263,7 +266,7 @@ async def handle_list_user(bot: Bot, event: Event, arg: Message = CommandArg()) 
     display_name="添加仓库物品",
     permission="warehouse.add",
     description="将物品添加到指定用户仓库的第一个空格",
-    usage="添加仓库物品 <用户名/QQ/@用户> <物品ID> <数量> <前缀ID> <进度>",
+    usage="添加仓库物品 <用户名/QQ/@用户> <物品ID> <数量> <前缀ID> <进度> <价值>",
     category="仓库系统",
 )
 @require_permission("warehouse.add")
@@ -285,7 +288,7 @@ async def handle_add(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
         raise_command_usage()
 
     args = parse_command_args_with_fallback(event, arg, "添加仓库物品")
-    if len(args) != 5:
+    if len(args) != 6:
         raise_command_usage()
 
     try:
@@ -326,6 +329,15 @@ async def handle_add(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
         )
         return
 
+    try:
+        value = int(args[5])
+    except ValueError:
+        await bot.send(event, at + " " + reply_failure("添加", "价值必须为非负整数"))
+        return
+    if value < 0:
+        await bot.send(event, at + " " + reply_failure("添加", "价值必须为非负整数"))
+        return
+
     user = _load_user(target_user_id)
     if user is None:
         await bot.send(event, at + " " + reply_failure("添加", "未找到该用户"))
@@ -363,6 +375,7 @@ async def handle_add(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
                 prefix_id=prefix_id,
                 quantity=quantity,
                 min_tier=tier_key,
+                value=value,
                 created_at=db_now_utc_naive(),
             )
         )
@@ -373,7 +386,7 @@ async def handle_add(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
 
     logger.info(
         f"添加仓库物品成功：target={target_user_id} slot={free_slot} item={item_id} "
-        f"prefix={prefix_id} qty={quantity} tier={tier_key}"
+        f"prefix={prefix_id} qty={quantity} tier={tier_key} value={value}"
     )
     tier_zh = PROGRESSION_KEY_TO_ZH.get(tier_key, tier_key)
     item_label = _format_item_label(item_id, prefix_id, quantity)
@@ -386,6 +399,7 @@ async def handle_add(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
                 f"{EMOJI_USER} 用户：{user.name}（{target_user_id}）",
                 f"{EMOJI_WAREHOUSE} 格子：#{free_slot}",
                 f"{EMOJI_TARGET} 最低进度：{tier_zh}",
+                f"{EMOJI_COIN} 单价：{value} 金币",
                 f"{EMOJI_CHART} 已使用：{used_after} / {WAREHOUSE_CAPACITY}",
             ],
         ),
@@ -551,6 +565,109 @@ async def handle_drop(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
             [
                 f"🎁 物品：{_format_item_label(*snapshot)}",
                 f"{EMOJI_WAREHOUSE} 格子：#{slot_index}",
+                f"{EMOJI_CHART} 已使用：{used_after} / {WAREHOUSE_CAPACITY}",
+            ],
+        ),
+    )
+
+
+@recycle_matcher.handle()
+@command_control(
+    command_key="warehouse.recycle_self",
+    display_name="回收物品",
+    permission="warehouse.recycle_self",
+    description="按价值比例回收自己仓库的物品换金币",
+    usage="回收物品 <格子ID>",
+    params={
+        "recycle_ratio": {
+            "type": "float",
+            "label": "回收比例",
+            "description": "回收时返还价值的比例，0.5 表示返还 50%",
+            "required": False,
+            "default": 0.5,
+            "min": 0.0,
+        },
+    },
+    category="仓库系统",
+)
+@require_permission("warehouse.recycle_self")
+async def handle_recycle(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
+    user_id = event.get_user_id()
+    at = OBV11MessageSegment.at(int(user_id))
+
+    args = parse_command_args_with_fallback(event, arg, "回收物品")
+    if len(args) != 1:
+        raise_command_usage()
+
+    try:
+        slot_index = int(args[0])
+    except ValueError:
+        await bot.send(event, at + " " + reply_failure("回收", "格子 ID 必须为整数"))
+        return
+    if not (1 <= slot_index <= WAREHOUSE_CAPACITY):
+        await bot.send(
+            event,
+            at + " " + reply_failure("回收", f"格子 ID 必须为 1-{WAREHOUSE_CAPACITY}"),
+        )
+        return
+
+    ratio = max(0.0, float(get_current_param("recycle_ratio", 0.5)))
+
+    session = get_session()
+    try:
+        user = session.query(User).filter(User.user_id == user_id).first()
+        if user is None:
+            await bot.send(event, at + " " + reply_failure("回收", "未注册账号"))
+            return
+
+        item = (
+            session.query(WarehouseItem)
+            .filter(
+                WarehouseItem.user_id == user_id,
+                WarehouseItem.slot_index == slot_index,
+            )
+            .first()
+        )
+        if item is None:
+            await bot.send(event, at + " " + reply_failure("回收", "该格子为空"))
+            return
+
+        unit_value = int(item.value or 0)
+        quantity = int(item.quantity)
+        if unit_value <= 0:
+            await bot.send(event, at + " " + reply_failure("回收", "物品无价值，不可回收"))
+            return
+
+        snapshot = (int(item.item_id), int(item.prefix_id), quantity)
+        refund = int(unit_value * quantity * ratio)
+
+        user.coins = int(user.coins or 0) + refund
+        coins_after = int(user.coins)
+        session.delete(item)
+        session.commit()
+        used_after = (
+            session.query(WarehouseItem)
+            .filter(WarehouseItem.user_id == user_id)
+            .count()
+        )
+    finally:
+        session.close()
+
+    logger.info(
+        f"回收仓库物品成功：user_id={user_id} slot={slot_index} "
+        f"item={snapshot[0]} prefix={snapshot[1]} qty={snapshot[2]} "
+        f"unit_value={unit_value} ratio={ratio} refund={refund}"
+    )
+    await bot.send(
+        event,
+        at + "\n" + reply_block(
+            reply_success("回收"),
+            [
+                f"🎁 物品：{_format_item_label(*snapshot)}",
+                f"{EMOJI_COIN} 单价：{unit_value} 金币",
+                f"{EMOJI_CHART} 回收比例：{int(ratio * 100)}%",
+                f"{EMOJI_COIN} 获得金币：{refund}",
+                f"{EMOJI_COIN} 当前金币：{coins_after}",
                 f"{EMOJI_CHART} 已使用：{used_after} / {WAREHOUSE_CAPACITY}",
             ],
         ),

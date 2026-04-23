@@ -171,6 +171,7 @@ class WarehouseItem(Base):
     prefix_id: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     min_tier: Mapped[str] = mapped_column(String, nullable=False)
+    value: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=db_now_utc_naive
     )
@@ -211,7 +212,7 @@ def ensure_default_groups() -> None:
     try:
         guest = session.query(Group).filter(Group.name == "guest").first()
         if guest is None:
-            session.add(Group(name="guest", permissions="about,ban.list,economy.dice,economy.guess_number,economy.red_packet.grab,economy.red_packet.list_all,economy.red_packet.list_own,economy.red_packet.send,economy.red_packet.withdraw,economy.rob,economy.sign,economy.transfer,leaderboard.coins,leaderboard.daily_sign,leaderboard.deaths,leaderboard.dice_income,leaderboard.dice_win_rate,leaderboard.fishing,leaderboard.guess_number_income,leaderboard.guess_number_win_rate,leaderboard.online_time,leaderboard.rob_income,leaderboard.rob_loss,leaderboard.rob_penalty,leaderboard.rob_success_rate,leaderboard.signin,leaderboard.streak,leaderboard.total_online_time,menu.root,menu.search,player_query.inventory.self,player_query.inventory.user,player_query.kick.self,player_query.online,player_query.progress,security.login.confirm,security.login.reject,server.list,server.send,system.tutorial,user.info.self,user.info.user,user.register,user.whitelist.sync,warehouse.drop_self,warehouse.list_self,warehouse.list_user", inherits=""))
+            session.add(Group(name="guest", permissions="about,ban.list,economy.dice,economy.guess_number,economy.red_packet.grab,economy.red_packet.list_all,economy.red_packet.list_own,economy.red_packet.send,economy.red_packet.withdraw,economy.rob,economy.sign,economy.transfer,leaderboard.coins,leaderboard.daily_sign,leaderboard.deaths,leaderboard.dice_income,leaderboard.dice_win_rate,leaderboard.fishing,leaderboard.guess_number_income,leaderboard.guess_number_win_rate,leaderboard.online_time,leaderboard.rob_income,leaderboard.rob_loss,leaderboard.rob_penalty,leaderboard.rob_success_rate,leaderboard.signin,leaderboard.streak,leaderboard.total_online_time,menu.root,menu.search,player_query.inventory.self,player_query.inventory.user,player_query.kick.self,player_query.online,player_query.progress,security.login.confirm,security.login.reject,server.list,server.send,system.tutorial,user.info.self,user.info.user,user.register,user.whitelist.sync,warehouse.drop_self,warehouse.list_self,warehouse.list_user,warehouse.recycle_self", inherits=""))
 
         default = session.query(Group).filter(Group.name == "default").first()
         if default is None:
@@ -272,6 +273,29 @@ def ensure_command_config_schema() -> None:
         if "category" not in columns:
             conn.execute(
                 'ALTER TABLE "command_config" ADD COLUMN "category" TEXT NOT NULL DEFAULT \'\''
+            )
+            changed = True
+        if changed:
+            conn.commit()
+    finally:
+        conn.close()
+
+
+def ensure_warehouse_schema() -> None:
+    if not DB_PATH.exists():
+        return
+
+    conn = sqlite3.connect(str(DB_PATH))
+    try:
+        rows = conn.execute('PRAGMA table_info("warehouse_item")').fetchall()
+        if not rows:
+            return
+
+        columns = {str(row[1]) for row in rows}
+        changed = False
+        if "value" not in columns:
+            conn.execute(
+                'ALTER TABLE "warehouse_item" ADD COLUMN "value" INTEGER NOT NULL DEFAULT 0'
             )
             changed = True
         if changed:
