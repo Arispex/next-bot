@@ -84,7 +84,7 @@ _VALID_CHOICES = {"大", "小", "豹子"}
             "min": 0,
         },
     },
-    category="经济系统",
+    category="小游戏系统",
 )
 @require_permission("economy.dice")
 async def handle_dice(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:

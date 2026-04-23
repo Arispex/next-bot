@@ -18,6 +18,7 @@ from nextbot.permissions import require_permission
 from nextbot.text_utils import (
     EMOJI_CHART,
     EMOJI_COIN,
+    EMOJI_GAME,
     EMOJI_GROUP,
     EMOJI_LIST,
     EMOJI_LOCK,
@@ -44,6 +45,7 @@ MENU_SCREENSHOT_OPTIONS = ScreenshotOptions(
 CATEGORY_ORDER = [
     "用户系统",
     "经济系统",
+    "小游戏系统",
     "红包系统",
     "仓库系统",
     "排行榜",
@@ -59,6 +61,7 @@ _UNCATEGORIZED = "未分类"
 CATEGORY_EMOJI = {
     "用户系统": EMOJI_USER,
     "经济系统": EMOJI_COIN,
+    "小游戏系统": EMOJI_GAME,
     "红包系统": EMOJI_RED_PACKET,
     "仓库系统": EMOJI_WAREHOUSE,
     "排行榜": EMOJI_CHART,
