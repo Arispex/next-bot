@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 from pathlib import Path
 
 from nonebot import on_command
+from sqlalchemy.exc import IntegrityError
 from nonebot.adapters import Bot, Event, Message
 from nonebot.adapters.onebot.v11 import MessageSegment as OBV11MessageSegment
 from nonebot.log import logger
@@ -169,6 +171,20 @@ def _load_server(server_id: int) -> Server | None:
         return session.query(Server).filter(Server.id == server_id).first()
     finally:
         session.close()
+
+
+# Per-user warehouse lock prevents concurrent claim/recycle/drop/remove/add on
+# the same player's warehouse from racing. Without this, async /give calls in
+# 领取物品 leave a window where the same item can be claimed twice.
+_WAREHOUSE_LOCKS: dict[str, asyncio.Lock] = {}
+
+
+def _warehouse_lock(user_id: str) -> asyncio.Lock:
+    lock = _WAREHOUSE_LOCKS.get(user_id)
+    if lock is None:
+        lock = asyncio.Lock()
+        _WAREHOUSE_LOCKS[user_id] = lock
+    return lock
 
 
 def _load_warehouse_slots(user_id: str) -> list[dict]:
@@ -398,46 +414,64 @@ async def handle_add(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
         await bot.send(event, at + " " + reply_failure("添加", "未找到该用户"))
         return
 
-    session = get_session()
-    try:
-        occupied = {
-            int(s) for (s,) in session.query(WarehouseItem.slot_index)
-            .filter(WarehouseItem.user_id == target_user_id).all()
-        }
-        free_slot = next(
-            (i for i in range(1, WAREHOUSE_CAPACITY + 1) if i not in occupied),
-            None,
-        )
-        if free_slot is None:
-            await bot.send(
-                event,
-                at + "\n" + reply_block(
-                    reply_failure("添加", "仓库已满"),
-                    [
-                        f"{EMOJI_USER} 用户：{user.name}（{target_user_id}）",
-                        f"{EMOJI_CHART} 已使用：{WAREHOUSE_CAPACITY} / {WAREHOUSE_CAPACITY}",
-                        "💡 提示：可让用户使用「丢弃物品」或管理员使用「删除仓库物品」释放格子",
-                    ],
-                ),
+    async with _warehouse_lock(target_user_id):
+        session = get_session()
+        try:
+            occupied = {
+                int(s) for (s,) in session.query(WarehouseItem.slot_index)
+                .filter(WarehouseItem.user_id == target_user_id).all()
+            }
+            free_slot = next(
+                (i for i in range(1, WAREHOUSE_CAPACITY + 1) if i not in occupied),
+                None,
             )
-            return
+            if free_slot is None:
+                await bot.send(
+                    event,
+                    at + "\n" + reply_block(
+                        reply_failure("添加", "仓库已满"),
+                        [
+                            f"{EMOJI_USER} 用户：{user.name}（{target_user_id}）",
+                            f"{EMOJI_CHART} 已使用：{WAREHOUSE_CAPACITY} / {WAREHOUSE_CAPACITY}",
+                            "💡 提示：可让用户使用「丢弃物品」或管理员使用「删除仓库物品」释放格子",
+                        ],
+                    ),
+                )
+                return
 
-        session.add(
-            WarehouseItem(
-                user_id=target_user_id,
-                slot_index=free_slot,
-                item_id=item_id,
-                prefix_id=prefix_id,
-                quantity=quantity,
-                min_tier=tier_key,
-                value=value,
-                created_at=db_now_utc_naive(),
+            session.add(
+                WarehouseItem(
+                    user_id=target_user_id,
+                    slot_index=free_slot,
+                    item_id=item_id,
+                    prefix_id=prefix_id,
+                    quantity=quantity,
+                    min_tier=tier_key,
+                    value=value,
+                    created_at=db_now_utc_naive(),
+                )
             )
-        )
-        session.commit()
-        used_after = len(occupied) + 1
-    finally:
-        session.close()
+            try:
+                session.commit()
+            except IntegrityError:
+                # Defensive: with the per-user lock above, two concurrent adds
+                # for the same user can't both pick the same slot. This guard
+                # only triggers if some other path (e.g. WebUI bypassing the
+                # lock) inserts in the meantime — surface a friendly error.
+                session.rollback()
+                logger.warning(
+                    f"添加仓库物品冲突：target={target_user_id} slot={free_slot}"
+                )
+                await bot.send(
+                    event,
+                    at + " " + reply_failure(
+                        "添加", "格子被占用，请稍后重试或使用 WebUI 手动指定空格",
+                    ),
+                )
+                return
+            used_after = len(occupied) + 1
+        finally:
+            session.close()
 
     logger.info(
         f"添加仓库物品成功：target={target_user_id} slot={free_slot} item={item_id} "
@@ -515,10 +549,11 @@ async def handle_remove(bot: Bot, event: Event, arg: Message = CommandArg()) -> 
     target_user = _load_user(target_user_id)
     target_name = str(target_user.name) if target_user is not None else "未知用户"
 
-    if is_single:
-        await _remove_single(bot, event, at, target_user_id, target_name, slot_indexes[0], quantity_arg)
-    else:
-        await _remove_many(bot, event, at, target_user_id, target_name, slot_indexes)
+    async with _warehouse_lock(target_user_id):
+        if is_single:
+            await _remove_single(bot, event, at, target_user_id, target_name, slot_indexes[0], quantity_arg)
+        else:
+            await _remove_many(bot, event, at, target_user_id, target_name, slot_indexes)
 
 
 async def _remove_single(
@@ -688,10 +723,11 @@ async def handle_drop(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
         await bot.send(event, at + " " + reply_failure("丢弃", "未注册账号"))
         return
 
-    if is_single:
-        await _drop_single(bot, event, at, user_id, slot_indexes[0], quantity_arg)
-    else:
-        await _drop_many(bot, event, at, user_id, slot_indexes)
+    async with _warehouse_lock(user_id):
+        if is_single:
+            await _drop_single(bot, event, at, user_id, slot_indexes[0], quantity_arg)
+        else:
+            await _drop_many(bot, event, at, user_id, slot_indexes)
 
 
 async def _drop_single(
@@ -870,10 +906,11 @@ async def handle_recycle(bot: Bot, event: Event, arg: Message = CommandArg()) ->
 
     ratio = max(0.0, float(get_current_param("recycle_ratio", 0.5)))
 
-    if is_single:
-        await _recycle_single(bot, event, at, user_id, slot_indexes[0], quantity_arg, ratio)
-    else:
-        await _recycle_many(bot, event, at, user_id, slot_indexes, ratio)
+    async with _warehouse_lock(user_id):
+        if is_single:
+            await _recycle_single(bot, event, at, user_id, slot_indexes[0], quantity_arg, ratio)
+        else:
+            await _recycle_many(bot, event, at, user_id, slot_indexes, ratio)
 
 
 async def _recycle_single(
@@ -1029,7 +1066,10 @@ async def _recycle_many(
 
 
 def _is_progress_satisfied(min_tier: str, progress: dict[str, bool]) -> bool:
-    if not min_tier or min_tier == "none":
+    # Whitelist: only the explicit "无门槛" sentinel passes without a boss check.
+    # An empty / unknown min_tier must NOT bypass — otherwise a malformed DB row
+    # could leak past the gate.
+    if min_tier == "none":
         return True
     return bool(progress.get(min_tier, False))
 
@@ -1165,16 +1205,17 @@ async def handle_claim(bot: Bot, event: Event, arg: Message = CommandArg()) -> N
         return
 
     server_label = f"{server.id}.{server.name}"
-    if is_single:
-        await _claim_single(
-            bot, event, at, user_id, player_name,
-            server, server_label, slot_indexes[0], quantity_arg, progress,
-        )
-    else:
-        await _claim_many(
-            bot, event, at, user_id, player_name,
-            server, server_label, slot_indexes, progress,
-        )
+    async with _warehouse_lock(user_id):
+        if is_single:
+            await _claim_single(
+                bot, event, at, user_id, player_name,
+                server, server_label, slot_indexes[0], quantity_arg, progress,
+            )
+        else:
+            await _claim_many(
+                bot, event, at, user_id, player_name,
+                server, server_label, slot_indexes, progress,
+            )
 
 
 async def _claim_single(
@@ -1292,8 +1333,10 @@ async def _claim_many(
         skipped_give_failed = 0
         processed = 0
         total_qty = 0
-        delete_targets: list[WarehouseItem] = []
 
+        # Per-slot commit so that a crash mid-loop never leaves a window where
+        # the item was already /give'd in-game but still sits in the warehouse
+        # (which would let the user re-claim it on next bot restart).
         for s in slot_indexes:
             it = item_map.get(s)
             if it is None:
@@ -1303,25 +1346,24 @@ async def _claim_many(
             if not _is_progress_satisfied(min_tier, progress):
                 skipped_progress += 1
                 continue
+            slot_qty = int(it.quantity)
             ok, _ = await _issue_give_command(
                 server, player_name=player_name,
                 item_id=int(it.item_id), prefix_id=int(it.prefix_id),
-                quantity=int(it.quantity),
+                quantity=slot_qty,
             )
             if not ok:
                 skipped_give_failed += 1
                 continue
-            total_qty += int(it.quantity)
-            delete_targets.append(it)
+            session.delete(it)
+            session.commit()
+            total_qty += slot_qty
             processed += 1
 
         if processed == 0:
             await bot.send(event, at + " " + reply_failure("领取", "未找到任何可领取的格子"))
             return
 
-        for it in delete_targets:
-            session.delete(it)
-        session.commit()
         used_after = (
             session.query(WarehouseItem)
             .filter(WarehouseItem.user_id == user_id)
