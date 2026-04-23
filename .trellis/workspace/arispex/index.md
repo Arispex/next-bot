@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 59
-- **Last Active**: 2026-04-22
+- **Total Sessions**: 60
+- **Last Active**: 2026-04-23
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~384 | Active |
+| `journal-2.md` | ~460 | Active |
 | `journal-1.md` | ~1999 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits |
 |---|------|-------|---------|
+| 60 | 2026-04-23 | Warehouse system + tutorial command + reply layout standardization | `eaa93f0`, `bae3905`, `2357809`, `935f18c`, `411c408`, `0eb3e36`, `459bb75`, `57b6a99`, `ab05ca1`, `d903106`, `82542f3`, `09f6abc`, `d25e17b` |
 | 59 | 2026-04-22 | 菜单二级分类重构 + admin 字段清理 | `eb9e0e0`, `7ac1889` |
 | 58 | 2026-04-20 | 新增猜数字/掷骰子排行榜与 v1.1.1 发布 | `2d08c13`, `fa436a2` |
 | 57 | 2026-04-12 | 抢劫系统、更改用户名称、签到奖励调整 | `1890c77`, `ced5eda`, `26dfa6e` |

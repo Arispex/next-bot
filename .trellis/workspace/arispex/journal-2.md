@@ -382,3 +382,79 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 60: Warehouse system + tutorial command + reply layout standardization
+
+**Date**: 2026-04-23
+**Task**: Warehouse system + tutorial command + reply layout standardization
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 主题 | 说明 |
+|---------|-------------|
+| 仓库系统 4 期 | 完整建仓 → 物品价值 + 回收 → 批量操作 + 部分数量 → 服务器投递（领取物品） |
+| 仓库安全审计 | 修复 4 个漏洞：领取双花 race、添加满仓 IntegrityError、领取多格中途崩溃丢原子性、min_tier 空串绕过 |
+| 使用教程命令 | 全新 `使用教程` 命令 + `新手教程` 内置教程，仿菜单两级分发，网页渲染含 QQ 聊天模拟块 |
+| 回复风格统一 | 11+ 个 admin/系统命令统一为多行 + 字段 emoji 模板（`@用户` 独占行 + `✅ 动作成功` + 字段行） |
+| 红包图片化 | `我的红包` / `红包列表` 改图片渲染 + 分页 + 单价 / 份数 / 红金主题视觉 |
+
+**仓库系统架构**
+
+| 层 | 入口 |
+|---|---|
+| 数据 | `nextbot/db.py` `WarehouseItem`（user_id, slot_index 1-100, item_id, prefix_id, quantity, min_tier, value, created_at）+ `WAREHOUSE_CAPACITY=100` + `ensure_warehouse_schema()` 迁移 |
+| 进度档位 | `nextbot/progression.py`（21 个 boss + `none` 总 22 档；`PROGRESSION_KEY_TO_ZH` / `TIER_OPTIONS` / `parse_tier`） |
+| 命令 | `nextbot/plugins/warehouse.py` 7 个 matcher：`我的仓库`、`用户仓库`、`添加仓库物品`、`删除仓库物品`、`丢弃物品`、`回收物品`、`领取物品` |
+| 渲染 | `server/pages/warehouse_page.py` + `server/templates/warehouse.html`（红金 10×10 网格，3:4 卡片显示 #ID + 图标 + 前缀 + 名称 + tier chip + 💰 单价） |
+| WebUI | `/webui/warehouse?user_id=X` + 用户搜索下拉 + 模态编辑（含 value）+ 用户管理页"仓库"按钮跳转 |
+| API | `/webui/api/warehouse{tiers,?user_id,/{uid}/{slot}}` GET / PUT / DELETE |
+| 权限 | guest 默认含 `warehouse.list_self/list_user/drop_self/recycle_self/claim_self`；admin 含 `add/remove` |
+| 并发安全 | `_warehouse_lock(user_id)` 全局 dict[user_id → asyncio.Lock]；5 个 dispatcher 全部 `async with` |
+
+**关键设计决策**
+
+- **min_tier 实时判定**：不存 server.tier，每次领取查 `/nextbot/world/progress` 比对 `item.min_tier`，跟随实际游戏状态
+- **值语义按"单价"**：`value` 表示每件物品金币，回收 = `int(value × quantity × ratio)`，admin 填一次即可
+- **格子表达式**：`5` / `1-10` / `1,3,5` / `1-3,5,7-9` / `全部` `all` 五种形式，多格禁用 `[数量]` 参数
+- **领取流程**：解析 → 注册 → 服务器存在 → 玩家在线（`/v2/server/status`）→ 进度通过 → `/give <itemId> <name> <qty> [prefix]` → 扣仓库（per-slot commit 防崩溃丢原子性）
+- **回复模板**：`@用户\n✅ 动作成功\n🎁 物品: ...\n👤 用户: ...\n📦 格子: ...\n📊 已使用: N/100` 全套统一
+
+**Updated Files** (主要新建/修改):
+- 新建：`nextbot/progression.py`、`nextbot/plugins/warehouse.py`、`nextbot/plugins/tutorial.py`、`nextbot/plugins/tutorial_data.py`、`server/pages/{warehouse,red_packet_own,red_packet_all,tutorial}_page.py`、`server/templates/{warehouse,red_packet_own,red_packet_all,tutorial}.html`、`server/routes/webui_warehouse.py`、`server/webui/templates/warehouse_content.html`、`server/webui/static/js/warehouse.js`
+- 修改：`nextbot/db.py`（WarehouseItem + value + ensure_warehouse_schema + guest seed 加 6 项 warehouse 权限）、`nextbot/plugins/{economy,user_manager,ban,server_manager,server_send,permission_manager,group_manager,group_member_notify,server_tools,red_packet,player_query,menu}.py`（统一 reply 模板）、`bot.py`、`nextbot/text_utils.py`（新增 EMOJI_GUIDE/EMOJI_WAREHOUSE）、`server/{web_server,routes/{render,webui},pages/console_page}.py`、`server/webui/{templates/app_shell_base,static/js/users}.html/js`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `eaa93f0` | (see git log) |
+| `bae3905` | (see git log) |
+| `2357809` | (see git log) |
+| `935f18c` | (see git log) |
+| `411c408` | (see git log) |
+| `0eb3e36` | (see git log) |
+| `459bb75` | (see git log) |
+| `57b6a99` | (see git log) |
+| `ab05ca1` | (see git log) |
+| `d903106` | (see git log) |
+| `82542f3` | (see git log) |
+| `09f6abc` | (see git log) |
+| `d25e17b` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
