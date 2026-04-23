@@ -21,7 +21,7 @@ from nextbot.tshock_api import (
     is_success,
     request_server_api,
 )
-from nextbot.text_utils import reply_failure, reply_success
+from nextbot.text_utils import EMOJI_SERVER, reply_block, reply_failure, reply_success
 
 
 execute_matcher = on_command("执行")
@@ -105,10 +105,30 @@ async def handle_execute(
 
     result_text = _extract_response_text(response.payload)
     if result_text:
-        await bot.send(event, at + "\n" + reply_success("执行") + f"\n📋 返回内容：\n{result_text}")
+        await bot.send(
+            event,
+            at + "\n" + reply_block(
+                reply_success("执行"),
+                [
+                    f"{EMOJI_SERVER} 服务器：{server.id}.{server.name}",
+                    f"⚙️ 命令：{command}",
+                    f"📋 返回内容：\n{result_text}",
+                ],
+            ),
+        )
         return
 
-    await bot.send(event, at + " " + reply_success("执行", "无返回内容"))
+    await bot.send(
+        event,
+        at + "\n" + reply_block(
+            reply_success("执行"),
+            [
+                f"{EMOJI_SERVER} 服务器：{server.id}.{server.name}",
+                f"⚙️ 命令：{command}",
+                "ℹ️ 无返回内容",
+            ],
+        ),
+    )
 
 
 @map_image_matcher.handle()

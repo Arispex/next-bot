@@ -375,8 +375,12 @@ async def handle_add_coins(
     await bot.send(
         event,
         at + "\n" + reply_block(
-            reply_success("添加金币", f"+{amount}"),
-            [f"{EMOJI_COIN} 当前金币：{coins}"],
+            reply_success("添加"),
+            [
+                f"{EMOJI_USER} 用户：{user_name}（{target_user_id}）",
+                f"{EMOJI_COIN} 数量：+{amount}",
+                f"{EMOJI_COIN} 当前金币：{coins}",
+            ],
         ),
     )
 
@@ -445,7 +449,11 @@ async def handle_remove_coins(
     await bot.send(
         event,
         at + "\n" + reply_block(
-            reply_success("扣除金币", f"-{amount}"),
-            [f"{EMOJI_COIN} 当前金币：{coins}"],
+            reply_success("扣除"),
+            [
+                f"{EMOJI_USER} 用户：{user_name}（{target_user_id}）",
+                f"{EMOJI_COIN} 数量：-{amount}",
+                f"{EMOJI_COIN} 当前金币：{coins}",
+            ],
         ),
     )

@@ -435,7 +435,12 @@ async def handle_rename(bot: Bot, event: Event, arg: Message = CommandArg()) -> 
     finally:
         session.close()
 
-    lines: list[str] = [f"✅ 更改用户名称成功，{old_name}（{target_user_id}）的用户名称已更改为 {new_name}"]
+    lines: list[str] = [
+        reply_success("更改"),
+        f"{EMOJI_USER} 用户 QQ：{target_user_id}",
+        f"📝 旧名称：{old_name}",
+        f"📝 新名称：{new_name}",
+    ]
     if not servers:
         lines.append("🖥️ 同步服务器白名单结果：ℹ️ 暂无服务器")
     else:

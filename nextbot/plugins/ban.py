@@ -18,7 +18,7 @@ from nextbot.render_utils import resolve_render_theme
 from nextbot.time_utils import beijing_filename_timestamp, db_now_utc_naive
 from nextbot.time_utils import format_beijing_datetime
 from nextbot.tshock_api import TShockRequestError, get_error_reason, is_success, request_server_api
-from nextbot.text_utils import reply_failure
+from nextbot.text_utils import EMOJI_USER, reply_failure, reply_success
 from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
 from server.web_server import create_ban_list_page
 
@@ -89,7 +89,9 @@ async def handle_ban(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
     )
 
     lines: list[str] = [
-        f"✅ 封禁成功，用户 {result.user_name}（{result.user_qq}）已被封禁，原因：{reason}"
+        reply_success("封禁"),
+        f"{EMOJI_USER} 用户：{result.user_name}（{result.user_qq}）",
+        f"📋 原因：{reason}",
     ]
     lines.extend(await sync_user_to_blacklist(result.user_name, reason))
 
@@ -261,7 +263,10 @@ async def handle_unban(bot: Bot, event: Event, arg: Message = CommandArg()) -> N
     finally:
         session.close()
 
-    lines: list[str] = [f"✅ 解封成功，用户 {user_name}（{user_qq}）已解除封禁"]
+    lines: list[str] = [
+        reply_success("解封"),
+        f"{EMOJI_USER} 用户：{user_name}（{user_qq}）",
+    ]
 
     if not servers:
         lines.append("🖥️ 同步服务器黑名单结果：ℹ️ 暂无服务器")
