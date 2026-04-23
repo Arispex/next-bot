@@ -14,7 +14,7 @@ from nextbot.tshock_api import (
     is_success,
     request_server_api,
 )
-from nextbot.text_utils import reply_failure, reply_success
+from nextbot.text_utils import EMOJI_SERVER, reply_block, reply_failure, reply_success
 
 add_matcher = on_command("添加服务器")
 delete_matcher = on_command("删除服务器")
@@ -59,7 +59,17 @@ async def handle_add_server(
     logger.info(
         f"添加服务器成功：ID={count + 1} name={name} ip={ip} game_port={game_port} restapi_port={restapi_port}"
     )
-    await bot.send(event, at + " " + reply_success("添加"))
+    await bot.send(
+        event,
+        at + "\n" + reply_block(
+            reply_success("添加"),
+            [
+                f"🆔 服务器 ID：{count + 1}",
+                f"{EMOJI_SERVER} 名称：{name}",
+                f"🌐 地址：{ip}:{game_port}",
+            ],
+        ),
+    )
 
 
 @delete_matcher.handle()
@@ -93,6 +103,7 @@ async def handle_delete_server(
             return
 
         deleted_id = server.id
+        deleted_name = server.name
         session.delete(server)
         session.flush()
 
@@ -104,7 +115,16 @@ async def handle_delete_server(
         session.close()
 
     logger.info(f"删除服务器成功：ID={deleted_id}")
-    await bot.send(event, at + " " + reply_success("删除"))
+    await bot.send(
+        event,
+        at + "\n" + reply_block(
+            reply_success("删除"),
+            [
+                f"🆔 服务器 ID：{deleted_id}",
+                f"{EMOJI_SERVER} 名称：{deleted_name}",
+            ],
+        ),
+    )
 
 
 @list_matcher.handle()

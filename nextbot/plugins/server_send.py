@@ -16,7 +16,7 @@ from nextbot.tshock_api import (
     is_success,
     request_server_api,
 )
-from nextbot.text_utils import reply_failure, reply_success
+from nextbot.text_utils import EMOJI_SERVER, reply_block, reply_failure, reply_success
 
 
 send_matcher = on_command("发送")
@@ -95,4 +95,13 @@ async def handle_send(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
         await bot.send(event, at + " " + reply_failure("发送", f"{get_error_reason(response)}"))
         return
 
-    await bot.send(event, at + " " + reply_success("发送"))
+    await bot.send(
+        event,
+        at + "\n" + reply_block(
+            reply_success("发送"),
+            [
+                f"{EMOJI_SERVER} 服务器：{server.id}.{server.name}",
+                f"💬 内容：{content}",
+            ],
+        ),
+    )

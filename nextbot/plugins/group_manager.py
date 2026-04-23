@@ -14,7 +14,7 @@ from nextbot.permissions import (
     remove_permission,
     require_permission,
 )
-from nextbot.text_utils import reply_failure, reply_success
+from nextbot.text_utils import EMOJI_GROUP, EMOJI_LOCK, reply_block, reply_failure, reply_success
 
 list_matcher = on_command("身份组列表")
 add_matcher = on_command("添加身份组")
@@ -183,7 +183,16 @@ async def handle_inherit_group(
         session.close()
 
     logger.info(f"身份组继承成功：{child} -> {parent}")
-    await bot.send(event, at + " " + reply_success("修改"))
+    await bot.send(
+        event,
+        at + "\n" + reply_block(
+            reply_success("继承"),
+            [
+                f"{EMOJI_GROUP} 身份组：{child}",
+                f"🔗 继承：{parent}",
+            ],
+        ),
+    )
 
 
 @clear_inherit_matcher.handle()
@@ -218,7 +227,16 @@ async def handle_clear_inherit_group(
         session.close()
 
     logger.info(f"取消身份组继承成功：name={name}")
-    await bot.send(event, at + " " + reply_success("修改"))
+    await bot.send(
+        event,
+        at + "\n" + reply_block(
+            reply_success("取消继承"),
+            [
+                f"{EMOJI_GROUP} 身份组：{name}",
+                "🔗 已清空全部继承",
+            ],
+        ),
+    )
 
 
 @add_perm_matcher.handle()
@@ -253,7 +271,16 @@ async def handle_add_group_perm(
         session.close()
 
     logger.info(f"添加身份组权限成功：name={name} permission={permission}")
-    await bot.send(event, at + " " + reply_success("添加"))
+    await bot.send(
+        event,
+        at + "\n" + reply_block(
+            reply_success("添加"),
+            [
+                f"{EMOJI_GROUP} 身份组：{name}",
+                f"{EMOJI_LOCK} 权限：{permission}",
+            ],
+        ),
+    )
 
 
 @remove_perm_matcher.handle()
@@ -288,4 +315,13 @@ async def handle_remove_group_perm(
         session.close()
 
     logger.info(f"删除身份组权限成功：name={name} permission={permission}")
-    await bot.send(event, at + " " + reply_success("删除"))
+    await bot.send(
+        event,
+        at + "\n" + reply_block(
+            reply_success("删除"),
+            [
+                f"{EMOJI_GROUP} 身份组：{name}",
+                f"{EMOJI_LOCK} 权限：{permission}",
+            ],
+        ),
+    )

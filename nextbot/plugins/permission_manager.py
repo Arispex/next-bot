@@ -21,7 +21,7 @@ from nextbot.permissions import (
 )
 from nextbot.render_utils import resolve_render_theme
 from nextbot.time_utils import beijing_filename_timestamp
-from nextbot.text_utils import reply_failure, reply_success
+from nextbot.text_utils import EMOJI_GROUP, EMOJI_LOCK, EMOJI_USER, reply_block, reply_failure, reply_success
 from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
 from server.web_server import create_admin_list_page
 
@@ -89,12 +89,22 @@ async def handle_add_user_perm(
             return
 
         user.permissions = add_permission(user.permissions, permission)
+        target_name = str(user.name)
         session.commit()
     finally:
         session.close()
 
     logger.info(f"添加用户权限成功：user_id={user_id} permission={permission}")
-    await bot.send(event, at + " " + reply_success("添加"))
+    await bot.send(
+        event,
+        at + "\n" + reply_block(
+            reply_success("添加"),
+            [
+                f"{EMOJI_USER} 用户：{target_name}（{user_id}）",
+                f"{EMOJI_LOCK} 权限：{permission}",
+            ],
+        ),
+    )
 
 
 @remove_user_perm_matcher.handle()
@@ -141,12 +151,22 @@ async def handle_remove_user_perm(
             return
 
         user.permissions = remove_permission(user.permissions, permission)
+        target_name = str(user.name)
         session.commit()
     finally:
         session.close()
 
     logger.info(f"删除用户权限成功：user_id={user_id} permission={permission}")
-    await bot.send(event, at + " " + reply_success("删除"))
+    await bot.send(
+        event,
+        at + "\n" + reply_block(
+            reply_success("删除"),
+            [
+                f"{EMOJI_USER} 用户：{target_name}（{user_id}）",
+                f"{EMOJI_LOCK} 权限：{permission}",
+            ],
+        ),
+    )
 
 
 @set_user_group_matcher.handle()
@@ -198,6 +218,7 @@ async def handle_set_user_group(
             return
 
         user.group = group_name
+        target_name = str(user.name)
         session.commit()
     finally:
         session.close()
@@ -205,7 +226,16 @@ async def handle_set_user_group(
     logger.info(
         f"修改用户身份组成功：user_id={target_user_id} group={group_name}"
     )
-    await bot.send(event, at + " " + reply_success("修改"))
+    await bot.send(
+        event,
+        at + "\n" + reply_block(
+            reply_success("修改"),
+            [
+                f"{EMOJI_USER} 用户：{target_name}（{target_user_id}）",
+                f"{EMOJI_GROUP} 身份组：{group_name}",
+            ],
+        ),
+    )
 
 
 @admin_list_matcher.handle()
