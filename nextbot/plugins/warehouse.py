@@ -96,6 +96,50 @@ def _format_item_label(item_id: int, prefix_id: int, quantity: int) -> str:
     return f"{full} ×{quantity}"
 
 
+def _parse_slot_expression(s: str) -> tuple[list[int], bool]:
+    """格子表达式解析，返回 (排序去重后的格子号列表, 是否单格)。
+
+    支持：单格 `5` / 区间 `1-10` / 列表 `1,3,5` / 组合 `1-3,5,7-9` / `全部`/`all`
+    """
+    raw = str(s or "").strip()
+    if not raw:
+        raise ValueError("格子表达式不能为空")
+    if raw in {"全部", "all"}:
+        return list(range(1, WAREHOUSE_CAPACITY + 1)), False
+    if raw.isdigit():
+        n = int(raw)
+        if not (1 <= n <= WAREHOUSE_CAPACITY):
+            raise ValueError(f"格子号必须为 1-{WAREHOUSE_CAPACITY}")
+        return [n], True
+
+    parts = [p.strip() for p in raw.split(",") if p.strip()]
+    if not parts:
+        raise ValueError("格子表达式格式错误，例：5 / 1-10 / 1,3,5 / 全部")
+    out: set[int] = set()
+    for part in parts:
+        if "-" in part:
+            a_s, _, b_s = part.partition("-")
+            try:
+                a, b = int(a_s.strip()), int(b_s.strip())
+            except ValueError as exc:
+                raise ValueError("格子表达式格式错误，例：5 / 1-10 / 1,3,5 / 全部") from exc
+            if a > b:
+                raise ValueError("区间起点不能大于终点")
+            for n in range(a, b + 1):
+                if not (1 <= n <= WAREHOUSE_CAPACITY):
+                    raise ValueError(f"格子号必须为 1-{WAREHOUSE_CAPACITY}")
+                out.add(n)
+        else:
+            try:
+                n = int(part)
+            except ValueError as exc:
+                raise ValueError("格子表达式格式错误，例：5 / 1-10 / 1,3,5 / 全部") from exc
+            if not (1 <= n <= WAREHOUSE_CAPACITY):
+                raise ValueError(f"格子号必须为 1-{WAREHOUSE_CAPACITY}")
+            out.add(n)
+    return sorted(out), False
+
+
 def _build_tier_options_lines(per_line: int = 4) -> list[str]:
     names = [zh for _, zh in TIER_OPTIONS]
     return ["、".join(names[i:i + per_line]) for i in range(0, len(names), per_line)]
@@ -411,8 +455,8 @@ async def handle_add(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
     command_key="warehouse.remove",
     display_name="删除仓库物品",
     permission="warehouse.remove",
-    description="清空指定用户仓库的指定格子",
-    usage="删除仓库物品 <用户名/QQ/@用户> <格子ID>",
+    description="清空指定用户仓库的物品，支持单格 / 区间 / 列表 / 全部，单格可指定数量",
+    usage="删除仓库物品 <用户名/QQ/@用户> <格子表达式> [数量]",
     category="仓库系统",
 )
 @require_permission("warehouse.remove")
@@ -434,26 +478,44 @@ async def handle_remove(bot: Bot, event: Event, arg: Message = CommandArg()) -> 
         raise_command_usage()
 
     args = parse_command_args_with_fallback(event, arg, "删除仓库物品")
-    if len(args) != 2:
+    if not (2 <= len(args) <= 3):
         raise_command_usage()
 
     try:
-        slot_index = int(args[1])
-    except ValueError:
-        await bot.send(event, at + " " + reply_failure("删除", "格子 ID 必须为整数"))
-        return
-    if not (1 <= slot_index <= WAREHOUSE_CAPACITY):
-        await bot.send(
-            event,
-            at + " " + reply_failure("删除", f"格子 ID 必须为 1-{WAREHOUSE_CAPACITY}"),
-        )
+        slot_indexes, is_single = _parse_slot_expression(args[1])
+    except ValueError as exc:
+        await bot.send(event, at + " " + reply_failure("删除", str(exc)))
         return
 
+    quantity_arg: int | None = None
+    if len(args) == 3:
+        if not is_single:
+            await bot.send(event, at + " " + reply_failure("删除", "多格操作不支持数量参数，请使用单格"))
+            return
+        try:
+            quantity_arg = int(args[2])
+        except ValueError:
+            await bot.send(event, at + " " + reply_failure("删除", "数量必须为正整数"))
+            return
+        if quantity_arg < 1:
+            await bot.send(event, at + " " + reply_failure("删除", "数量必须为正整数"))
+            return
+
+    target_user = _load_user(target_user_id)
+    target_name = str(target_user.name) if target_user is not None else "未知用户"
+
+    if is_single:
+        await _remove_single(bot, event, at, target_user_id, target_name, slot_indexes[0], quantity_arg)
+    else:
+        await _remove_many(bot, event, at, target_user_id, target_name, slot_indexes)
+
+
+async def _remove_single(
+    bot: Bot, event: Event, at: object,
+    target_user_id: str, target_name: str, slot_index: int, quantity_arg: int | None,
+) -> None:
     session = get_session()
     try:
-        target_user = (
-            session.query(User).filter(User.user_id == target_user_id).first()
-        )
         item = (
             session.query(WarehouseItem)
             .filter(
@@ -465,9 +527,25 @@ async def handle_remove(bot: Bot, event: Event, arg: Message = CommandArg()) -> 
         if item is None:
             await bot.send(event, at + " " + reply_failure("删除", "该格子为空"))
             return
-        snapshot = (int(item.item_id), int(item.prefix_id), int(item.quantity))
-        target_name = str(target_user.name) if target_user is not None else "未知用户"
-        session.delete(item)
+
+        current_qty = int(item.quantity)
+        if quantity_arg is not None and quantity_arg > current_qty:
+            await bot.send(
+                event,
+                at + " " + reply_failure("删除", f"数量超过该格当前数量（{current_qty}）"),
+            )
+            return
+
+        remove_qty = quantity_arg if quantity_arg is not None else current_qty
+        item_id = int(item.item_id)
+        prefix_id = int(item.prefix_id)
+
+        if remove_qty >= current_qty:
+            session.delete(item)
+            remaining = 0
+        else:
+            item.quantity = current_qty - remove_qty
+            remaining = int(item.quantity)
         session.commit()
         used_after = (
             session.query(WarehouseItem)
@@ -479,16 +557,77 @@ async def handle_remove(bot: Bot, event: Event, arg: Message = CommandArg()) -> 
 
     logger.info(
         f"删除仓库物品成功：target={target_user_id} slot={slot_index} "
-        f"item={snapshot[0]} prefix={snapshot[1]} qty={snapshot[2]}"
+        f"item={item_id} prefix={prefix_id} qty={remove_qty} remaining={remaining}"
     )
+    slot_line = f"{EMOJI_WAREHOUSE} 格子：#{slot_index}"
+    if remaining > 0:
+        slot_line = f"{EMOJI_WAREHOUSE} 格子：#{slot_index}（剩余 {remaining} 件）"
     await bot.send(
         event,
         at + "\n" + reply_block(
             reply_success("删除"),
             [
-                f"🎁 物品：{_format_item_label(*snapshot)}",
+                f"🎁 物品：{_format_item_label(item_id, prefix_id, remove_qty)}",
                 f"{EMOJI_USER} 用户：{target_name}（{target_user_id}）",
-                f"{EMOJI_WAREHOUSE} 格子：#{slot_index}",
+                slot_line,
+                f"{EMOJI_CHART} 已使用：{used_after} / {WAREHOUSE_CAPACITY}",
+            ],
+        ),
+    )
+
+
+async def _remove_many(
+    bot: Bot, event: Event, at: object,
+    target_user_id: str, target_name: str, slot_indexes: list[int],
+) -> None:
+    session = get_session()
+    try:
+        items = (
+            session.query(WarehouseItem)
+            .filter(
+                WarehouseItem.user_id == target_user_id,
+                WarehouseItem.slot_index.in_(slot_indexes),
+            )
+            .all()
+        )
+        item_map = {int(it.slot_index): it for it in items}
+        total_qty = 0
+        processed = 0
+        for s in slot_indexes:
+            it = item_map.get(s)
+            if it is None:
+                continue
+            total_qty += int(it.quantity)
+            session.delete(it)
+            processed += 1
+        skipped_empty = len(slot_indexes) - processed
+        if processed == 0:
+            await bot.send(event, at + " " + reply_failure("删除", "未找到任何可删除的格子"))
+            return
+        session.commit()
+        used_after = (
+            session.query(WarehouseItem)
+            .filter(WarehouseItem.user_id == target_user_id)
+            .count()
+        )
+    finally:
+        session.close()
+
+    logger.info(
+        f"批量删除仓库物品：target={target_user_id} processed={processed} "
+        f"skipped_empty={skipped_empty} total_qty={total_qty}"
+    )
+    process_line = f"{EMOJI_WAREHOUSE} 处理格子：{processed} 个"
+    if skipped_empty > 0:
+        process_line = f"{EMOJI_WAREHOUSE} 处理格子：{processed} 个（跳过 {skipped_empty} 个空格）"
+    await bot.send(
+        event,
+        at + "\n" + reply_block(
+            reply_success("删除"),
+            [
+                f"{EMOJI_USER} 用户：{target_name}（{target_user_id}）",
+                process_line,
+                f"🎁 共删除：{total_qty} 件物品",
                 f"{EMOJI_CHART} 已使用：{used_after} / {WAREHOUSE_CAPACITY}",
             ],
         ),
@@ -500,8 +639,8 @@ async def handle_remove(bot: Bot, event: Event, arg: Message = CommandArg()) -> 
     command_key="warehouse.drop_self",
     display_name="丢弃物品",
     permission="warehouse.drop_self",
-    description="丢弃自己仓库的指定格子物品",
-    usage="丢弃物品 <格子ID>",
+    description="丢弃自己仓库的物品，支持单格 / 区间 / 列表 / 全部，单格可指定数量",
+    usage="丢弃物品 <格子表达式> [数量]",
     category="仓库系统",
 )
 @require_permission("warehouse.drop_self")
@@ -510,26 +649,44 @@ async def handle_drop(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     at = OBV11MessageSegment.at(int(user_id))
 
     args = parse_command_args_with_fallback(event, arg, "丢弃物品")
-    if len(args) != 1:
+    if not (1 <= len(args) <= 2):
         raise_command_usage()
 
     try:
-        slot_index = int(args[0])
-    except ValueError:
-        await bot.send(event, at + " " + reply_failure("丢弃", "格子 ID 必须为整数"))
+        slot_indexes, is_single = _parse_slot_expression(args[0])
+    except ValueError as exc:
+        await bot.send(event, at + " " + reply_failure("丢弃", str(exc)))
         return
-    if not (1 <= slot_index <= WAREHOUSE_CAPACITY):
-        await bot.send(
-            event,
-            at + " " + reply_failure("丢弃", f"格子 ID 必须为 1-{WAREHOUSE_CAPACITY}"),
-        )
-        return
+
+    quantity_arg: int | None = None
+    if len(args) == 2:
+        if not is_single:
+            await bot.send(event, at + " " + reply_failure("丢弃", "多格操作不支持数量参数，请使用单格"))
+            return
+        try:
+            quantity_arg = int(args[1])
+        except ValueError:
+            await bot.send(event, at + " " + reply_failure("丢弃", "数量必须为正整数"))
+            return
+        if quantity_arg < 1:
+            await bot.send(event, at + " " + reply_failure("丢弃", "数量必须为正整数"))
+            return
 
     user = _load_user(user_id)
     if user is None:
         await bot.send(event, at + " " + reply_failure("丢弃", "未注册账号"))
         return
 
+    if is_single:
+        await _drop_single(bot, event, at, user_id, slot_indexes[0], quantity_arg)
+    else:
+        await _drop_many(bot, event, at, user_id, slot_indexes)
+
+
+async def _drop_single(
+    bot: Bot, event: Event, at: object,
+    user_id: str, slot_index: int, quantity_arg: int | None,
+) -> None:
     session = get_session()
     try:
         item = (
@@ -543,8 +700,25 @@ async def handle_drop(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
         if item is None:
             await bot.send(event, at + " " + reply_failure("丢弃", "该格子为空"))
             return
-        snapshot = (int(item.item_id), int(item.prefix_id), int(item.quantity))
-        session.delete(item)
+
+        current_qty = int(item.quantity)
+        if quantity_arg is not None and quantity_arg > current_qty:
+            await bot.send(
+                event,
+                at + " " + reply_failure("丢弃", f"数量超过该格当前数量（{current_qty}）"),
+            )
+            return
+
+        drop_qty = quantity_arg if quantity_arg is not None else current_qty
+        item_id = int(item.item_id)
+        prefix_id = int(item.prefix_id)
+
+        if drop_qty >= current_qty:
+            session.delete(item)
+            remaining = 0
+        else:
+            item.quantity = current_qty - drop_qty
+            remaining = int(item.quantity)
         session.commit()
         used_after = (
             session.query(WarehouseItem)
@@ -556,15 +730,75 @@ async def handle_drop(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
 
     logger.info(
         f"丢弃仓库物品成功：user_id={user_id} slot={slot_index} "
-        f"item={snapshot[0]} prefix={snapshot[1]} qty={snapshot[2]}"
+        f"item={item_id} prefix={prefix_id} qty={drop_qty} remaining={remaining}"
     )
+    slot_line = f"{EMOJI_WAREHOUSE} 格子：#{slot_index}"
+    if remaining > 0:
+        slot_line = f"{EMOJI_WAREHOUSE} 格子：#{slot_index}（剩余 {remaining} 件）"
     await bot.send(
         event,
         at + "\n" + reply_block(
             reply_success("丢弃"),
             [
-                f"🎁 物品：{_format_item_label(*snapshot)}",
-                f"{EMOJI_WAREHOUSE} 格子：#{slot_index}",
+                f"🎁 物品：{_format_item_label(item_id, prefix_id, drop_qty)}",
+                slot_line,
+                f"{EMOJI_CHART} 已使用：{used_after} / {WAREHOUSE_CAPACITY}",
+            ],
+        ),
+    )
+
+
+async def _drop_many(
+    bot: Bot, event: Event, at: object,
+    user_id: str, slot_indexes: list[int],
+) -> None:
+    session = get_session()
+    try:
+        items = (
+            session.query(WarehouseItem)
+            .filter(
+                WarehouseItem.user_id == user_id,
+                WarehouseItem.slot_index.in_(slot_indexes),
+            )
+            .all()
+        )
+        item_map = {int(it.slot_index): it for it in items}
+        total_qty = 0
+        processed = 0
+        for s in slot_indexes:
+            it = item_map.get(s)
+            if it is None:
+                continue
+            total_qty += int(it.quantity)
+            session.delete(it)
+            processed += 1
+        skipped_empty = len(slot_indexes) - processed
+        if processed == 0:
+            await bot.send(event, at + " " + reply_failure("丢弃", "未找到任何可丢弃的格子"))
+            return
+        session.commit()
+        used_after = (
+            session.query(WarehouseItem)
+            .filter(WarehouseItem.user_id == user_id)
+            .count()
+        )
+    finally:
+        session.close()
+
+    logger.info(
+        f"批量丢弃仓库物品：user_id={user_id} processed={processed} "
+        f"skipped_empty={skipped_empty} total_qty={total_qty}"
+    )
+    process_line = f"{EMOJI_WAREHOUSE} 处理格子：{processed} 个"
+    if skipped_empty > 0:
+        process_line = f"{EMOJI_WAREHOUSE} 处理格子：{processed} 个（跳过 {skipped_empty} 个空格）"
+    await bot.send(
+        event,
+        at + "\n" + reply_block(
+            reply_success("丢弃"),
+            [
+                process_line,
+                f"🎁 共丢弃：{total_qty} 件物品",
                 f"{EMOJI_CHART} 已使用：{used_after} / {WAREHOUSE_CAPACITY}",
             ],
         ),
@@ -576,8 +810,8 @@ async def handle_drop(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     command_key="warehouse.recycle_self",
     display_name="回收物品",
     permission="warehouse.recycle_self",
-    description="按价值比例回收自己仓库的物品换金币",
-    usage="回收物品 <格子ID>",
+    description="按价值比例回收自己仓库的物品换金币，支持单格 / 区间 / 列表 / 全部，单格可指定数量",
+    usage="回收物品 <格子表达式> [数量]",
     params={
         "recycle_ratio": {
             "type": "float",
@@ -596,30 +830,48 @@ async def handle_recycle(bot: Bot, event: Event, arg: Message = CommandArg()) ->
     at = OBV11MessageSegment.at(int(user_id))
 
     args = parse_command_args_with_fallback(event, arg, "回收物品")
-    if len(args) != 1:
+    if not (1 <= len(args) <= 2):
         raise_command_usage()
 
     try:
-        slot_index = int(args[0])
-    except ValueError:
-        await bot.send(event, at + " " + reply_failure("回收", "格子 ID 必须为整数"))
+        slot_indexes, is_single = _parse_slot_expression(args[0])
+    except ValueError as exc:
+        await bot.send(event, at + " " + reply_failure("回收", str(exc)))
         return
-    if not (1 <= slot_index <= WAREHOUSE_CAPACITY):
-        await bot.send(
-            event,
-            at + " " + reply_failure("回收", f"格子 ID 必须为 1-{WAREHOUSE_CAPACITY}"),
-        )
+
+    quantity_arg: int | None = None
+    if len(args) == 2:
+        if not is_single:
+            await bot.send(event, at + " " + reply_failure("回收", "多格操作不支持数量参数，请使用单格"))
+            return
+        try:
+            quantity_arg = int(args[1])
+        except ValueError:
+            await bot.send(event, at + " " + reply_failure("回收", "数量必须为正整数"))
+            return
+        if quantity_arg < 1:
+            await bot.send(event, at + " " + reply_failure("回收", "数量必须为正整数"))
+            return
+
+    if _load_user(user_id) is None:
+        await bot.send(event, at + " " + reply_failure("回收", "未注册账号"))
         return
 
     ratio = max(0.0, float(get_current_param("recycle_ratio", 0.5)))
 
+    if is_single:
+        await _recycle_single(bot, event, at, user_id, slot_indexes[0], quantity_arg, ratio)
+    else:
+        await _recycle_many(bot, event, at, user_id, slot_indexes, ratio)
+
+
+async def _recycle_single(
+    bot: Bot, event: Event, at: object,
+    user_id: str, slot_index: int, quantity_arg: int | None, ratio: float,
+) -> None:
     session = get_session()
     try:
         user = session.query(User).filter(User.user_id == user_id).first()
-        if user is None:
-            await bot.send(event, at + " " + reply_failure("回收", "未注册账号"))
-            return
-
         item = (
             session.query(WarehouseItem)
             .filter(
@@ -632,18 +884,31 @@ async def handle_recycle(bot: Bot, event: Event, arg: Message = CommandArg()) ->
             await bot.send(event, at + " " + reply_failure("回收", "该格子为空"))
             return
 
+        current_qty = int(item.quantity)
         unit_value = int(item.value or 0)
-        quantity = int(item.quantity)
         if unit_value <= 0:
             await bot.send(event, at + " " + reply_failure("回收", "物品无价值，不可回收"))
             return
+        if quantity_arg is not None and quantity_arg > current_qty:
+            await bot.send(
+                event,
+                at + " " + reply_failure("回收", f"数量超过该格当前数量（{current_qty}）"),
+            )
+            return
 
-        snapshot = (int(item.item_id), int(item.prefix_id), quantity)
-        refund = int(unit_value * quantity * ratio)
+        recycle_qty = quantity_arg if quantity_arg is not None else current_qty
+        refund = int(unit_value * recycle_qty * ratio)
+        item_id = int(item.item_id)
+        prefix_id = int(item.prefix_id)
 
+        if recycle_qty >= current_qty:
+            session.delete(item)
+            remaining = 0
+        else:
+            item.quantity = current_qty - recycle_qty
+            remaining = int(item.quantity)
         user.coins = int(user.coins or 0) + refund
         coins_after = int(user.coins)
-        session.delete(item)
         session.commit()
         used_after = (
             session.query(WarehouseItem)
@@ -655,18 +920,96 @@ async def handle_recycle(bot: Bot, event: Event, arg: Message = CommandArg()) ->
 
     logger.info(
         f"回收仓库物品成功：user_id={user_id} slot={slot_index} "
-        f"item={snapshot[0]} prefix={snapshot[1]} qty={snapshot[2]} "
+        f"item={item_id} prefix={prefix_id} qty={recycle_qty} remaining={remaining} "
         f"unit_value={unit_value} ratio={ratio} refund={refund}"
     )
+    slot_line = f"{EMOJI_WAREHOUSE} 格子：#{slot_index}"
+    if remaining > 0:
+        slot_line = f"{EMOJI_WAREHOUSE} 格子：#{slot_index}（剩余 {remaining} 件）"
     await bot.send(
         event,
         at + "\n" + reply_block(
             reply_success("回收"),
             [
-                f"🎁 物品：{_format_item_label(*snapshot)}",
+                f"🎁 物品：{_format_item_label(item_id, prefix_id, recycle_qty)}",
+                slot_line,
                 f"{EMOJI_COIN} 单价：{unit_value} 金币",
                 f"{EMOJI_CHART} 回收比例：{int(ratio * 100)}%",
                 f"{EMOJI_COIN} 获得金币：{refund}",
+                f"{EMOJI_COIN} 当前金币：{coins_after}",
+                f"{EMOJI_CHART} 已使用：{used_after} / {WAREHOUSE_CAPACITY}",
+            ],
+        ),
+    )
+
+
+async def _recycle_many(
+    bot: Bot, event: Event, at: object,
+    user_id: str, slot_indexes: list[int], ratio: float,
+) -> None:
+    session = get_session()
+    try:
+        user = session.query(User).filter(User.user_id == user_id).first()
+        items = (
+            session.query(WarehouseItem)
+            .filter(
+                WarehouseItem.user_id == user_id,
+                WarehouseItem.slot_index.in_(slot_indexes),
+            )
+            .all()
+        )
+        item_map = {int(it.slot_index): it for it in items}
+        total_refund = 0
+        processed = 0
+        skipped_empty = 0
+        skipped_no_value = 0
+        for s in slot_indexes:
+            it = item_map.get(s)
+            if it is None:
+                skipped_empty += 1
+                continue
+            unit_value = int(it.value or 0)
+            if unit_value <= 0:
+                skipped_no_value += 1
+                continue
+            total_refund += int(unit_value * int(it.quantity) * ratio)
+            session.delete(it)
+            processed += 1
+        if processed == 0:
+            await bot.send(event, at + " " + reply_failure("回收", "未找到任何可回收的格子"))
+            return
+        user.coins = int(user.coins or 0) + total_refund
+        coins_after = int(user.coins)
+        session.commit()
+        used_after = (
+            session.query(WarehouseItem)
+            .filter(WarehouseItem.user_id == user_id)
+            .count()
+        )
+    finally:
+        session.close()
+
+    logger.info(
+        f"批量回收仓库物品：user_id={user_id} processed={processed} "
+        f"skipped_empty={skipped_empty} skipped_no_value={skipped_no_value} "
+        f"ratio={ratio} total_refund={total_refund}"
+    )
+    process_line = f"{EMOJI_WAREHOUSE} 处理格子：{processed} 个"
+    skip_parts: list[str] = []
+    if skipped_empty > 0:
+        skip_parts.append(f"{skipped_empty} 个空")
+    if skipped_no_value > 0:
+        skip_parts.append(f"{skipped_no_value} 个无价值")
+    if skip_parts:
+        process_line = f"{EMOJI_WAREHOUSE} 处理格子：{processed} 个（跳过 {'、'.join(skip_parts)}）"
+    await bot.send(
+        event,
+        at + "\n" + reply_block(
+            reply_success("回收"),
+            [
+                process_line,
+                f"{EMOJI_CHART} 回收比例：{int(ratio * 100)}%",
+                f"{EMOJI_COIN} 获得金币：{total_refund}",
                 f"{EMOJI_COIN} 当前金币：{coins_after}",
                 f"{EMOJI_CHART} 已使用：{used_after} / {WAREHOUSE_CAPACITY}",
             ],
