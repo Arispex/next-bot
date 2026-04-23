@@ -426,6 +426,14 @@
         });
       }
 
+      const warehouseButton = document.createElement("button");
+      warehouseButton.type = "button";
+      warehouseButton.className = "btn action-btn";
+      warehouseButton.textContent = "仓库";
+      warehouseButton.addEventListener("click", () => {
+        window.location.href = "/webui/warehouse?user_id=" + encodeURIComponent(user.user_id);
+      });
+
       const deleteButton = document.createElement("button");
       deleteButton.type = "button";
       deleteButton.className = "btn action-btn action-btn-danger";
@@ -436,6 +444,7 @@
 
       actions.appendChild(editButton);
       actions.appendChild(syncButton);
+      actions.appendChild(warehouseButton);
       actions.appendChild(banButton);
       actions.appendChild(deleteButton);
       actionCell.appendChild(actions);

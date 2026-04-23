@@ -14,6 +14,7 @@ AppShellMenu = Literal[
     "servers",
     "users",
     "groups",
+    "warehouse",
     "settings",
 ]
 
@@ -56,6 +57,7 @@ def _render_app_shell_page(  # noqa: PLR0913
     servers_active = "is-active" if active_menu == "servers" else ""
     users_active = "is-active" if active_menu == "users" else ""
     groups_active = "is-active" if active_menu == "groups" else ""
+    warehouse_active = "is-active" if active_menu == "warehouse" else ""
     settings_active = "is-active" if active_menu == "settings" else ""
 
     return (
@@ -67,6 +69,7 @@ def _render_app_shell_page(  # noqa: PLR0913
         .replace("__NAV_SERVERS_ACTIVE__", servers_active)
         .replace("__NAV_USERS_ACTIVE__", users_active)
         .replace("__NAV_GROUPS_ACTIVE__", groups_active)
+        .replace("__NAV_WAREHOUSE_ACTIVE__", warehouse_active)
         .replace("__NAV_SETTINGS_ACTIVE__", settings_active)
         .replace("__MAIN_CONTENT__", content_html)
         .replace(
@@ -169,6 +172,21 @@ def render_groups_page() -> str:
         ),
         page_script_urls=(
             _asset_url("js/groups.js"),
+        ),
+    )
+
+
+def render_warehouse_page() -> str:
+    return _render_app_shell_page(
+        page_title="NextBot WebUI - 仓库管理",
+        header_title="仓库管理",
+        active_menu="warehouse",
+        content_template="warehouse_content.html",
+        page_style_urls=(
+            _asset_url("css/app-shell.css"),
+        ),
+        page_script_urls=(
+            _asset_url("js/warehouse.js"),
         ),
     )
 

@@ -47,29 +47,7 @@ PROGRESS_SCREENSHOT_OPTIONS = ScreenshotOptions(
     viewport_height=700,
     full_page=True,
 )
-_PROGRESS_NAME_MAP: dict[str, str] = {
-    "kingSlime": "史莱姆王",
-    "eyeOfCthulhu": "克苏鲁之眼",
-    "eaterOfWorldsOrBrainOfCthulhu": "世界吞噬者/克苏鲁之脑",
-    "queenBee": "蜂后",
-    "skeletron": "骷髅王",
-    "deerclops": "独眼鹿怪",
-    "wallOfFlesh": "血肉墙",
-    "queenSlime": "史莱姆王后",
-    "theTwins": "双子魔眼",
-    "theDestroyer": "毁灭者",
-    "skeletronPrime": "机械骷髅王",
-    "plantera": "世纪之花",
-    "golem": "石巨人",
-    "dukeFishron": "猪龙鱼公爵",
-    "empressOfLight": "光之女皇",
-    "lunaticCultist": "邪教徒",
-    "solarPillar": "日耀柱",
-    "nebulaPillar": "星云柱",
-    "vortexPillar": "漩涡柱",
-    "stardustPillar": "星尘柱",
-    "moonLord": "月亮领主",
-}
+from nextbot.progression import PROGRESSION_KEY_TO_ZH as _PROGRESS_NAME_MAP
 
 
 def _to_non_negative_int(value: object) -> int | None:

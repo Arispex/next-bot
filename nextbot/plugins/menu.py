@@ -25,6 +25,7 @@ from nextbot.text_utils import (
     EMOJI_SECURE,
     EMOJI_SERVER,
     EMOJI_USER,
+    EMOJI_WAREHOUSE,
     reply_failure,
     reply_list,
 )
@@ -44,6 +45,7 @@ CATEGORY_ORDER = [
     "用户系统",
     "经济系统",
     "红包系统",
+    "仓库系统",
     "排行榜",
     "服务器管理",
     "服务器工具",
@@ -58,6 +60,7 @@ CATEGORY_EMOJI = {
     "用户系统": EMOJI_USER,
     "经济系统": EMOJI_COIN,
     "红包系统": EMOJI_RED_PACKET,
+    "仓库系统": EMOJI_WAREHOUSE,
     "排行榜": EMOJI_CHART,
     "服务器管理": EMOJI_SERVER,
     "服务器工具": EMOJI_SERVER,

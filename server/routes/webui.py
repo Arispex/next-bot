@@ -18,6 +18,7 @@ from server.pages.console_page import (
     render_login_page,
     render_servers_page,
     render_users_page,
+    render_warehouse_page,
 )
 from server.routes import api_error, api_success, read_json_object
 from server.server_config import WebServerSettings
@@ -161,6 +162,11 @@ async def webui_users_page(request: Request) -> HTMLResponse:
 @router.get("/webui/groups", response_class=HTMLResponse)
 async def webui_groups_page(request: Request) -> HTMLResponse:
     return HTMLResponse(content=render_groups_page())
+
+
+@router.get("/webui/warehouse", response_class=HTMLResponse)
+async def webui_warehouse_page(request: Request) -> HTMLResponse:
+    return HTMLResponse(content=render_warehouse_page())
 
 
 @router.get("/webui/static/{file_path:path}")
