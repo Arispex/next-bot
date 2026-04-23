@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import base64
 import json
 from pathlib import Path
@@ -34,6 +33,7 @@ from nextbot.text_utils import (
 )
 from nextbot.time_utils import beijing_filename_timestamp, db_now_utc_naive
 from nextbot.tshock_api import TShockRequestError, get_error_reason, is_success, request_server_api
+from nextbot.warehouse_lock import warehouse_lock
 from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
 from server.web_server import create_warehouse_page
 
@@ -173,20 +173,6 @@ def _load_server(server_id: int) -> Server | None:
         session.close()
 
 
-# Per-user warehouse lock prevents concurrent claim/recycle/drop/remove/add on
-# the same player's warehouse from racing. Without this, async /give calls in
-# 领取物品 leave a window where the same item can be claimed twice.
-_WAREHOUSE_LOCKS: dict[str, asyncio.Lock] = {}
-
-
-def _warehouse_lock(user_id: str) -> asyncio.Lock:
-    lock = _WAREHOUSE_LOCKS.get(user_id)
-    if lock is None:
-        lock = asyncio.Lock()
-        _WAREHOUSE_LOCKS[user_id] = lock
-    return lock
-
-
 def _load_warehouse_slots(user_id: str) -> list[dict]:
     session = get_session()
     try:
@@ -244,9 +230,9 @@ list_self_matcher = on_command("我的仓库")
 list_user_matcher = on_command("用户仓库")
 add_matcher = on_command("添加仓库物品")
 remove_matcher = on_command("删除仓库物品")
-drop_matcher = on_command("丢弃物品")
-recycle_matcher = on_command("回收物品")
-claim_matcher = on_command("领取物品")
+drop_matcher = on_command("丢弃仓库物品")
+recycle_matcher = on_command("回收仓库物品")
+claim_matcher = on_command("领取仓库物品")
 
 
 @list_self_matcher.handle()
@@ -414,7 +400,7 @@ async def handle_add(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
         await bot.send(event, at + " " + reply_failure("添加", "未找到该用户"))
         return
 
-    async with _warehouse_lock(target_user_id):
+    async with warehouse_lock(target_user_id):
         session = get_session()
         try:
             occupied = {
@@ -433,7 +419,7 @@ async def handle_add(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
                         [
                             f"{EMOJI_USER} 用户：{user.name}（{target_user_id}）",
                             f"{EMOJI_CHART} 已使用：{WAREHOUSE_CAPACITY} / {WAREHOUSE_CAPACITY}",
-                            "💡 提示：可让用户使用「丢弃物品」或管理员使用「删除仓库物品」释放格子",
+                            "💡 提示：可让用户使用「丢弃仓库物品」或管理员使用「删除仓库物品」释放格子",
                         ],
                     ),
                 )
@@ -549,7 +535,7 @@ async def handle_remove(bot: Bot, event: Event, arg: Message = CommandArg()) -> 
     target_user = _load_user(target_user_id)
     target_name = str(target_user.name) if target_user is not None else "未知用户"
 
-    async with _warehouse_lock(target_user_id):
+    async with warehouse_lock(target_user_id):
         if is_single:
             await _remove_single(bot, event, at, target_user_id, target_name, slot_indexes[0], quantity_arg)
         else:
@@ -683,10 +669,10 @@ async def _remove_many(
 @drop_matcher.handle()
 @command_control(
     command_key="warehouse.drop_self",
-    display_name="丢弃物品",
+    display_name="丢弃仓库物品",
     permission="warehouse.drop_self",
     description="丢弃自己仓库的物品，支持单格 / 区间 / 列表 / 全部，单格可指定数量",
-    usage="丢弃物品 <格子表达式> [数量]",
+    usage="丢弃仓库物品 <格子表达式> [数量]",
     category="仓库系统",
 )
 @require_permission("warehouse.drop_self")
@@ -694,7 +680,7 @@ async def handle_drop(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     user_id = event.get_user_id()
     at = OBV11MessageSegment.at(int(user_id))
 
-    args = parse_command_args_with_fallback(event, arg, "丢弃物品")
+    args = parse_command_args_with_fallback(event, arg, "丢弃仓库物品")
     if not (1 <= len(args) <= 2):
         raise_command_usage()
 
@@ -723,7 +709,7 @@ async def handle_drop(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
         await bot.send(event, at + " " + reply_failure("丢弃", "未注册账号"))
         return
 
-    async with _warehouse_lock(user_id):
+    async with warehouse_lock(user_id):
         if is_single:
             await _drop_single(bot, event, at, user_id, slot_indexes[0], quantity_arg)
         else:
@@ -855,10 +841,10 @@ async def _drop_many(
 @recycle_matcher.handle()
 @command_control(
     command_key="warehouse.recycle_self",
-    display_name="回收物品",
+    display_name="回收仓库物品",
     permission="warehouse.recycle_self",
     description="按价值比例回收自己仓库的物品换金币，支持单格 / 区间 / 列表 / 全部，单格可指定数量",
-    usage="回收物品 <格子表达式> [数量]",
+    usage="回收仓库物品 <格子表达式> [数量]",
     params={
         "recycle_ratio": {
             "type": "float",
@@ -876,7 +862,7 @@ async def handle_recycle(bot: Bot, event: Event, arg: Message = CommandArg()) ->
     user_id = event.get_user_id()
     at = OBV11MessageSegment.at(int(user_id))
 
-    args = parse_command_args_with_fallback(event, arg, "回收物品")
+    args = parse_command_args_with_fallback(event, arg, "回收仓库物品")
     if not (1 <= len(args) <= 2):
         raise_command_usage()
 
@@ -906,7 +892,7 @@ async def handle_recycle(bot: Bot, event: Event, arg: Message = CommandArg()) ->
 
     ratio = max(0.0, float(get_current_param("recycle_ratio", 0.5)))
 
-    async with _warehouse_lock(user_id):
+    async with warehouse_lock(user_id):
         if is_single:
             await _recycle_single(bot, event, at, user_id, slot_indexes[0], quantity_arg, ratio)
         else:
@@ -1139,10 +1125,10 @@ async def _issue_give_command(
 @claim_matcher.handle()
 @command_control(
     command_key="warehouse.claim_self",
-    display_name="领取物品",
+    display_name="领取仓库物品",
     permission="warehouse.claim_self",
     description="从仓库领取物品到指定服务器，需玩家在线且服务器进度满足要求",
-    usage="领取物品 <服务器ID> <格子表达式> [数量]",
+    usage="领取仓库物品 <服务器ID> <格子表达式> [数量]",
     category="仓库系统",
 )
 @require_permission("warehouse.claim_self")
@@ -1150,7 +1136,7 @@ async def handle_claim(bot: Bot, event: Event, arg: Message = CommandArg()) -> N
     user_id = event.get_user_id()
     at = OBV11MessageSegment.at(int(user_id))
 
-    args = parse_command_args_with_fallback(event, arg, "领取物品")
+    args = parse_command_args_with_fallback(event, arg, "领取仓库物品")
     if not (2 <= len(args) <= 3):
         raise_command_usage()
 
@@ -1205,7 +1191,7 @@ async def handle_claim(bot: Bot, event: Event, arg: Message = CommandArg()) -> N
         return
 
     server_label = f"{server.id}.{server.name}"
-    async with _warehouse_lock(user_id):
+    async with warehouse_lock(user_id):
         if is_single:
             await _claim_single(
                 bot, event, at, user_id, player_name,

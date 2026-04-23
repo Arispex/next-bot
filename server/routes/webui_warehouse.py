@@ -9,6 +9,7 @@ from nonebot.log import logger
 from nextbot.db import WAREHOUSE_CAPACITY, User, WarehouseItem, get_session
 from nextbot.progression import PROGRESSION_KEY_TO_ZH, TIER_OPTIONS
 from nextbot.time_utils import db_now_utc_naive
+from nextbot.warehouse_lock import warehouse_lock
 from server.routes import api_error, api_success, read_json_object
 
 router = APIRouter()
@@ -142,45 +143,46 @@ async def upsert_slot(user_id: str, slot_index: int, request: Request) -> JSONRe
         return validation_error
     assert validated is not None
 
-    session = get_session()
-    try:
-        user = session.query(User).filter(User.user_id == user_id).first()
-        if user is None:
-            return api_error(
-                status_code=404, code="user_not_found", message="未找到该用户",
-            )
-        existing = (
-            session.query(WarehouseItem)
-            .filter(
-                WarehouseItem.user_id == user_id,
-                WarehouseItem.slot_index == slot_index,
-            )
-            .first()
-        )
-        if existing is None:
-            session.add(
-                WarehouseItem(
-                    user_id=user_id,
-                    slot_index=slot_index,
-                    item_id=validated["item_id"],
-                    prefix_id=validated["prefix_id"],
-                    quantity=validated["quantity"],
-                    value=validated["value"],
-                    min_tier=validated["min_tier"],
-                    created_at=db_now_utc_naive(),
+    async with warehouse_lock(user_id):
+        session = get_session()
+        try:
+            user = session.query(User).filter(User.user_id == user_id).first()
+            if user is None:
+                return api_error(
+                    status_code=404, code="user_not_found", message="未找到该用户",
                 )
+            existing = (
+                session.query(WarehouseItem)
+                .filter(
+                    WarehouseItem.user_id == user_id,
+                    WarehouseItem.slot_index == slot_index,
+                )
+                .first()
             )
-            action = "create"
-        else:
-            existing.item_id = validated["item_id"]
-            existing.prefix_id = validated["prefix_id"]
-            existing.quantity = validated["quantity"]
-            existing.value = validated["value"]
-            existing.min_tier = validated["min_tier"]
-            action = "update"
-        session.commit()
-    finally:
-        session.close()
+            if existing is None:
+                session.add(
+                    WarehouseItem(
+                        user_id=user_id,
+                        slot_index=slot_index,
+                        item_id=validated["item_id"],
+                        prefix_id=validated["prefix_id"],
+                        quantity=validated["quantity"],
+                        value=validated["value"],
+                        min_tier=validated["min_tier"],
+                        created_at=db_now_utc_naive(),
+                    )
+                )
+                action = "create"
+            else:
+                existing.item_id = validated["item_id"]
+                existing.prefix_id = validated["prefix_id"]
+                existing.quantity = validated["quantity"]
+                existing.value = validated["value"]
+                existing.min_tier = validated["min_tier"]
+                action = "update"
+            session.commit()
+        finally:
+            session.close()
 
     logger.info(
         f"WebUI 仓库 {action}：user_id={user_id} slot={slot_index} "
@@ -209,24 +211,25 @@ async def delete_slot(user_id: str, slot_index: int) -> JSONResponse:
             message=f"slot_index 必须为 1-{WAREHOUSE_CAPACITY}",
         )
 
-    session = get_session()
-    try:
-        existing = (
-            session.query(WarehouseItem)
-            .filter(
-                WarehouseItem.user_id == user_id,
-                WarehouseItem.slot_index == slot_index,
+    async with warehouse_lock(user_id):
+        session = get_session()
+        try:
+            existing = (
+                session.query(WarehouseItem)
+                .filter(
+                    WarehouseItem.user_id == user_id,
+                    WarehouseItem.slot_index == slot_index,
+                )
+                .first()
             )
-            .first()
-        )
-        if existing is None:
-            return api_error(
-                status_code=404, code="slot_empty", message="该格子为空",
-            )
-        session.delete(existing)
-        session.commit()
-    finally:
-        session.close()
+            if existing is None:
+                return api_error(
+                    status_code=404, code="slot_empty", message="该格子为空",
+                )
+            session.delete(existing)
+            session.commit()
+        finally:
+            session.close()
 
     logger.info(f"WebUI 仓库 delete：user_id={user_id} slot={slot_index}")
     return api_success(data={"slot_index": slot_index})
