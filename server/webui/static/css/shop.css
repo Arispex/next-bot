@@ -484,9 +484,10 @@ html.dark {
 
 .item-detail-cell {
   max-width: 380px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+}
+
+.item-detail-cell > * + * {
+  margin-top: 4px;
 }
 
 .item-detail-line {
