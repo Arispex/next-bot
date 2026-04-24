@@ -24,12 +24,12 @@ from nextbot.permissions import require_permission
 from nextbot.progression import PROGRESSION_KEY_TO_ZH
 from nextbot.render_utils import resolve_render_theme
 from nextbot.text_utils import (
-    EMOJI_CHART,
     EMOJI_COIN,
     EMOJI_SERVER,
     EMOJI_SHOP,
     EMOJI_TARGET,
     EMOJI_USER,
+    EMOJI_WAREHOUSE,
     reply_block,
     reply_failure,
     reply_list,
@@ -161,9 +161,9 @@ async def handle_shop_list(bot: Bot, event: Event, arg: Message = CommandArg()) 
 
     items = []
     for idx, (shop_id, name, desc, count) in enumerate(rows, 1):
-        line = f"{idx}. {name}（ID {shop_id}） · {count} 件商品"
+        line = f"🏪 {idx}. {name}（{count} 件 · ID {shop_id}）"
         if desc:
-            line += f"\n   {desc}"
+            line += f"\n   📝 {desc}"
         items.append(line)
 
     await bot.send(
@@ -172,7 +172,7 @@ async def handle_shop_list(bot: Bot, event: Event, arg: Message = CommandArg()) 
             "商店列表",
             items,
             title_emoji=EMOJI_SHOP,
-            hint="发「查看商店 <ID>」查看详情，「购买商品 <商店 ID> <商品序号> [数量]」购买",
+            hint="查看：「查看商店 <ID>」 / 购买：「购买商品 <商店 ID> <序号> [数量]」",
         ),
     )
 
@@ -413,15 +413,18 @@ async def _buy_item(
         finally:
             session.close()
 
-    tier_zh = PROGRESSION_KEY_TO_ZH.get(min_tier, min_tier)
     lines = [
         f"{EMOJI_SHOP} 商店：{shop_name}（ID {shop_id}）",
         f"🎁 商品：{target_name} ×{buy_count}",
-        f"📦 入库格子：#{empty_slot}（数量 {total_quantity}）",
-        f"{EMOJI_TARGET} 最低进度：{tier_zh}",
+        f"{EMOJI_WAREHOUSE} 入库格子：#{empty_slot}（数量 {total_quantity}）",
+    ]
+    if min_tier and min_tier != "none":
+        tier_zh = PROGRESSION_KEY_TO_ZH.get(min_tier, min_tier)
+        lines.append(f"{EMOJI_TARGET} 最低进度：{tier_zh}")
+    lines.extend([
         f"{EMOJI_COIN} 花费：{total_price} 金币（单价 {unit_price}）",
         f"{EMOJI_COIN} 当前金币：{final_coins}",
-    ]
+    ])
     logger.info(
         f"商店购买物品成功：user_id={user_id} shop_id={shop_id} item={target_name} "
         f"shop_item_id={target_id} count={buy_count} total_quantity={total_quantity} "
@@ -531,17 +534,19 @@ async def _buy_command(
 
     lines = [
         f"{EMOJI_SHOP} 商店：{shop_name}（ID {shop_id}）",
-        f"🎁 商品：{target_name} ×{buy_count}",
+        f"⚙️ 商品：{target_name} ×{buy_count}",
         f"{EMOJI_USER} 玩家：{player_name}",
         f"{EMOJI_COIN} 花费：{total_price} 金币（单价 {unit_price}）",
-        f"{EMOJI_SERVER} 执行结果：成功 {success_count} / 失败 {fail_count}",
+        f"{EMOJI_SERVER} 执行结果：成功 {success_count} / 失败 {fail_count}（共 {len(online_servers)} 服）",
     ]
     for srv, ok, reason in exec_results:
         mark = "✅" if ok else "❌"
         suffix = "" if ok else f"（{reason}）" if reason else "（失败）"
         lines.append(f"  {mark} #{srv.id} {srv.name}{suffix}")
     if offline_reasons:
-        lines.append(f"{EMOJI_CHART} 已跳过：" + "；".join(offline_reasons))
+        lines.append(f"⚠️ 跳过 {len(offline_reasons)} 个服务器：")
+        for r in offline_reasons:
+            lines.append(f"  · {r}")
     lines.append(f"{EMOJI_COIN} 当前金币：{final_coins}")
 
     logger.info(
