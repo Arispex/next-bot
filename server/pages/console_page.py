@@ -202,6 +202,7 @@ def render_shop_page() -> str:
         content_template="shop_content.html",
         page_style_urls=(
             _asset_url("css/app-shell.css"),
+            _asset_url("css/shop.css"),
         ),
         page_script_urls=(
             _asset_url("js/shop.js"),

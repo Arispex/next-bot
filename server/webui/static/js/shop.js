@@ -15,6 +15,8 @@
     servers: [],
     editingShopId: null,
     editingItemId: null,
+    pendingDeleteShop: null, // { id, name }
+    pendingDeleteItem: null, // { id, name }
   };
 
   const els = {};
@@ -27,22 +29,38 @@
 
   function showAlert(node, text, kind) {
     if (!node) return;
-    node.textContent = text;
-    node.style.display = "block";
-    node.style.background = kind === "error" ? "#fee2e2" : "#dcfce7";
-    node.style.color = kind === "error" ? "#991b1b" : "#166534";
-    node.style.border = "1px solid " + (kind === "error" ? "#fecaca" : "#bbf7d0");
+    const msg = node.querySelector(".alert-message") || node;
+    msg.textContent = text;
+    node.classList.remove("hidden", "success", "error");
+    node.classList.add(kind === "error" ? "error" : "success");
   }
 
   function hideAlert(node) {
     if (!node) return;
-    node.style.display = "none";
-    node.textContent = "";
+    node.classList.add("hidden");
+    const msg = node.querySelector(".alert-message");
+    if (msg) msg.textContent = "";
+  }
+
+  function showModal(modal) {
+    if (!modal) return;
+    modal.classList.remove("hidden");
+  }
+
+  function hideModal(modal) {
+    if (!modal) return;
+    modal.classList.add("hidden");
+  }
+
+  function hideAllModals() {
+    document.querySelectorAll(".modal").forEach((m) => m.classList.add("hidden"));
   }
 
   async function callApi(url, opts = {}) {
     return api.apiRequest(url, opts);
   }
+
+  // ---------- Data load ----------
 
   async function loadMeta() {
     try {
@@ -75,58 +93,69 @@
     }
   }
 
+  async function loadShopDetail(shopId) {
+    try {
+      const res = await callApi("/webui/api/shops/" + shopId, { action: "加载商店详情" });
+      state.selectedShopDetail = api.unwrapData(res);
+      renderShopDetail();
+    } catch (err) {
+      showAlert(els.alert, err.message || "加载失败", "error");
+    }
+  }
+
+  // ---------- Render ----------
+
   function renderShopList() {
     clearChildren(els.shopList);
     if (state.shops.length === 0) {
-      els.shopListEmpty.style.display = "block";
+      els.shopListEmpty.classList.remove("hidden");
       return;
     }
-    els.shopListEmpty.style.display = "none";
+    els.shopListEmpty.classList.add("hidden");
     state.shops.forEach((shop) => {
       const card = document.createElement("div");
-      card.style.padding = "10px 12px";
-      card.style.border = "1px solid var(--color-border, #e2e8f0)";
-      card.style.borderRadius = "8px";
-      card.style.cursor = "pointer";
-      card.style.display = "flex";
-      card.style.justifyContent = "space-between";
-      card.style.alignItems = "center";
-      card.style.gap = "8px";
-      if (shop.id === state.selectedShopId) {
-        card.style.background = "rgba(59,130,246,0.08)";
-        card.style.borderColor = "rgba(59,130,246,0.40)";
+      card.className = "shop-card" + (shop.id === state.selectedShopId ? " is-active" : "");
+
+      const body = document.createElement("div");
+      body.className = "shop-card-body";
+
+      const title = document.createElement("div");
+      title.className = "shop-card-title";
+      const titleText = document.createElement("span");
+      titleText.textContent = shop.name;
+      title.appendChild(titleText);
+      const status = document.createElement("span");
+      status.className = "status-badge " + (shop.enabled ? "is-on" : "is-off");
+      status.textContent = shop.enabled ? "上架" : "下架";
+      title.appendChild(status);
+      body.appendChild(title);
+
+      if (shop.description) {
+        const desc = document.createElement("div");
+        desc.className = "shop-card-desc";
+        desc.textContent = shop.description;
+        body.appendChild(desc);
       }
 
-      const left = document.createElement("div");
-      left.style.flex = "1 1 auto";
-      left.style.minWidth = "0";
-      const title = document.createElement("div");
-      title.style.fontWeight = "700";
-      title.style.fontSize = "14px";
-      title.style.overflow = "hidden";
-      title.style.textOverflow = "ellipsis";
-      title.style.whiteSpace = "nowrap";
-      title.textContent = (shop.enabled ? "" : "[下架] ") + shop.name;
       const meta = document.createElement("div");
-      meta.style.fontSize = "11px";
-      meta.style.color = "var(--color-text-muted, #94a3b8)";
-      meta.style.marginTop = "2px";
+      meta.className = "shop-card-meta";
       meta.textContent = "ID " + shop.id + "  ·  " + (shop.item_count || 0) + " 件商品  ·  排序 " + shop.sort_order;
-      left.appendChild(title);
-      left.appendChild(meta);
-      card.appendChild(left);
+      body.appendChild(meta);
 
+      card.appendChild(body);
+
+      const actions = document.createElement("div");
+      actions.className = "shop-card-actions";
       const editBtn = document.createElement("button");
       editBtn.type = "button";
-      editBtn.className = "btn btn-ghost";
-      editBtn.style.padding = "4px 10px";
-      editBtn.style.fontSize = "12px";
+      editBtn.className = "btn shop-card-edit-btn";
       editBtn.textContent = "编辑";
       editBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         openShopModal(shop);
       });
-      card.appendChild(editBtn);
+      actions.appendChild(editBtn);
+      card.appendChild(actions);
 
       card.addEventListener("click", () => {
         state.selectedShopId = shop.id;
@@ -138,148 +167,140 @@
     });
   }
 
-  async function loadShopDetail(shopId) {
-    try {
-      const res = await callApi("/webui/api/shops/" + shopId, { action: "加载商店详情" });
-      state.selectedShopDetail = api.unwrapData(res);
-      renderShopDetail();
-    } catch (err) {
-      showAlert(els.alert, err.message || "加载失败", "error");
-    }
-  }
-
   function renderShopDetail() {
     const detail = state.selectedShopDetail;
     if (!detail) {
-      els.detailHeader.style.display = "none";
-      els.itemList.style.display = "none";
-      els.itemEmpty.style.display = "none";
-      els.detailPlaceholder.style.display = "block";
+      els.detailHead.classList.add("hidden");
+      els.itemTableWrap.classList.add("hidden");
+      els.itemEmpty.classList.add("hidden");
+      els.detailPlaceholder.classList.remove("hidden");
       return;
     }
-    els.detailPlaceholder.style.display = "none";
-    els.detailHeader.style.display = "block";
-    els.detailName.textContent = (detail.enabled ? "" : "[下架] ") + detail.name;
-    els.detailMeta.textContent = "ID " + detail.id + "  ·  " + (detail.item_count || 0) + " 件商品  ·  排序 " + detail.sort_order;
-    els.detailDesc.textContent = detail.description || "（暂无说明）";
+    els.detailPlaceholder.classList.add("hidden");
+    els.detailHead.classList.remove("hidden");
 
-    clearChildren(els.itemList);
+    clearChildren(els.detailTitle);
+    const titleText = document.createElement("span");
+    titleText.textContent = detail.name;
+    els.detailTitle.appendChild(titleText);
+    const status = document.createElement("span");
+    status.className = "status-badge " + (detail.enabled ? "is-on" : "is-off");
+    status.textContent = detail.enabled ? "上架" : "下架";
+    els.detailTitle.appendChild(status);
+
+    els.detailSubtitle.textContent = "ID " + detail.id + "  ·  " + (detail.item_count || 0) + " 件商品  ·  排序 " + detail.sort_order;
+    els.detailDesc.textContent = detail.description || "";
+    els.detailDesc.style.display = detail.description ? "block" : "none";
+
+    clearChildren(els.itemTbody);
     const items = Array.isArray(detail.items) ? detail.items : [];
     if (items.length === 0) {
-      els.itemList.style.display = "none";
-      els.itemEmpty.style.display = "block";
+      els.itemTableWrap.classList.add("hidden");
+      els.itemEmpty.classList.remove("hidden");
     } else {
-      els.itemList.style.display = "flex";
-      els.itemEmpty.style.display = "none";
-      items.forEach((it) => els.itemList.appendChild(renderItemRow(it)));
+      els.itemEmpty.classList.add("hidden");
+      els.itemTableWrap.classList.remove("hidden");
+      items.forEach((it, idx) => els.itemTbody.appendChild(renderItemRow(it, idx + 1)));
     }
   }
 
-  function renderItemRow(it) {
-    const row = document.createElement("div");
-    row.style.padding = "10px 12px";
-    row.style.border = "1px solid var(--color-border, #e2e8f0)";
-    row.style.borderRadius = "8px";
-    row.style.display = "flex";
-    row.style.alignItems = "center";
-    row.style.gap = "12px";
+  function renderItemRow(it, displayIndex) {
+    const tr = document.createElement("tr");
 
-    const left = document.createElement("div");
-    left.style.flex = "1 1 auto";
-    left.style.minWidth = "0";
+    const tdIdx = document.createElement("td");
+    tdIdx.className = "col-index";
+    tdIdx.textContent = "#" + displayIndex;
+    tr.appendChild(tdIdx);
 
-    const head = document.createElement("div");
-    head.style.display = "flex";
-    head.style.alignItems = "center";
-    head.style.gap = "8px";
-    head.style.flexWrap = "wrap";
-
+    const tdKind = document.createElement("td");
+    tdKind.className = "col-kind";
     const kind = document.createElement("span");
-    kind.style.fontSize = "11px";
-    kind.style.fontWeight = "700";
-    kind.style.padding = "2px 8px";
-    kind.style.borderRadius = "6px";
-    if (it.kind === "item") {
-      kind.style.background = "#dbeafe";
-      kind.style.color = "#1e40af";
-      kind.textContent = "物品";
-    } else {
-      kind.style.background = "#ede9fe";
-      kind.style.color = "#6d28d9";
-      kind.textContent = "指令";
-    }
-    head.appendChild(kind);
+    kind.className = "kind-badge " + (it.kind === "item" ? "kind-item" : "kind-command");
+    kind.textContent = it.kind === "item" ? "物品" : "指令";
+    tdKind.appendChild(kind);
+    tr.appendChild(tdKind);
 
-    const name = document.createElement("span");
-    name.style.fontWeight = "700";
-    name.style.fontSize = "14px";
-    name.textContent = (it.enabled ? "" : "[下架] ") + (it.name || "未命名");
-    head.appendChild(name);
-
-    const price = document.createElement("span");
-    price.style.fontSize = "12px";
-    price.style.fontWeight = "700";
-    price.style.color = "#b45309";
-    price.textContent = "💰 " + it.price;
-    head.appendChild(price);
-
-    left.appendChild(head);
-
+    const tdName = document.createElement("td");
+    tdName.className = "item-name-cell";
+    const name = document.createElement("p");
+    name.className = "item-name";
+    name.textContent = it.name || "未命名";
+    tdName.appendChild(name);
     if (it.description) {
       const desc = document.createElement("div");
-      desc.style.fontSize = "12px";
-      desc.style.color = "var(--color-text-muted, #64748b)";
-      desc.style.marginTop = "4px";
+      desc.className = "item-desc";
       desc.textContent = it.description;
-      left.appendChild(desc);
+      desc.title = it.description;
+      tdName.appendChild(desc);
     }
+    tr.appendChild(tdName);
 
-    const meta = document.createElement("div");
-    meta.style.fontSize = "11px";
-    meta.style.color = "var(--color-text-muted, #94a3b8)";
-    meta.style.marginTop = "4px";
+    const tdPrice = document.createElement("td");
+    tdPrice.className = "col-price";
+    tdPrice.textContent = it.price + " 金币";
+    tr.appendChild(tdPrice);
+
+    const tdDetail = document.createElement("td");
+    tdDetail.className = "item-detail-cell";
     if (it.kind === "item") {
-      const parts = [
-        "item_id=" + it.item_id,
-        "prefix=" + it.prefix_id,
-        "数量=" + it.quantity,
-        "进度=" + (it.min_tier_label || it.min_tier),
-        "排序=" + it.sort_order,
-      ];
-      meta.textContent = parts.join("  ·  ");
+      const line = document.createElement("div");
+      line.className = "item-detail-line";
+      line.textContent = "物品 ID " + it.item_id + "  ·  前缀 " + it.prefix_id + "  ·  数量 ×" + it.quantity + "  ·  进度 " + (it.min_tier_label || it.min_tier);
+      tdDetail.appendChild(line);
     } else {
-      const parts = [
-        "目标=" + (it.target_server_label || "全部服务器"),
-        "展示命令=" + (it.show_command ? "是" : "否"),
-        "要求在线=" + (it.require_online ? "是" : "否"),
-        "排序=" + it.sort_order,
-      ];
-      meta.textContent = parts.join("  ·  ");
-      const cmd = document.createElement("div");
-      cmd.style.fontFamily = "ui-monospace, SFMono-Regular, Menlo, monospace";
-      cmd.style.fontSize = "11px";
-      cmd.style.background = "#f8fafc";
-      cmd.style.padding = "4px 8px";
-      cmd.style.borderRadius = "4px";
-      cmd.style.marginTop = "4px";
-      cmd.style.wordBreak = "break-all";
-      cmd.textContent = it.command_template || "";
-      left.appendChild(meta);
-      left.appendChild(cmd);
+      const targetLine = document.createElement("div");
+      targetLine.className = "item-detail-line";
+      const targetSpan = document.createElement("span");
+      targetSpan.textContent = "目标：" + (it.target_server_label || "全部服务器");
+      targetLine.appendChild(targetSpan);
+      if (it.show_command) {
+        const flag = document.createElement("span");
+        flag.className = "flag-chip flag-on";
+        flag.textContent = "展示命令";
+        targetLine.appendChild(flag);
+      }
+      if (it.require_online) {
+        const flag = document.createElement("span");
+        flag.className = "flag-chip flag-on";
+        flag.textContent = "要求在线";
+        targetLine.appendChild(flag);
+      }
+      tdDetail.appendChild(targetLine);
+      if (it.command_template) {
+        const cmd = document.createElement("div");
+        cmd.className = "item-detail-line";
+        const cmdPreview = document.createElement("span");
+        cmdPreview.className = "command-preview";
+        cmdPreview.textContent = it.command_template;
+        cmdPreview.title = it.command_template;
+        cmd.appendChild(cmdPreview);
+        tdDetail.appendChild(cmd);
+      }
     }
-    if (it.kind === "item") left.appendChild(meta);
-    row.appendChild(left);
+    tr.appendChild(tdDetail);
 
+    const tdStatus = document.createElement("td");
+    tdStatus.className = "col-status";
+    const stat = document.createElement("span");
+    stat.className = "status-badge " + (it.enabled ? "is-on" : "is-off");
+    stat.textContent = it.enabled ? "上架" : "下架";
+    tdStatus.appendChild(stat);
+    tr.appendChild(tdStatus);
+
+    const tdAct = document.createElement("td");
+    tdAct.className = "col-actions";
+    const wrap = document.createElement("div");
+    wrap.className = "row-actions";
     const editBtn = document.createElement("button");
     editBtn.type = "button";
-    editBtn.className = "btn btn-ghost";
-    editBtn.style.padding = "6px 12px";
-    editBtn.style.fontSize = "12px";
+    editBtn.className = "btn action-btn";
     editBtn.textContent = "编辑";
     editBtn.addEventListener("click", () => openItemModal(it));
-    row.appendChild(editBtn);
+    wrap.appendChild(editBtn);
+    tdAct.appendChild(wrap);
+    tr.appendChild(tdAct);
 
-    return row;
+    return tr;
   }
 
   // ---------- Shop modal ----------
@@ -292,12 +313,17 @@
     els.shopFieldDescription.value = shop ? (shop.description || "") : "";
     els.shopFieldSortOrder.value = shop ? shop.sort_order : 0;
     els.shopFieldEnabled.checked = shop ? !!shop.enabled : true;
-    els.shopModalDelete.style.display = shop ? "inline-block" : "none";
-    els.shopModal.style.display = "flex";
+    if (shop) {
+      els.shopModalDelete.classList.remove("hidden");
+    } else {
+      els.shopModalDelete.classList.add("hidden");
+    }
+    showModal(els.shopModal);
+    setTimeout(() => els.shopFieldName.focus(), 30);
   }
 
   function closeShopModal() {
-    els.shopModal.style.display = "none";
+    hideModal(els.shopModal);
     state.editingShopId = null;
   }
 
@@ -333,15 +359,29 @@
     }
   }
 
-  async function deleteShop() {
+  // ---------- Shop delete confirm modal ----------
+
+  function openShopDeleteModal() {
     if (state.editingShopId === null) return;
-    if (!window.confirm("确定要删除该商店吗？同时会删除该商店下所有商品。")) return;
+    const shop = state.shops.find((s) => s.id === state.editingShopId);
+    state.pendingDeleteShop = { id: state.editingShopId, name: shop ? shop.name : "" };
+    els.shopDeleteName.textContent = state.pendingDeleteShop.name || ("ID " + state.pendingDeleteShop.id);
+    hideAlert(els.shopDeleteAlert);
+    showModal(els.shopDeleteModal);
+  }
+
+  function closeShopDeleteModal() {
+    hideModal(els.shopDeleteModal);
+    state.pendingDeleteShop = null;
+  }
+
+  async function confirmDeleteShop() {
+    if (!state.pendingDeleteShop) return;
+    const id = state.pendingDeleteShop.id;
     try {
-      await callApi("/webui/api/shops/" + state.editingShopId, {
-        method: "DELETE",
-        action: "删除商店",
-      });
-      const wasSelected = state.selectedShopId === state.editingShopId;
+      await callApi("/webui/api/shops/" + id, { method: "DELETE", action: "删除商店" });
+      const wasSelected = state.selectedShopId === id;
+      closeShopDeleteModal();
       closeShopModal();
       if (wasSelected) {
         state.selectedShopId = null;
@@ -350,7 +390,7 @@
       await loadShops();
       renderShopDetail();
     } catch (err) {
-      showAlert(els.shopModalAlert, err.message || "删除失败", "error");
+      showAlert(els.shopDeleteAlert, err.message || "删除失败", "error");
     }
   }
 
@@ -383,11 +423,11 @@
   function applyKindVisibility() {
     const kind = els.itemFieldKind.value;
     if (kind === "item") {
-      els.itemKindItemFields.style.display = "flex";
-      els.itemKindCommandFields.style.display = "none";
+      els.itemKindItemFields.classList.remove("hidden");
+      els.itemKindCommandFields.classList.add("hidden");
     } else {
-      els.itemKindItemFields.style.display = "none";
-      els.itemKindCommandFields.style.display = "flex";
+      els.itemKindItemFields.classList.add("hidden");
+      els.itemKindCommandFields.classList.remove("hidden");
     }
   }
 
@@ -411,13 +451,18 @@
     els.itemFieldCommandTemplate.value = item ? (item.command_template || "") : "";
     els.itemFieldShowCommand.checked = item ? !!item.show_command : false;
     els.itemFieldRequireOnline.checked = item ? !!item.require_online : false;
-    els.itemModalDelete.style.display = item ? "inline-block" : "none";
+    if (item) {
+      els.itemModalDelete.classList.remove("hidden");
+    } else {
+      els.itemModalDelete.classList.add("hidden");
+    }
     applyKindVisibility();
-    els.itemModal.style.display = "flex";
+    showModal(els.itemModal);
+    setTimeout(() => els.itemFieldName.focus(), 30);
   }
 
   function closeItemModal() {
-    els.itemModal.style.display = "none";
+    hideModal(els.itemModal);
     state.editingItemId = null;
   }
 
@@ -473,56 +518,81 @@
     }
   }
 
-  async function deleteItem() {
+  // ---------- Item delete confirm modal ----------
+
+  function openItemDeleteModal() {
     if (state.selectedShopId === null || state.editingItemId === null) return;
-    if (!window.confirm("确定要删除该商品吗？")) return;
+    const items = state.selectedShopDetail && Array.isArray(state.selectedShopDetail.items)
+      ? state.selectedShopDetail.items : [];
+    const target = items.find((it) => it.id === state.editingItemId);
+    state.pendingDeleteItem = { id: state.editingItemId, name: target ? target.name : "" };
+    els.itemDeleteName.textContent = state.pendingDeleteItem.name || ("ID " + state.pendingDeleteItem.id);
+    hideAlert(els.itemDeleteAlert);
+    showModal(els.itemDeleteModal);
+  }
+
+  function closeItemDeleteModal() {
+    hideModal(els.itemDeleteModal);
+    state.pendingDeleteItem = null;
+  }
+
+  async function confirmDeleteItem() {
+    if (!state.pendingDeleteItem || state.selectedShopId === null) return;
+    const id = state.pendingDeleteItem.id;
     try {
       await callApi(
-        "/webui/api/shops/" + state.selectedShopId + "/items/" + state.editingItemId,
+        "/webui/api/shops/" + state.selectedShopId + "/items/" + id,
         { method: "DELETE", action: "删除商品" },
       );
+      closeItemDeleteModal();
       closeItemModal();
       await loadShopDetail(state.selectedShopId);
       await loadShops();
     } catch (err) {
-      showAlert(els.itemModalAlert, err.message || "删除失败", "error");
+      showAlert(els.itemDeleteAlert, err.message || "删除失败", "error");
     }
   }
 
+  // ---------- Bind ----------
+
   function bindEls() {
     els.alert = $("shop-alert");
+
     els.shopList = $("shop-list");
     els.shopListEmpty = $("shop-list-empty");
+    els.shopReloadBtn = $("shop-reload-btn");
     els.shopCreateBtn = $("shop-create-btn");
-    els.detailHeader = $("shop-detail-header");
-    els.detailName = $("shop-detail-name");
-    els.detailMeta = $("shop-detail-meta");
+
+    els.detailHead = $("shop-detail-head");
+    els.detailTitle = $("shop-detail-title");
+    els.detailSubtitle = $("shop-detail-subtitle");
     els.detailDesc = $("shop-detail-desc");
     els.detailPlaceholder = $("shop-detail-placeholder");
     els.itemCreateBtn = $("shop-item-create-btn");
-    els.itemList = $("shop-item-list");
+
+    els.itemTableWrap = $("shop-item-table-wrap");
+    els.itemTbody = $("shop-item-tbody");
     els.itemEmpty = $("shop-item-empty");
 
     els.shopModal = $("shop-modal");
     els.shopModalTitle = $("shop-modal-title");
     els.shopModalAlert = $("shop-modal-alert");
     els.shopModalForm = $("shop-modal-form");
-    els.shopModalClose = $("shop-modal-close");
-    els.shopModalCancel = $("shop-modal-cancel");
-    els.shopModalSave = $("shop-modal-save");
     els.shopModalDelete = $("shop-modal-delete");
     els.shopFieldName = $("shop-field-name");
     els.shopFieldDescription = $("shop-field-description");
     els.shopFieldSortOrder = $("shop-field-sort-order");
     els.shopFieldEnabled = $("shop-field-enabled");
 
+    els.shopDeleteModal = $("shop-delete-modal");
+    els.shopDeleteAlert = $("shop-delete-alert");
+    els.shopDeleteName = $("shop-delete-name");
+    els.shopDeleteConfirm = $("shop-delete-confirm");
+
     els.itemModal = $("item-modal");
     els.itemModalTitle = $("item-modal-title");
     els.itemModalAlert = $("item-modal-alert");
     els.itemModalForm = $("item-modal-form");
-    els.itemModalClose = $("item-modal-close");
-    els.itemModalCancel = $("item-modal-cancel");
-    els.itemModalSave = $("item-modal-save");
     els.itemModalDelete = $("item-modal-delete");
     els.itemFieldName = $("item-field-name");
     els.itemFieldDescription = $("item-field-description");
@@ -540,26 +610,40 @@
     els.itemFieldCommandTemplate = $("item-field-command-template");
     els.itemFieldShowCommand = $("item-field-show-command");
     els.itemFieldRequireOnline = $("item-field-require-online");
+
+    els.itemDeleteModal = $("item-delete-modal");
+    els.itemDeleteAlert = $("item-delete-alert");
+    els.itemDeleteName = $("item-delete-name");
+    els.itemDeleteConfirm = $("item-delete-confirm");
   }
 
   function bindEvents() {
+    els.shopReloadBtn.addEventListener("click", loadShops);
     els.shopCreateBtn.addEventListener("click", () => openShopModal(null));
-    els.shopModalClose.addEventListener("click", closeShopModal);
-    els.shopModalCancel.addEventListener("click", closeShopModal);
     els.shopModalForm.addEventListener("submit", submitShopModal);
-    els.shopModalDelete.addEventListener("click", deleteShop);
-    els.shopModal.addEventListener("click", (e) => {
-      if (e.target === els.shopModal) closeShopModal();
-    });
+    els.shopModalDelete.addEventListener("click", openShopDeleteModal);
+    els.shopDeleteConfirm.addEventListener("click", confirmDeleteShop);
 
     els.itemCreateBtn.addEventListener("click", () => openItemModal(null));
-    els.itemModalClose.addEventListener("click", closeItemModal);
-    els.itemModalCancel.addEventListener("click", closeItemModal);
     els.itemModalForm.addEventListener("submit", submitItemModal);
-    els.itemModalDelete.addEventListener("click", deleteItem);
+    els.itemModalDelete.addEventListener("click", openItemDeleteModal);
+    els.itemDeleteConfirm.addEventListener("click", confirmDeleteItem);
     els.itemFieldKind.addEventListener("change", applyKindVisibility);
-    els.itemModal.addEventListener("click", (e) => {
-      if (e.target === els.itemModal) closeItemModal();
+
+    // Generic close handlers (data-modal-close="<id>")
+    document.querySelectorAll("[data-modal-close]").forEach((el) => {
+      el.addEventListener("click", () => {
+        const targetId = el.getAttribute("data-modal-close");
+        const target = document.getElementById(targetId);
+        if (target) target.classList.add("hidden");
+      });
+    });
+
+    // Esc closes any visible modal
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        document.querySelectorAll(".modal:not(.hidden)").forEach((m) => m.classList.add("hidden"));
+      }
     });
   }
 

@@ -1,212 +1,261 @@
-<section class="shop-layout" style="display:flex; flex-direction:column; gap:16px;">
+<section class="shop-layout">
 
-  <div id="shop-alert" style="display:none; padding:10px 14px; border-radius:8px; font-size:13px;"></div>
+  <div class="shop-toolbar">
+    <div class="shop-toolbar-spacer"></div>
+    <div class="panel-head-actions">
+      <button id="shop-reload-btn" type="button" class="btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+          <path d="M21 3v6h-6"></path>
+        </svg>
+        刷新
+      </button>
+      <button id="shop-create-btn" type="button" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M12 5v14"></path>
+          <path d="M5 12h14"></path>
+        </svg>
+        新建商店
+      </button>
+    </div>
+  </div>
 
-  <div style="display:grid; grid-template-columns:minmax(280px, 360px) 1fr; gap:16px; align-items:start;">
+  <div id="shop-alert" class="alert hidden" role="status" aria-live="polite">
+    <span id="shop-alert-message" class="alert-message"></span>
+  </div>
 
-    <!-- Left: shop list -->
-    <div style="display:flex; flex-direction:column; gap:10px; padding:14px; border:1px solid var(--color-border, #e2e8f0); border-radius:12px; background:var(--color-surface, #fff);">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-        <div style="font-weight:700; font-size:15px;">商店列表</div>
-        <button id="shop-create-btn" type="button" class="btn btn-primary"
-                style="padding:6px 12px; font-size:13px;">+ 新建商店</button>
-      </div>
-      <div id="shop-list"
-           style="display:flex; flex-direction:column; gap:8px; max-height:540px; overflow-y:auto;"></div>
-      <div id="shop-list-empty" style="display:none; padding:18px 0; text-align:center; color:var(--color-text-muted, #94a3b8); font-size:13px;">
+  <div class="shop-master-detail">
+
+    <aside class="shop-list-panel">
+      <div class="shop-list-panel-head">商店列表</div>
+      <div id="shop-list" class="shop-list"></div>
+      <div id="shop-list-empty" class="empty hidden">
         暂无商店，点击右上角「新建商店」
       </div>
-    </div>
+    </aside>
 
-    <!-- Right: items in selected shop -->
-    <div style="display:flex; flex-direction:column; gap:10px; padding:14px; border:1px solid var(--color-border, #e2e8f0); border-radius:12px; background:var(--color-surface, #fff);">
-      <div id="shop-detail-header" style="display:none;">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
-          <div>
-            <div id="shop-detail-name" style="font-weight:800; font-size:18px;"></div>
-            <div id="shop-detail-meta" style="font-size:12px; color:var(--color-text-muted, #64748b); margin-top:2px;"></div>
-            <div id="shop-detail-desc" style="font-size:13px; color:var(--color-text-muted, #475569); margin-top:4px;"></div>
-          </div>
-          <button id="shop-item-create-btn" type="button" class="btn btn-primary"
-                  style="padding:6px 12px; font-size:13px;">+ 新建商品</button>
+    <section class="shop-detail-panel">
+      <div id="shop-detail-head" class="shop-detail-head hidden">
+        <div style="min-width:0; flex:1 1 auto;">
+          <h3 id="shop-detail-title" class="shop-detail-title"></h3>
+          <div id="shop-detail-subtitle" class="shop-detail-subtitle"></div>
+          <div id="shop-detail-desc" class="shop-detail-desc"></div>
         </div>
+        <button id="shop-item-create-btn" type="button" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 5v14"></path>
+            <path d="M5 12h14"></path>
+          </svg>
+          新建商品
+        </button>
       </div>
-      <div id="shop-item-list" style="display:flex; flex-direction:column; gap:10px;"></div>
-      <div id="shop-item-empty" style="display:none; padding:24px 0; text-align:center; color:var(--color-text-muted, #94a3b8); font-size:13px;">
-        该商店暂无商品
+
+      <div id="shop-item-table-wrap" class="table-wrap hidden">
+        <table class="shop-item-table" aria-label="商店商品表格">
+          <thead>
+            <tr>
+              <th class="col-index">#</th>
+              <th class="col-kind">类型</th>
+              <th>名称</th>
+              <th class="col-price">单价</th>
+              <th>详情</th>
+              <th class="col-status">状态</th>
+              <th class="col-actions">操作</th>
+            </tr>
+          </thead>
+          <tbody id="shop-item-tbody"></tbody>
+        </table>
       </div>
-      <div id="shop-detail-placeholder" style="padding:48px 0; text-align:center; color:var(--color-text-muted, #94a3b8); font-size:13px;">
-        请在左侧选择一个商店查看商品
-      </div>
-    </div>
+
+      <div id="shop-item-empty" class="empty hidden">该商店暂无商品，点击右上角「新建商品」</div>
+      <div id="shop-detail-placeholder" class="empty">请在左侧选择一个商店查看商品</div>
+    </section>
+
   </div>
-
-  <!-- Shop modal -->
-  <div id="shop-modal"
-       style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.45); z-index:200; align-items:center; justify-content:center;">
-    <div style="background:var(--color-surface, #fff); width:min(520px, 92vw); max-height:88vh; overflow-y:auto; padding:20px 22px; border-radius:14px; box-shadow:0 20px 60px rgba(15,23,42,0.25);">
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-        <div id="shop-modal-title" style="font-weight:800; font-size:16px;">编辑商店</div>
-        <button id="shop-modal-close" type="button" class="btn btn-ghost" style="padding:4px 10px;">×</button>
-      </div>
-      <div id="shop-modal-alert" style="display:none; padding:8px 12px; border-radius:6px; font-size:12px; margin-bottom:10px;"></div>
-      <form id="shop-modal-form" style="display:flex; flex-direction:column; gap:12px;">
-        <div>
-          <label style="font-size:12px; font-weight:600;">名称 <span style="color:#dc2626;">*</span></label>
-          <input id="shop-field-name" type="text" required maxlength="50" class="form-input"
-                 style="width:100%; padding:8px 10px; border:1px solid var(--color-border, #e2e8f0); border-radius:8px; font-size:13px;" />
-        </div>
-        <div>
-          <label style="font-size:12px; font-weight:600;">说明</label>
-          <input id="shop-field-description" type="text" maxlength="200" class="form-input"
-                 style="width:100%; padding:8px 10px; border:1px solid var(--color-border, #e2e8f0); border-radius:8px; font-size:13px;" />
-        </div>
-        <div style="display:flex; gap:12px;">
-          <div style="flex:1;">
-            <label style="font-size:12px; font-weight:600;">排序</label>
-            <input id="shop-field-sort-order" type="number" value="0" class="form-input"
-                   style="width:100%; padding:8px 10px; border:1px solid var(--color-border, #e2e8f0); border-radius:8px; font-size:13px;" />
-          </div>
-          <div style="flex:1; display:flex; align-items:flex-end;">
-            <label style="font-size:13px; display:flex; align-items:center; gap:6px;">
-              <input id="shop-field-enabled" type="checkbox" checked />
-              上架（玩家可见）
-            </label>
-          </div>
-        </div>
-        <div style="display:flex; justify-content:space-between; gap:10px; margin-top:6px;">
-          <button id="shop-modal-delete" type="button" class="btn"
-                  style="padding:8px 14px; font-size:13px; color:#dc2626; background:transparent; border:1px solid #fecaca;">删除商店</button>
-          <div style="display:flex; gap:8px;">
-            <button id="shop-modal-cancel" type="button" class="btn btn-ghost"
-                    style="padding:8px 14px; font-size:13px;">取消</button>
-            <button id="shop-modal-save" type="submit" class="btn btn-primary"
-                    style="padding:8px 14px; font-size:13px;">保存</button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Item modal -->
-  <div id="item-modal"
-       style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.45); z-index:200; align-items:center; justify-content:center;">
-    <div style="background:var(--color-surface, #fff); width:min(640px, 96vw); max-height:92vh; overflow-y:auto; padding:20px 22px; border-radius:14px; box-shadow:0 20px 60px rgba(15,23,42,0.25);">
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-        <div id="item-modal-title" style="font-weight:800; font-size:16px;">编辑商品</div>
-        <button id="item-modal-close" type="button" class="btn btn-ghost" style="padding:4px 10px;">×</button>
-      </div>
-      <div id="item-modal-alert" style="display:none; padding:8px 12px; border-radius:6px; font-size:12px; margin-bottom:10px;"></div>
-      <form id="item-modal-form" style="display:flex; flex-direction:column; gap:12px;">
-        <div style="display:flex; gap:12px;">
-          <div style="flex:2;">
-            <label style="font-size:12px; font-weight:600;">名称 <span style="color:#dc2626;">*</span></label>
-            <input id="item-field-name" type="text" required maxlength="50" class="form-input"
-                   style="width:100%; padding:8px 10px; border:1px solid var(--color-border, #e2e8f0); border-radius:8px; font-size:13px;" />
-          </div>
-          <div style="flex:1;">
-            <label style="font-size:12px; font-weight:600;">单价（金币） <span style="color:#dc2626;">*</span></label>
-            <input id="item-field-price" type="number" min="0" required value="0" class="form-input"
-                   style="width:100%; padding:8px 10px; border:1px solid var(--color-border, #e2e8f0); border-radius:8px; font-size:13px;" />
-          </div>
-        </div>
-        <div>
-          <label style="font-size:12px; font-weight:600;">说明</label>
-          <input id="item-field-description" type="text" maxlength="200" class="form-input"
-                 style="width:100%; padding:8px 10px; border:1px solid var(--color-border, #e2e8f0); border-radius:8px; font-size:13px;" />
-        </div>
-        <div style="display:flex; gap:12px;">
-          <div style="flex:1;">
-            <label style="font-size:12px; font-weight:600;">类型 <span style="color:#dc2626;">*</span></label>
-            <select id="item-field-kind" class="form-input"
-                    style="width:100%; padding:8px 10px; border:1px solid var(--color-border, #e2e8f0); border-radius:8px; font-size:13px;">
-              <option value="item">物品（送入仓库）</option>
-              <option value="command">指令（立即执行）</option>
-            </select>
-          </div>
-          <div style="flex:1;">
-            <label style="font-size:12px; font-weight:600;">排序</label>
-            <input id="item-field-sort-order" type="number" value="0" class="form-input"
-                   style="width:100%; padding:8px 10px; border:1px solid var(--color-border, #e2e8f0); border-radius:8px; font-size:13px;" />
-          </div>
-          <div style="flex:1; display:flex; align-items:flex-end;">
-            <label style="font-size:13px; display:flex; align-items:center; gap:6px;">
-              <input id="item-field-enabled" type="checkbox" checked />
-              上架
-            </label>
-          </div>
-        </div>
-
-        <!-- kind=item fields -->
-        <div id="item-kind-item-fields" style="display:flex; flex-direction:column; gap:10px; padding:12px; border:1px dashed var(--color-border, #e2e8f0); border-radius:8px;">
-          <div style="font-size:12px; font-weight:700; color:var(--color-text-muted, #475569);">物品配置</div>
-          <div style="display:flex; gap:12px;">
-            <div style="flex:1;">
-              <label style="font-size:12px;">item_id <span style="color:#dc2626;">*</span></label>
-              <input id="item-field-item-id" type="number" min="1" value="1" class="form-input"
-                     style="width:100%; padding:8px 10px; border:1px solid var(--color-border, #e2e8f0); border-radius:8px; font-size:13px;" />
-            </div>
-            <div style="flex:1;">
-              <label style="font-size:12px;">prefix_id</label>
-              <input id="item-field-prefix-id" type="number" min="0" value="0" class="form-input"
-                     style="width:100%; padding:8px 10px; border:1px solid var(--color-border, #e2e8f0); border-radius:8px; font-size:13px;" />
-            </div>
-            <div style="flex:1;">
-              <label style="font-size:12px;">单份数量</label>
-              <input id="item-field-quantity" type="number" min="1" value="1" class="form-input"
-                     style="width:100%; padding:8px 10px; border:1px solid var(--color-border, #e2e8f0); border-radius:8px; font-size:13px;" />
-            </div>
-          </div>
-          <div>
-            <label style="font-size:12px;">进度要求</label>
-            <select id="item-field-min-tier" class="form-input"
-                    style="width:100%; padding:8px 10px; border:1px solid var(--color-border, #e2e8f0); border-radius:8px; font-size:13px;"></select>
-          </div>
-        </div>
-
-        <!-- kind=command fields -->
-        <div id="item-kind-command-fields" style="display:none; flex-direction:column; gap:10px; padding:12px; border:1px dashed var(--color-border, #e2e8f0); border-radius:8px;">
-          <div style="font-size:12px; font-weight:700; color:var(--color-text-muted, #475569);">指令配置</div>
-          <div>
-            <label style="font-size:12px;">目标服务器</label>
-            <select id="item-field-target-server" class="form-input"
-                    style="width:100%; padding:8px 10px; border:1px solid var(--color-border, #e2e8f0); border-radius:8px; font-size:13px;">
-              <option value="">全部服务器</option>
-            </select>
-          </div>
-          <div>
-            <label style="font-size:12px;">命令模板 <span style="color:#dc2626;">*</span></label>
-            <textarea id="item-field-command-template" rows="3" maxlength="500" class="form-input"
-                      style="width:100%; padding:8px 10px; border:1px solid var(--color-border, #e2e8f0); border-radius:8px; font-size:13px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace;"
-                      placeholder="/buff {player} 1 1800"></textarea>
-            <div style="font-size:11px; color:var(--color-text-muted, #94a3b8); margin-top:4px;">
-              占位符：<code>{player}</code> 替换为玩家游戏名
-            </div>
-          </div>
-          <div style="display:flex; flex-direction:column; gap:6px;">
-            <label style="font-size:13px; display:flex; align-items:center; gap:6px;">
-              <input id="item-field-show-command" type="checkbox" />
-              在「查看商店」中向玩家展示命令模板（默认隐藏）
-            </label>
-            <label style="font-size:13px; display:flex; align-items:center; gap:6px;">
-              <input id="item-field-require-online" type="checkbox" />
-              要求玩家在线才能购买（默认不要求）
-            </label>
-          </div>
-        </div>
-
-        <div style="display:flex; justify-content:space-between; gap:10px; margin-top:6px;">
-          <button id="item-modal-delete" type="button" class="btn"
-                  style="padding:8px 14px; font-size:13px; color:#dc2626; background:transparent; border:1px solid #fecaca;">删除商品</button>
-          <div style="display:flex; gap:8px;">
-            <button id="item-modal-cancel" type="button" class="btn btn-ghost"
-                    style="padding:8px 14px; font-size:13px;">取消</button>
-            <button id="item-modal-save" type="submit" class="btn btn-primary"
-                    style="padding:8px 14px; font-size:13px;">保存</button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
-
 </section>
+
+<!-- Shop modal -->
+<div id="shop-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="shop-modal-title">
+  <div class="modal-mask" data-modal-close="shop-modal"></div>
+  <div class="modal-card modal-card-narrow">
+    <div class="modal-head">
+      <h3 id="shop-modal-title" class="modal-title">编辑商店</h3>
+      <button type="button" class="btn btn-icon modal-close-btn" data-modal-close="shop-modal" aria-label="关闭">✕</button>
+    </div>
+    <div id="shop-modal-alert" class="alert hidden modal-alert" role="status" aria-live="polite">
+      <span class="alert-message"></span>
+    </div>
+    <form id="shop-modal-form" class="modal-body">
+      <div class="form-grid">
+        <label class="form-item form-item-full">
+          <span class="form-label">名称<span class="form-required">*</span></span>
+          <input id="shop-field-name" class="input" type="text" maxlength="50" required />
+        </label>
+        <label class="form-item form-item-full">
+          <span class="form-label">说明</span>
+          <input id="shop-field-description" class="input" type="text" maxlength="200" placeholder="商店简介，玩家会在「查看商店」中看到" />
+        </label>
+        <label class="form-item">
+          <span class="form-label">排序（小靠前）</span>
+          <input id="shop-field-sort-order" class="input" type="number" value="0" />
+        </label>
+        <label class="form-checkbox-row form-item form-item-bool">
+          <input id="shop-field-enabled" type="checkbox" checked />
+          <span>上架（玩家可见）</span>
+        </label>
+      </div>
+    </form>
+    <div class="modal-foot">
+      <button id="shop-modal-delete" type="button" class="btn btn-danger hidden">删除商店</button>
+      <div class="modal-foot-spacer"></div>
+      <button type="button" class="btn" data-modal-close="shop-modal">取消</button>
+      <button id="shop-modal-save" type="submit" form="shop-modal-form" class="btn btn-primary">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Item modal -->
+<div id="item-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="item-modal-title">
+  <div class="modal-mask" data-modal-close="item-modal"></div>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="item-modal-title" class="modal-title">编辑商品</h3>
+      <button type="button" class="btn btn-icon modal-close-btn" data-modal-close="item-modal" aria-label="关闭">✕</button>
+    </div>
+    <div id="item-modal-alert" class="alert hidden modal-alert" role="status" aria-live="polite">
+      <span class="alert-message"></span>
+    </div>
+    <form id="item-modal-form" class="modal-body">
+
+      <div class="form-grid">
+        <label class="form-item form-item-full">
+          <span class="form-label">名称<span class="form-required">*</span></span>
+          <input id="item-field-name" class="input" type="text" maxlength="50" required />
+        </label>
+        <label class="form-item form-item-full">
+          <span class="form-label">说明</span>
+          <input id="item-field-description" class="input" type="text" maxlength="200" placeholder="商品简介，玩家会在「查看商店」中看到" />
+        </label>
+        <label class="form-item">
+          <span class="form-label">类型<span class="form-required">*</span></span>
+          <select id="item-field-kind" class="select">
+            <option value="item">物品（送入仓库）</option>
+            <option value="command">指令（立即执行）</option>
+          </select>
+        </label>
+        <label class="form-item">
+          <span class="form-label">单价（金币）<span class="form-required">*</span></span>
+          <input id="item-field-price" class="input" type="number" min="0" required value="0" />
+        </label>
+        <label class="form-item">
+          <span class="form-label">排序（小靠前）</span>
+          <input id="item-field-sort-order" class="input" type="number" value="0" />
+        </label>
+        <label class="form-checkbox-row form-item form-item-bool">
+          <input id="item-field-enabled" type="checkbox" checked />
+          <span>上架（玩家可见）</span>
+        </label>
+      </div>
+
+      <div id="item-kind-item-fields" class="field-section">
+        <div class="field-section-title">物品配置</div>
+        <div class="form-grid">
+          <label class="form-item">
+            <span class="form-label">物品 ID<span class="form-required">*</span></span>
+            <input id="item-field-item-id" class="input" type="number" min="1" value="1" />
+          </label>
+          <label class="form-item">
+            <span class="form-label">前缀 ID</span>
+            <input id="item-field-prefix-id" class="input" type="number" min="0" value="0" />
+          </label>
+          <label class="form-item">
+            <span class="form-label">单份数量</span>
+            <input id="item-field-quantity" class="input" type="number" min="1" value="1" />
+          </label>
+          <label class="form-item">
+            <span class="form-label">进度要求</span>
+            <select id="item-field-min-tier" class="select"></select>
+          </label>
+        </div>
+        <div class="field-section-hint">购买后会自动写入玩家仓库的第一个空格，单份数量乘以购买份数即为入库总数。</div>
+      </div>
+
+      <div id="item-kind-command-fields" class="field-section hidden">
+        <div class="field-section-title">指令配置</div>
+        <label class="form-item">
+          <span class="form-label">目标服务器</span>
+          <select id="item-field-target-server" class="select">
+            <option value="">全部服务器</option>
+          </select>
+        </label>
+        <label class="form-item">
+          <span class="form-label">命令模板<span class="form-required">*</span></span>
+          <textarea id="item-field-command-template" class="textarea textarea-mono" rows="3" maxlength="500" placeholder="/buff {player} 1 1800"></textarea>
+        </label>
+        <div class="field-section-hint">占位符 <code>{player}</code> 会替换为玩家游戏名；购买 N 份会按顺序在每个目标服务器上重复执行 N 次。</div>
+        <label class="form-checkbox-row">
+          <input id="item-field-show-command" type="checkbox" />
+          <span>在「查看商店」中向玩家展示命令模板（默认隐藏）</span>
+        </label>
+        <label class="form-checkbox-row">
+          <input id="item-field-require-online" type="checkbox" />
+          <span>要求玩家在线才能购买（默认不要求）</span>
+        </label>
+      </div>
+
+    </form>
+    <div class="modal-foot">
+      <button id="item-modal-delete" type="button" class="btn btn-danger hidden">删除商品</button>
+      <div class="modal-foot-spacer"></div>
+      <button type="button" class="btn" data-modal-close="item-modal">取消</button>
+      <button id="item-modal-save" type="submit" form="item-modal-form" class="btn btn-primary">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete confirm: shop -->
+<div id="shop-delete-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="shop-delete-title">
+  <div class="modal-mask" data-modal-close="shop-delete-modal"></div>
+  <div class="modal-card confirm-modal-card">
+    <div class="modal-head">
+      <h3 id="shop-delete-title" class="modal-title">删除商店</h3>
+      <button type="button" class="btn btn-icon modal-close-btn" data-modal-close="shop-delete-modal" aria-label="关闭">✕</button>
+    </div>
+    <div id="shop-delete-alert" class="alert hidden modal-alert" role="status" aria-live="polite">
+      <span class="alert-message"></span>
+    </div>
+    <div class="modal-body confirm-modal-body">
+      <p class="confirm-modal-text">
+        确定删除商店「<span id="shop-delete-name" class="confirm-modal-highlight"></span>」吗？<br />
+        该商店下的所有商品会一起被删除，此操作不可恢复。
+      </p>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn" data-modal-close="shop-delete-modal">取消</button>
+      <button id="shop-delete-confirm" type="button" class="btn btn-danger">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete confirm: item -->
+<div id="item-delete-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="item-delete-title">
+  <div class="modal-mask" data-modal-close="item-delete-modal"></div>
+  <div class="modal-card confirm-modal-card">
+    <div class="modal-head">
+      <h3 id="item-delete-title" class="modal-title">删除商品</h3>
+      <button type="button" class="btn btn-icon modal-close-btn" data-modal-close="item-delete-modal" aria-label="关闭">✕</button>
+    </div>
+    <div id="item-delete-alert" class="alert hidden modal-alert" role="status" aria-live="polite">
+      <span class="alert-message"></span>
+    </div>
+    <div class="modal-body confirm-modal-body">
+      <p class="confirm-modal-text">
+        确定删除商品「<span id="item-delete-name" class="confirm-modal-highlight"></span>」吗？此操作不可恢复。
+      </p>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn" data-modal-close="item-delete-modal">取消</button>
+      <button id="item-delete-confirm" type="button" class="btn btn-danger">确认删除</button>
+    </div>
+  </div>
+</div>
