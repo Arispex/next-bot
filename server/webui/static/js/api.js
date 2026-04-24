@@ -59,6 +59,18 @@
     return normalizedReason ? `${normalizedAction}失败，${normalizedReason}` : `${normalizedAction}失败`;
   };
 
+  const buildDetailReason = (details) => {
+    if (!Array.isArray(details) || details.length === 0) return "";
+    const messages = details
+      .map((d) => {
+        if (!d || typeof d !== "object") return "";
+        const message = typeof d.message === "string" ? d.message.trim() : "";
+        return message;
+      })
+      .filter(Boolean);
+    return messages.join("；");
+  };
+
   const buildNetworkErrorMessage = (action, error) => {
     const reason = error instanceof Error ? String(error.message || "").trim() : "";
     return buildActionFailureMessage(action || "请求", reason);
@@ -116,7 +128,8 @@
     const { code, reason, details } = readApiError(payload);
 
     if (!response.ok) {
-      const finalReason = reason || buildFallbackReason(response.status);
+      const detailReason = buildDetailReason(details);
+      const finalReason = detailReason || reason || buildFallbackReason(response.status);
       throw new ApiRequestError(buildActionFailureMessage(action, finalReason), {
         status: response.status,
         code,

@@ -147,7 +147,7 @@
   async function loadWarehouse(userId) {
     clearAlert();
     if (!userId) {
-      showAlert("请输入用户 QQ 或用户名", "error");
+      showAlert("加载仓库失败，请输入用户 QQ 或用户名", "error");
       return;
     }
     try {
@@ -403,7 +403,7 @@
       );
       closeModal();
       await loadWarehouse(state.user.user_id);
-      showAlert("已保存 #" + (state.editingSlot || ""), "success");
+      showAlert("保存成功，#" + (state.editingSlot || ""), "success");
     } catch (err) {
       showModalAlert(err && err.message ? err.message : "保存失败");
     }
@@ -426,7 +426,7 @@
       const slotShown = state.editingSlot;
       closeModal();
       await loadWarehouse(state.user.user_id);
-      showAlert("已删除 #" + slotShown, "success");
+      showAlert("删除成功，#" + slotShown, "success");
     } catch (err) {
       showModalAlert(err && err.message ? err.message : "删除失败");
     }
