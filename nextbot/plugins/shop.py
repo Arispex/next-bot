@@ -484,8 +484,16 @@ async def _buy_command(
                 offline_reasons.append(f"#{srv.id} {srv.name}：{reason or '查询失败'}")
 
         if not online_servers:
-            detail = "；".join(offline_reasons) if offline_reasons else "玩家未在线"
-            await bot.send(event, at + " " + reply_failure("购买", detail))
+            if offline_reasons:
+                await bot.send(
+                    event,
+                    at + "\n" + reply_block(
+                        reply_failure("购买", "无可用的目标服务器"),
+                        [f"  ❌ {r}" for r in offline_reasons],
+                    ),
+                )
+            else:
+                await bot.send(event, at + " " + reply_failure("购买", "玩家未在线"))
             return
     else:
         online_servers = list(servers)
