@@ -231,6 +231,7 @@ async def handle_shop_view(bot: Bot, event: Event, arg: Message = CommandArg()) 
                     "prefix_id": int(it.prefix_id or 0),
                     "quantity": int(it.quantity or 1),
                     "min_tier": str(it.min_tier or "none"),
+                    "is_mystery": bool(getattr(it, "is_mystery", False)),
                 })
             else:
                 entry["target_server_id"] = (
@@ -333,6 +334,8 @@ async def handle_shop_buy(bot: Bot, event: Event, arg: Message = CommandArg()) -
         target_prefix_id = int(target.prefix_id or 0)
         target_quantity_per_pack = int(target.quantity or 1)
         target_min_tier = str(target.min_tier or "none")
+        raw_actual = getattr(target, "actual_value", None)
+        target_actual_value = int(raw_actual) if raw_actual is not None else None
         target_server_id = (
             int(target.target_server_id) if target.target_server_id is not None else None
         )
@@ -353,6 +356,7 @@ async def handle_shop_buy(bot: Bot, event: Event, arg: Message = CommandArg()) -
             buy_count=buy_count,
             item_id=target_item_id, prefix_id=target_prefix_id,
             quantity_per_pack=target_quantity_per_pack, min_tier=target_min_tier,
+            actual_value=target_actual_value,
         )
     else:
         await _buy_command(
@@ -374,6 +378,7 @@ async def _buy_item(
     target_id: int, target_name: str,
     unit_price: int, total_price: int, buy_count: int,
     item_id: int, prefix_id: int, quantity_per_pack: int, min_tier: str,
+    actual_value: int | None,
 ) -> None:
     total_quantity = quantity_per_pack * buy_count
     async with warehouse_lock(user_id):
@@ -396,7 +401,10 @@ async def _buy_item(
                 return
 
             user.coins = coins - total_price
-            unit_value = unit_price // quantity_per_pack if quantity_per_pack > 0 else 0
+            if actual_value is not None:
+                unit_value = max(0, int(actual_value))
+            else:
+                unit_value = unit_price // quantity_per_pack if quantity_per_pack > 0 else 0
             new_item = WarehouseItem(
                 user_id=user_id,
                 slot_index=empty_slot,

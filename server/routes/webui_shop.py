@@ -46,6 +46,8 @@ def _serialize_shop_item(item: ShopItem, *, target_server_label: str | None = No
         "quantity": int(item.quantity or 1),
         "min_tier": str(item.min_tier or "none"),
         "min_tier_label": PROGRESSION_KEY_TO_ZH.get(str(item.min_tier or "none"), str(item.min_tier or "none")),
+        "actual_value": int(item.actual_value) if getattr(item, "actual_value", None) is not None else None,
+        "is_mystery": bool(getattr(item, "is_mystery", False)),
         "target_server_id": int(item.target_server_id) if item.target_server_id is not None else None,
         "command_template": str(item.command_template or ""),
         "show_command": bool(getattr(item, "show_command", False)),
@@ -139,6 +141,8 @@ def _validate_shop_item_payload(
     prefix_id = 0
     quantity = 1
     min_tier = "none"
+    actual_value: int | None = None
+    is_mystery = False
     target_server_id: int | None = None
     command_template = ""
     show_command = False
@@ -169,6 +173,19 @@ def _validate_shop_item_payload(
         min_tier = str(data.get("min_tier", "none")).strip() or "none"
         if min_tier not in PROGRESSION_KEY_TO_ZH:
             details.append({"field": "min_tier", "message": "进度要求不在已知列表中"})
+
+        raw_actual = data.get("actual_value", None)
+        if raw_actual is None or (isinstance(raw_actual, str) and raw_actual.strip() == ""):
+            actual_value = None
+        else:
+            try:
+                actual_value = int(raw_actual)
+            except (TypeError, ValueError):
+                actual_value = -1
+            if actual_value is not None and actual_value < 0:
+                details.append({"field": "actual_value", "message": "实际单价必须为非负整数"})
+
+        is_mystery = bool(data.get("is_mystery", False))
 
     if kind == "command":
         raw_target = data.get("target_server_id", None)
@@ -210,6 +227,8 @@ def _validate_shop_item_payload(
         "prefix_id": prefix_id,
         "quantity": quantity,
         "min_tier": min_tier,
+        "actual_value": actual_value,
+        "is_mystery": is_mystery,
         "target_server_id": target_server_id,
         "command_template": command_template,
         "show_command": show_command,
@@ -429,6 +448,8 @@ async def create_shop_item(shop_id: int, request: Request) -> JSONResponse:
             prefix_id=validated["prefix_id"],
             quantity=validated["quantity"],
             min_tier=validated["min_tier"],
+            actual_value=validated["actual_value"],
+            is_mystery=validated["is_mystery"],
             target_server_id=validated["target_server_id"],
             command_template=validated["command_template"],
             show_command=validated["show_command"],
@@ -487,6 +508,8 @@ async def update_shop_item(shop_id: int, item_id: int, request: Request) -> JSON
         item.prefix_id = validated["prefix_id"]
         item.quantity = validated["quantity"]
         item.min_tier = validated["min_tier"]
+        item.actual_value = validated["actual_value"]
+        item.is_mystery = validated["is_mystery"]
         item.target_server_id = validated["target_server_id"]
         item.command_template = validated["command_template"]
         item.show_command = validated["show_command"]

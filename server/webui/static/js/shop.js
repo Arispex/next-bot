@@ -245,7 +245,21 @@
     if (it.kind === "item") {
       const line = document.createElement("div");
       line.className = "item-detail-line";
-      line.textContent = "物品 ID " + it.item_id + "  ·  前缀 " + it.prefix_id + "  ·  数量 ×" + it.quantity + "  ·  进度 " + (it.min_tier_label || it.min_tier);
+      const baseSpan = document.createElement("span");
+      baseSpan.textContent = "物品 ID " + it.item_id + "  ·  前缀 " + it.prefix_id + "  ·  数量 ×" + it.quantity + "  ·  进度 " + (it.min_tier_label || it.min_tier);
+      line.appendChild(baseSpan);
+      if (it.actual_value !== null && it.actual_value !== undefined) {
+        const av = document.createElement("span");
+        av.className = "flag-chip flag-on";
+        av.textContent = "实际单价 " + it.actual_value;
+        line.appendChild(av);
+      }
+      if (it.is_mystery) {
+        const m = document.createElement("span");
+        m.className = "flag-chip flag-on";
+        m.textContent = "盲盒";
+        line.appendChild(m);
+      }
       tdDetail.appendChild(line);
     } else {
       const targetLine = document.createElement("div");
@@ -446,6 +460,9 @@
     els.itemFieldPrefixId.value = item ? (item.prefix_id || 0) : 0;
     els.itemFieldQuantity.value = item ? (item.quantity || 1) : 1;
     els.itemFieldMinTier.value = item ? (item.min_tier || "none") : "none";
+    els.itemFieldActualValue.value = (item && item.actual_value !== null && item.actual_value !== undefined)
+      ? String(item.actual_value) : "";
+    els.itemFieldIsMystery.checked = item ? !!item.is_mystery : false;
     els.itemFieldTargetServer.value = (item && item.target_server_id !== null && item.target_server_id !== undefined)
       ? String(item.target_server_id) : "";
     els.itemFieldCommandTemplate.value = item ? (item.command_template || "") : "";
@@ -484,6 +501,9 @@
       payload.prefix_id = Number(els.itemFieldPrefixId.value || 0);
       payload.quantity = Number(els.itemFieldQuantity.value || 1);
       payload.min_tier = els.itemFieldMinTier.value || "none";
+      const av = els.itemFieldActualValue.value.trim();
+      payload.actual_value = av === "" ? null : Number(av);
+      payload.is_mystery = els.itemFieldIsMystery.checked;
     } else {
       const raw = els.itemFieldTargetServer.value;
       payload.target_server_id = raw ? Number(raw) : null;
@@ -606,6 +626,8 @@
     els.itemFieldPrefixId = $("item-field-prefix-id");
     els.itemFieldQuantity = $("item-field-quantity");
     els.itemFieldMinTier = $("item-field-min-tier");
+    els.itemFieldActualValue = $("item-field-actual-value");
+    els.itemFieldIsMystery = $("item-field-is-mystery");
     els.itemFieldTargetServer = $("item-field-target-server");
     els.itemFieldCommandTemplate = $("item-field-command-template");
     els.itemFieldShowCommand = $("item-field-show-command");

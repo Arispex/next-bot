@@ -207,6 +207,8 @@ class ShopItem(Base):
     prefix_id: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     min_tier: Mapped[str] = mapped_column(String, nullable=False, default="none")
+    actual_value: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    is_mystery: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     # kind == "command"
     target_server_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
@@ -367,6 +369,14 @@ def ensure_shop_schema() -> None:
         if "require_online" not in columns:
             conn.execute(
                 'ALTER TABLE "shop_item" ADD COLUMN "require_online" BOOLEAN NOT NULL DEFAULT 0'
+            )
+            changed = True
+        if "actual_value" not in columns:
+            conn.execute('ALTER TABLE "shop_item" ADD COLUMN "actual_value" INTEGER')
+            changed = True
+        if "is_mystery" not in columns:
+            conn.execute(
+                'ALTER TABLE "shop_item" ADD COLUMN "is_mystery" BOOLEAN NOT NULL DEFAULT 0'
             )
             changed = True
         if changed:

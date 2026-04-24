@@ -46,6 +46,7 @@ def _normalize_items(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "min_tier": min_tier,
                 "min_tier_zh": PROGRESSION_KEY_TO_ZH.get(min_tier, min_tier),
                 "min_tier_rank": PROGRESSION_RANK.get(min_tier, -1),
+                "is_mystery": bool(raw.get("is_mystery", False)),
             })
         else:
             target_server_id = raw.get("target_server_id")

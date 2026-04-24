@@ -190,7 +190,22 @@
         left.style.justifyContent = "center";
         left.style.width = "64px";
         left.style.height = "64px";
-        if (it.kind === "item" && Number(it.item_id || 0) > 0) {
+        if (it.kind === "item" && it.is_mystery) {
+          const mystery = document.createElement("div");
+          mystery.style.width = "56px";
+          mystery.style.height = "56px";
+          mystery.style.borderRadius = "12px";
+          mystery.style.display = "flex";
+          mystery.style.alignItems = "center";
+          mystery.style.justifyContent = "center";
+          mystery.style.fontSize = "32px";
+          mystery.style.fontWeight = "900";
+          mystery.style.background = theme === "dark" ? "rgba(234,179,8,0.16)" : "#fffbeb";
+          mystery.style.color = theme === "dark" ? "#fde68a" : "#b45309";
+          mystery.style.border = "2px dashed " + (theme === "dark" ? "rgba(234,179,8,0.35)" : "#fcd34d");
+          mystery.textContent = "?";
+          left.appendChild(mystery);
+        } else if (it.kind === "item" && Number(it.item_id || 0) > 0) {
           const img = document.createElement("img");
           img.src = "/assets/items/Item_" + it.item_id + ".png";
           img.alt = String(it.item_id);
@@ -263,12 +278,16 @@
         meta.style.flexWrap = "wrap";
         meta.style.gap = "10px";
         if (it.kind === "item") {
-          const itemName = itemNameMap.get(Number(it.item_id)) || ("ID:" + it.item_id);
-          const prefixId = Number(it.prefix_id || 0);
-          const prefixName = prefixId > 0 ? (prefixNameMap.get(prefixId) || ("前缀 ID:" + prefixId)) : "";
           const parts = [];
-          if (prefixName) parts.push(prefixName + " " + itemName);
-          else parts.push(itemName);
+          if (it.is_mystery) {
+            parts.push("? ? ?");
+          } else {
+            const itemName = itemNameMap.get(Number(it.item_id)) || ("ID:" + it.item_id);
+            const prefixId = Number(it.prefix_id || 0);
+            const prefixName = prefixId > 0 ? (prefixNameMap.get(prefixId) || ("前缀 ID:" + prefixId)) : "";
+            if (prefixName) parts.push(prefixName + " " + itemName);
+            else parts.push(itemName);
+          }
           parts.push("数量 ×" + it.quantity);
           const span = document.createElement("span");
           span.textContent = parts.join("  ·  ");

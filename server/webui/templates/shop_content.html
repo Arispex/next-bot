@@ -176,8 +176,16 @@
             <span class="form-label">进度要求</span>
             <select id="item-field-min-tier" class="select"></select>
           </label>
+          <label class="form-item">
+            <span class="form-label">实际单价（选填）</span>
+            <input id="item-field-actual-value" class="input" type="number" min="0" placeholder="留空 = 单价 / 单份数量" />
+          </label>
         </div>
-        <div class="field-section-hint">购买后会自动写入玩家仓库的第一个空格，单份数量乘以购买份数即为入库总数。</div>
+        <div class="field-section-hint">购买后会自动写入玩家仓库的第一个空格，单份数量乘以购买份数即为入库总数。实际单价决定回收时按多少金币计算（不填则按上方单价均摊）。</div>
+        <label class="form-checkbox-row">
+          <input id="item-field-is-mystery" type="checkbox" />
+          <span>盲盒模式（在「查看商店」中隐藏物品图标 / 物品 ID / 前缀，仅显示商品名称，默认关闭）</span>
+        </label>
       </div>
 
       <div id="item-kind-command-fields" class="field-section hidden">
