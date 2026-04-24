@@ -177,6 +177,46 @@ class WarehouseItem(Base):
     )
 
 
+class Shop(Base):
+    __tablename__ = "shop"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    description: Mapped[str] = mapped_column(String, nullable=False, default="")
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=db_now_utc_naive
+    )
+
+
+class ShopItem(Base):
+    __tablename__ = "shop_item"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    shop_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[str] = mapped_column(String, nullable=False, default="")
+    kind: Mapped[str] = mapped_column(String, nullable=False)  # "item" | "command"
+    price: Mapped[int] = mapped_column(Integer, nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    # kind == "item"
+    item_id: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    prefix_id: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    min_tier: Mapped[str] = mapped_column(String, nullable=False, default="none")
+
+    # kind == "command"
+    target_server_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    command_template: Mapped[str] = mapped_column(String, nullable=False, default="")
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=db_now_utc_naive
+    )
+
+
 def get_engine() -> Engine:
     return create_engine(
         DATABASE_URL,
@@ -197,6 +237,7 @@ def init_db() -> None:
     ensure_user_guess_schema()
     ensure_user_dice_schema()
     ensure_red_packet_schema()
+    ensure_shop_schema()
     ensure_default_groups()
     ensure_default_stats()
 
@@ -212,7 +253,7 @@ def ensure_default_groups() -> None:
     try:
         guest = session.query(Group).filter(Group.name == "guest").first()
         if guest is None:
-            session.add(Group(name="guest", permissions="about,ban.list,economy.dice,economy.guess_number,economy.red_packet.grab,economy.red_packet.list_all,economy.red_packet.list_own,economy.red_packet.send,economy.red_packet.withdraw,economy.rob,economy.sign,economy.transfer,leaderboard.coins,leaderboard.daily_sign,leaderboard.deaths,leaderboard.dice_income,leaderboard.dice_win_rate,leaderboard.fishing,leaderboard.guess_number_income,leaderboard.guess_number_win_rate,leaderboard.online_time,leaderboard.rob_income,leaderboard.rob_loss,leaderboard.rob_penalty,leaderboard.rob_success_rate,leaderboard.signin,leaderboard.streak,leaderboard.total_online_time,menu.root,menu.search,player_query.inventory.self,player_query.inventory.user,player_query.kick.self,player_query.online,player_query.progress,security.login.confirm,security.login.reject,server.list,server.send,system.tutorial,user.info.self,user.info.user,user.register,user.whitelist.sync,warehouse.claim_self,warehouse.drop_self,warehouse.list_self,warehouse.list_user,warehouse.recycle_self", inherits=""))
+            session.add(Group(name="guest", permissions="about,ban.list,economy.dice,economy.guess_number,economy.red_packet.grab,economy.red_packet.list_all,economy.red_packet.list_own,economy.red_packet.send,economy.red_packet.withdraw,economy.rob,economy.sign,economy.transfer,leaderboard.coins,leaderboard.daily_sign,leaderboard.deaths,leaderboard.dice_income,leaderboard.dice_win_rate,leaderboard.fishing,leaderboard.guess_number_income,leaderboard.guess_number_win_rate,leaderboard.online_time,leaderboard.rob_income,leaderboard.rob_loss,leaderboard.rob_penalty,leaderboard.rob_success_rate,leaderboard.signin,leaderboard.streak,leaderboard.total_online_time,menu.root,menu.search,player_query.inventory.self,player_query.inventory.user,player_query.kick.self,player_query.online,player_query.progress,security.login.confirm,security.login.reject,server.list,server.send,shop.buy,shop.list,shop.view,system.tutorial,user.info.self,user.info.user,user.register,user.whitelist.sync,warehouse.claim_self,warehouse.drop_self,warehouse.list_self,warehouse.list_user,warehouse.recycle_self", inherits=""))
 
         default = session.query(Group).filter(Group.name == "default").first()
         if default is None:
@@ -300,6 +341,18 @@ def ensure_warehouse_schema() -> None:
             changed = True
         if changed:
             conn.commit()
+    finally:
+        conn.close()
+
+
+def ensure_shop_schema() -> None:
+    # Tables themselves are created by Base.metadata.create_all; this hook
+    # exists so future column additions can ALTER without dropping data.
+    if not DB_PATH.exists():
+        return
+    conn = sqlite3.connect(str(DB_PATH))
+    try:
+        pass
     finally:
         conn.close()
 

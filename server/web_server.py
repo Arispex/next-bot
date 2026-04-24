@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from nonebot.log import logger
 
 from server.page_store import create_page
-from server.pages import about_page, admin_list_page, ban_list_page, inventory_page, leaderboard_page, menu_page, progress_page, red_packet_all_page, red_packet_own_page, tutorial_page, user_info_page, warehouse_page
+from server.pages import about_page, admin_list_page, ban_list_page, inventory_page, leaderboard_page, menu_page, progress_page, red_packet_all_page, red_packet_own_page, shop_view_page, tutorial_page, user_info_page, warehouse_page
 from server.routes.render import router as render_router
 from server.routes.webui_commands import router as webui_commands_router
 from server.routes.webui_dashboard import router as webui_dashboard_router
@@ -18,6 +18,7 @@ from server.routes.webui_player_events import router as webui_player_events_rout
 from server.routes.webui_servers import router as webui_servers_router
 from server.routes.webui_settings import router as webui_settings_router
 from server.routes.webui_users import router as webui_users_router
+from server.routes.webui_shop import router as webui_shop_router
 from server.routes.webui_warehouse import router as webui_warehouse_router
 from server.routes.webui import add_webui_auth_middleware, router as webui_router
 from server.server_config import WebServerSettings, get_server_settings
@@ -254,6 +255,32 @@ def create_warehouse_page(
     return f"{_build_internal_base_url(settings)}/render/warehouse/{token}"
 
 
+def create_shop_view_page(
+    *,
+    shop_id: int,
+    shop_name: str,
+    shop_description: str,
+    user_user_id: str,
+    user_user_name: str,
+    user_coins: int,
+    items: list[dict[str, Any]],
+    theme: str = "light",
+) -> str:
+    payload = shop_view_page.build_payload(
+        shop_id=shop_id,
+        shop_name=shop_name,
+        shop_description=shop_description,
+        user_user_id=user_user_id,
+        user_user_name=user_user_name,
+        user_coins=user_coins,
+        items=items,
+        theme=theme,
+    )
+    token = create_page("shop_view", payload)
+    settings = get_server_settings()
+    return f"{_build_internal_base_url(settings)}/render/shop_view/{token}"
+
+
 def create_app(settings: WebServerSettings | None = None) -> FastAPI:
     runtime_settings = settings or get_server_settings()
 
@@ -277,6 +304,7 @@ def create_app(settings: WebServerSettings | None = None) -> FastAPI:
     app.include_router(webui_groups_router)
     app.include_router(webui_settings_router)
     app.include_router(webui_warehouse_router)
+    app.include_router(webui_shop_router)
 
     @app.get("/health")
     async def health() -> dict[str, str]:
