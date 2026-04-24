@@ -242,7 +242,8 @@ async def handle_shop_view(bot: Bot, event: Event, arg: Message = CommandArg()) 
                     entry["target_server_label"] = server_label_map.get(
                         int(it.target_server_id), f"#{int(it.target_server_id)}"
                     )
-                entry["command_template"] = str(it.command_template or "")
+                show_command = bool(getattr(it, "show_command", False))
+                entry["command_template"] = str(it.command_template or "") if show_command else ""
             render_items.append(entry)
     finally:
         session.close()
@@ -336,6 +337,7 @@ async def handle_shop_buy(bot: Bot, event: Event, arg: Message = CommandArg()) -
             int(target.target_server_id) if target.target_server_id is not None else None
         )
         target_command_template = str(target.command_template or "")
+        target_require_online = bool(getattr(target, "require_online", False))
         shop_name = str(shop.name)
     finally:
         session.close()
@@ -361,6 +363,7 @@ async def handle_shop_buy(bot: Bot, event: Event, arg: Message = CommandArg()) -
             buy_count=buy_count,
             target_server_id=target_server_id,
             command_template=target_command_template,
+            require_online=target_require_online,
         )
 
 
@@ -435,8 +438,9 @@ async def _buy_command(
     unit_price: int, total_price: int, buy_count: int,
     target_server_id: int | None,
     command_template: str,
+    require_online: bool,
 ) -> None:
-    # Load player + servers; verify online
+    # Load player + servers; optionally verify online
     session = get_session()
     try:
         user = session.query(User).filter(User.user_id == user_id).first()
@@ -467,21 +471,24 @@ async def _buy_command(
         await bot.send(event, at + " " + reply_failure("购买", "暂无可用服务器"))
         return
 
-    online_servers: list[Server] = []
     offline_reasons: list[str] = []
-    for srv in servers:
-        online, reason = await _check_player_online(srv, player_name)
-        if online is True:
-            online_servers.append(srv)
-        elif online is False:
-            offline_reasons.append(f"#{srv.id} {srv.name}：玩家不在线")
-        else:
-            offline_reasons.append(f"#{srv.id} {srv.name}：{reason or '查询失败'}")
+    if require_online:
+        online_servers: list[Server] = []
+        for srv in servers:
+            online, reason = await _check_player_online(srv, player_name)
+            if online is True:
+                online_servers.append(srv)
+            elif online is False:
+                offline_reasons.append(f"#{srv.id} {srv.name}：玩家不在线")
+            else:
+                offline_reasons.append(f"#{srv.id} {srv.name}：{reason or '查询失败'}")
 
-    if not online_servers:
-        detail = "；".join(offline_reasons) if offline_reasons else "玩家未在线"
-        await bot.send(event, at + " " + reply_failure("购买", detail))
-        return
+        if not online_servers:
+            detail = "；".join(offline_reasons) if offline_reasons else "玩家未在线"
+            await bot.send(event, at + " " + reply_failure("购买", detail))
+            return
+    else:
+        online_servers = list(servers)
 
     # Charge coins now (commit), then execute commands
     session = get_session()

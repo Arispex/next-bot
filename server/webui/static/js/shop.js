@@ -250,6 +250,8 @@
     } else {
       const parts = [
         "目标=" + (it.target_server_label || "全部服务器"),
+        "展示命令=" + (it.show_command ? "是" : "否"),
+        "要求在线=" + (it.require_online ? "是" : "否"),
         "排序=" + it.sort_order,
       ];
       meta.textContent = parts.join("  ·  ");
@@ -407,6 +409,8 @@
     els.itemFieldTargetServer.value = (item && item.target_server_id !== null && item.target_server_id !== undefined)
       ? String(item.target_server_id) : "";
     els.itemFieldCommandTemplate.value = item ? (item.command_template || "") : "";
+    els.itemFieldShowCommand.checked = item ? !!item.show_command : false;
+    els.itemFieldRequireOnline.checked = item ? !!item.require_online : false;
     els.itemModalDelete.style.display = item ? "inline-block" : "none";
     applyKindVisibility();
     els.itemModal.style.display = "flex";
@@ -439,6 +443,8 @@
       const raw = els.itemFieldTargetServer.value;
       payload.target_server_id = raw ? Number(raw) : null;
       payload.command_template = els.itemFieldCommandTemplate.value;
+      payload.show_command = els.itemFieldShowCommand.checked;
+      payload.require_online = els.itemFieldRequireOnline.checked;
     }
     try {
       if (state.editingItemId === null) {
@@ -532,6 +538,8 @@
     els.itemFieldMinTier = $("item-field-min-tier");
     els.itemFieldTargetServer = $("item-field-target-server");
     els.itemFieldCommandTemplate = $("item-field-command-template");
+    els.itemFieldShowCommand = $("item-field-show-command");
+    els.itemFieldRequireOnline = $("item-field-require-online");
   }
 
   function bindEvents() {

@@ -211,6 +211,8 @@ class ShopItem(Base):
     # kind == "command"
     target_server_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     command_template: Mapped[str] = mapped_column(String, nullable=False, default="")
+    show_command: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    require_online: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=db_now_utc_naive
@@ -347,12 +349,28 @@ def ensure_warehouse_schema() -> None:
 
 def ensure_shop_schema() -> None:
     # Tables themselves are created by Base.metadata.create_all; this hook
-    # exists so future column additions can ALTER without dropping data.
+    # patches existing tables when new columns are added.
     if not DB_PATH.exists():
         return
     conn = sqlite3.connect(str(DB_PATH))
     try:
-        pass
+        rows = conn.execute('PRAGMA table_info("shop_item")').fetchall()
+        if not rows:
+            return
+        columns = {str(row[1]) for row in rows}
+        changed = False
+        if "show_command" not in columns:
+            conn.execute(
+                'ALTER TABLE "shop_item" ADD COLUMN "show_command" BOOLEAN NOT NULL DEFAULT 0'
+            )
+            changed = True
+        if "require_online" not in columns:
+            conn.execute(
+                'ALTER TABLE "shop_item" ADD COLUMN "require_online" BOOLEAN NOT NULL DEFAULT 0'
+            )
+            changed = True
+        if changed:
+            conn.commit()
     finally:
         conn.close()
 

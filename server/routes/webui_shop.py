@@ -48,6 +48,8 @@ def _serialize_shop_item(item: ShopItem, *, target_server_label: str | None = No
         "min_tier_label": PROGRESSION_KEY_TO_ZH.get(str(item.min_tier or "none"), str(item.min_tier or "none")),
         "target_server_id": int(item.target_server_id) if item.target_server_id is not None else None,
         "command_template": str(item.command_template or ""),
+        "show_command": bool(getattr(item, "show_command", False)),
+        "require_online": bool(getattr(item, "require_online", False)),
     }
     if item.kind == "command":
         if item.target_server_id is None:
@@ -139,6 +141,8 @@ def _validate_shop_item_payload(
     min_tier = "none"
     target_server_id: int | None = None
     command_template = ""
+    show_command = False
+    require_online = False
 
     if kind == "item":
         try:
@@ -187,6 +191,9 @@ def _validate_shop_item_payload(
         else:
             command_template = stripped_cmd
 
+        show_command = bool(data.get("show_command", False))
+        require_online = bool(data.get("require_online", False))
+
     if details:
         return None, api_error(
             status_code=422, code="validation_error", message="参数校验失败", details=details,
@@ -205,6 +212,8 @@ def _validate_shop_item_payload(
         "min_tier": min_tier,
         "target_server_id": target_server_id,
         "command_template": command_template,
+        "show_command": show_command,
+        "require_online": require_online,
     }, None
 
 
@@ -422,6 +431,8 @@ async def create_shop_item(shop_id: int, request: Request) -> JSONResponse:
             min_tier=validated["min_tier"],
             target_server_id=validated["target_server_id"],
             command_template=validated["command_template"],
+            show_command=validated["show_command"],
+            require_online=validated["require_online"],
         )
         session.add(item)
         session.commit()
@@ -478,6 +489,8 @@ async def update_shop_item(shop_id: int, item_id: int, request: Request) -> JSON
         item.min_tier = validated["min_tier"]
         item.target_server_id = validated["target_server_id"]
         item.command_template = validated["command_template"]
+        item.show_command = validated["show_command"]
+        item.require_online = validated["require_online"]
         session.commit()
         label_map = _load_server_label_map()
         target_label = (
