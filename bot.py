@@ -98,7 +98,10 @@ def ensure_env_file() -> None:
 
 
 ensure_env_file()
-nonebot.init()
+# Explicitly point NoneBot at our resolved .env path. By default NoneBot
+# reads `.env` from the current working directory, which would miss
+# NEXTBOT_DATA_DIR-relocated state in containerised deployments.
+nonebot.init(_env_file=str(ENV_PATH))
 
 driver = nonebot.get_driver()
 # driver.register_adapter(ConsoleAdapter)
