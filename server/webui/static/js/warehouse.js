@@ -11,80 +11,50 @@
     user: null,           // { user_id, user_name }
     capacity: 100,
     used: 0,
-    slots: new Map(),     // slot_index -> { item_id, prefix_id, quantity, min_tier, min_tier_label }
+    slots: new Map(),     // slot_index -> { item_id, prefix_id, quantity, min_tier, min_tier_label, value }
     tiers: [],            // [{ key, label }]
     editingSlot: null,    // current slot_index in modal
   };
 
+  const TIER_RANK = new Map();   // tier key -> rank index for tier-chip styling
+
   const itemNameMap = new Map();
   const prefixNameMap = new Map();
 
-  const els = {
-    searchInput: null,
-    searchDropdown: null,
-    summary: null,
-    summaryName: null,
-    summaryQq: null,
-    summaryUsed: null,
-    summaryCapacity: null,
-    gridCard: null,
-    grid: null,
-    empty: null,
-    alert: null,
-    modal: null,
-    modalTitle: null,
-    modalAlert: null,
-    modalForm: null,
-    modalClose: null,
-    modalCancel: null,
-    modalSave: null,
-    modalDelete: null,
-    fieldSlot: null,
-    fieldItemId: null,
-    fieldPrefixId: null,
-    fieldQuantity: null,
-    fieldValue: null,
-    fieldMinTier: null,
-  };
+  const els = {};
 
-  function $(id) {
-    return document.getElementById(id);
-  }
+  function $(id) { return document.getElementById(id); }
 
   function clearChildren(node) {
+    while (node && node.firstChild) node.removeChild(node.firstChild);
+  }
+
+  function showAlert(node, text, kind) {
     if (!node) return;
-    while (node.firstChild) node.removeChild(node.firstChild);
+    const msg = node.querySelector(".alert-message") || node;
+    msg.textContent = text;
+    node.classList.remove("hidden", "success", "error");
+    node.classList.add(kind === "error" ? "error" : "success");
   }
 
-  function showAlert(text, kind) {
-    if (!els.alert) return;
-    els.alert.textContent = text;
-    els.alert.style.display = "block";
-    els.alert.style.background = kind === "error" ? "#fee2e2" : "#dcfce7";
-    els.alert.style.color = kind === "error" ? "#991b1b" : "#166534";
-    els.alert.style.border = "1px solid " + (kind === "error" ? "#fecaca" : "#bbf7d0");
+  function hideAlert(node) {
+    if (!node) return;
+    node.classList.add("hidden");
+    const msg = node.querySelector(".alert-message");
+    if (msg) msg.textContent = "";
   }
 
-  function clearAlert() {
-    if (!els.alert) return;
-    els.alert.style.display = "none";
-    els.alert.textContent = "";
+  function showModal(modal) {
+    if (!modal) return;
+    modal.classList.remove("hidden");
   }
 
-  function showModalAlert(text) {
-    if (!els.modalAlert) return;
-    els.modalAlert.textContent = text;
-    els.modalAlert.style.display = "block";
-    els.modalAlert.style.background = "#fee2e2";
-    els.modalAlert.style.color = "#991b1b";
-    els.modalAlert.style.border = "1px solid #fecaca";
+  function hideModal(modal) {
+    if (!modal) return;
+    modal.classList.add("hidden");
   }
 
-  function clearModalAlert() {
-    if (!els.modalAlert) return;
-    els.modalAlert.style.display = "none";
-    els.modalAlert.textContent = "";
-  }
+  // ---------- Data load ----------
 
   async function loadDicts() {
     try {
@@ -108,7 +78,7 @@
           if (id > 0 && name) prefixNameMap.set(id, name);
         });
       }
-    } catch (e) { /* ignore — will fall back to numeric ids */ }
+    } catch (e) { /* fall back to numeric ids */ }
   }
 
   async function loadTiers() {
@@ -121,8 +91,19 @@
       });
       const data = api.unwrapData(payload);
       state.tiers = Array.isArray(data) ? data : [];
+      // Rank index for tier-chip color (skip "none", first real boss = rank 0)
+      TIER_RANK.clear();
+      let rank = 0;
+      state.tiers.forEach(function (t) {
+        if (t.key === "none") {
+          TIER_RANK.set(t.key, -1);
+        } else {
+          TIER_RANK.set(t.key, rank);
+          rank += 1;
+        }
+      });
     } catch (err) {
-      showAlert(err && err.message ? err.message : "加载进度列表失败", "error");
+      showAlert(els.alert, err && err.message ? err.message : "加载进度列表失败", "error");
     }
   }
 
@@ -145,9 +126,9 @@
   }
 
   async function loadWarehouse(userId) {
-    clearAlert();
+    hideAlert(els.alert);
     if (!userId) {
-      showAlert("加载仓库失败，请输入用户 QQ 或用户名", "error");
+      showAlert(els.alert, "加载仓库失败，请输入用户 QQ 或用户名", "error");
       return;
     }
     try {
@@ -171,191 +152,113 @@
       renderSummary();
       renderGrid();
     } catch (err) {
-      showAlert(err && err.message ? err.message : "加载仓库失败", "error");
+      showAlert(els.alert, err && err.message ? err.message : "加载仓库失败", "error");
       hideAll();
     }
   }
 
   function hideAll() {
-    if (els.summary) els.summary.style.display = "none";
-    if (els.gridCard) els.gridCard.style.display = "none";
-    if (els.empty) els.empty.style.display = "block";
+    state.user = null;
+    els.summary.classList.add("hidden");
+    els.gridCard.classList.add("hidden");
+    els.empty.classList.remove("hidden");
   }
 
   function renderSummary() {
     if (!state.user) return hideAll();
-    els.summary.style.display = "block";
+    els.summary.classList.remove("hidden");
     els.summaryName.textContent = state.user.user_name || "(无用户名)";
-    els.summaryQq.textContent = "（QQ：" + state.user.user_id + "）";
+    els.summaryQq.textContent = state.user.user_id;
     els.summaryUsed.textContent = String(state.used);
     els.summaryCapacity.textContent = String(state.capacity);
-    els.empty.style.display = "none";
+    els.empty.classList.add("hidden");
   }
 
   function renderGrid() {
     if (!state.user) return;
-    els.gridCard.style.display = "block";
+    els.gridCard.classList.remove("hidden");
     clearChildren(els.grid);
     for (let i = 1; i <= state.capacity; i++) {
-      const slot = state.slots.get(i);
-      const occupied = !!slot;
-
-      const cell = document.createElement("div");
-      cell.style.position = "relative";
-      cell.style.aspectRatio = "4 / 5";
-      cell.style.border = "1px solid " + (occupied ? "#fcd34d" : "#e2e8f0");
-      cell.style.background = occupied ? "#fffbeb" : "#fafaf9";
-      cell.style.borderRadius = "8px";
-      cell.style.padding = "14px 4px 4px 4px";
-      cell.style.display = "flex";
-      cell.style.flexDirection = "column";
-      cell.style.alignItems = "center";
-      cell.style.justifyContent = "center";
-      cell.style.gap = "2px";
-      cell.style.cursor = "pointer";
-      cell.style.transition = "transform 0.1s, box-shadow 0.1s";
-      cell.style.overflow = "hidden";
-      cell.style.minWidth = "0";
-      cell.style.minHeight = "0";
-      cell.onmouseenter = function () {
-        cell.style.transform = "scale(1.04)";
-        cell.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)";
-        cell.style.zIndex = "2";
-      };
-      cell.onmouseleave = function () {
-        cell.style.transform = "";
-        cell.style.boxShadow = "";
-        cell.style.zIndex = "";
-      };
-      cell.onclick = function () { openModal(i, slot); };
-
-      const idEl = document.createElement("div");
-      idEl.textContent = "#" + i;
-      idEl.style.position = "absolute";
-      idEl.style.top = "3px";
-      idEl.style.left = "5px";
-      idEl.style.fontSize = "9px";
-      idEl.style.fontWeight = "700";
-      idEl.style.color = "#94a3b8";
-      cell.appendChild(idEl);
-
-      const iconWrap = document.createElement("div");
-      iconWrap.style.display = "flex";
-      iconWrap.style.alignItems = "center";
-      iconWrap.style.justifyContent = "center";
-      iconWrap.style.flexShrink = "0";
-      if (occupied) {
-        const img = document.createElement("img");
-        img.src = "/assets/items/Item_" + slot.item_id + ".png";
-        img.alt = String(slot.item_id);
-        img.style.width = "40px";
-        img.style.height = "40px";
-        img.style.maxWidth = "100%";
-        img.style.objectFit = "contain";
-        img.style.objectFit = "contain";
-        img.style.imageRendering = "pixelated";
-        img.onerror = function () { img.style.display = "none"; };
-        iconWrap.appendChild(img);
-      } else {
-        const empty = document.createElement("div");
-        empty.textContent = "+";
-        empty.style.fontSize = "20px";
-        empty.style.color = "#cbd5e1";
-        iconWrap.appendChild(empty);
-      }
-      cell.appendChild(iconWrap);
-
-      if (occupied) {
-        if (Number(slot.quantity || 0) > 1) {
-          const stack = document.createElement("div");
-          stack.textContent = "×" + slot.quantity;
-          stack.style.position = "absolute";
-          stack.style.top = "2px";
-          stack.style.right = "4px";
-          stack.style.fontSize = "9px";
-          stack.style.fontWeight = "800";
-          stack.style.padding = "1px 4px";
-          stack.style.background = "#fffbeb";
-          stack.style.color = "#b45309";
-          stack.style.border = "1px solid #fde68a";
-          stack.style.borderRadius = "4px";
-          cell.appendChild(stack);
-        }
-
-        const itemName = itemNameMap.get(Number(slot.item_id)) || ("ID:" + slot.item_id);
-        const prefixId = Number(slot.prefix_id || 0);
-        const prefixName = prefixId > 0 ? (prefixNameMap.get(prefixId) || "前缀 ID:" + prefixId) : "";
-
-        if (prefixName) {
-          const prefixEl = document.createElement("div");
-          prefixEl.textContent = prefixName;
-          prefixEl.style.fontSize = "8px";
-          prefixEl.style.fontWeight = "700";
-          prefixEl.style.color = "#b45309";
-          prefixEl.style.overflow = "hidden";
-          prefixEl.style.textOverflow = "ellipsis";
-          prefixEl.style.whiteSpace = "nowrap";
-          prefixEl.style.lineHeight = "1.2";
-          prefixEl.style.maxWidth = "100%";
-          prefixEl.style.textAlign = "center";
-          cell.appendChild(prefixEl);
-        }
-
-        const nameEl = document.createElement("div");
-        nameEl.textContent = itemName;
-        nameEl.title = (prefixName ? prefixName + " " : "") + itemName + " · " + (slot.min_tier_label || slot.min_tier || "");
-        nameEl.style.fontSize = "9px";
-        nameEl.style.fontWeight = "700";
-        nameEl.style.color = "#1e293b";
-        nameEl.style.overflow = "hidden";
-        nameEl.style.textOverflow = "ellipsis";
-        nameEl.style.whiteSpace = "nowrap";
-        nameEl.style.lineHeight = "1.2";
-        nameEl.style.maxWidth = "100%";
-        nameEl.style.textAlign = "center";
-        cell.appendChild(nameEl);
-
-        if (slot.min_tier_label) {
-          const tierEl = document.createElement("div");
-          tierEl.textContent = slot.min_tier_label;
-          tierEl.style.fontSize = "8px";
-          tierEl.style.fontWeight = "600";
-          tierEl.style.color = "#b45309";
-          tierEl.style.background = "#fef3c7";
-          tierEl.style.padding = "1px 4px";
-          tierEl.style.borderRadius = "4px";
-          tierEl.style.marginTop = "1px";
-          tierEl.style.maxWidth = "100%";
-          tierEl.style.overflow = "hidden";
-          tierEl.style.textOverflow = "ellipsis";
-          tierEl.style.whiteSpace = "nowrap";
-          cell.appendChild(tierEl);
-        }
-
-        if (Number(slot.value || 0) > 0) {
-          const valueEl = document.createElement("div");
-          valueEl.textContent = "💰 " + slot.value;
-          valueEl.style.fontSize = "9px";
-          valueEl.style.fontWeight = "700";
-          valueEl.style.color = "#b45309";
-          valueEl.style.lineHeight = "1.2";
-          valueEl.style.marginTop = "1px";
-          valueEl.style.maxWidth = "100%";
-          valueEl.style.overflow = "hidden";
-          valueEl.style.textOverflow = "ellipsis";
-          valueEl.style.whiteSpace = "nowrap";
-          valueEl.style.textAlign = "center";
-          cell.appendChild(valueEl);
-        }
-      }
-
-      els.grid.appendChild(cell);
+      els.grid.appendChild(renderSlot(i, state.slots.get(i)));
     }
   }
 
+  function renderSlot(slotIndex, slot) {
+    const occupied = !!slot;
+    const cell = document.createElement("div");
+    cell.className = "wh-slot" + (occupied ? " is-occupied" : "");
+    cell.addEventListener("click", function () { openModal(slotIndex, slot); });
+
+    const idEl = document.createElement("div");
+    idEl.className = "wh-slot-id";
+    idEl.textContent = "#" + slotIndex;
+    cell.appendChild(idEl);
+
+    const iconWrap = document.createElement("div");
+    iconWrap.className = "wh-slot-icon";
+    if (occupied) {
+      const img = document.createElement("img");
+      img.src = "/assets/items/Item_" + slot.item_id + ".png";
+      img.alt = String(slot.item_id);
+      img.addEventListener("error", function () { img.style.display = "none"; });
+      iconWrap.appendChild(img);
+    } else {
+      const empty = document.createElement("div");
+      empty.className = "wh-slot-empty-icon";
+      empty.textContent = "+";
+      iconWrap.appendChild(empty);
+    }
+    cell.appendChild(iconWrap);
+
+    if (!occupied) return cell;
+
+    if (Number(slot.quantity || 0) > 1) {
+      const stack = document.createElement("div");
+      stack.className = "wh-slot-stack";
+      stack.textContent = "×" + slot.quantity;
+      cell.appendChild(stack);
+    }
+
+    const itemName = itemNameMap.get(Number(slot.item_id)) || ("ID:" + slot.item_id);
+    const prefixId = Number(slot.prefix_id || 0);
+    const prefixName = prefixId > 0 ? (prefixNameMap.get(prefixId) || "前缀 ID:" + prefixId) : "";
+
+    if (prefixName) {
+      const prefixEl = document.createElement("div");
+      prefixEl.className = "wh-slot-prefix";
+      prefixEl.textContent = prefixName;
+      cell.appendChild(prefixEl);
+    }
+
+    const nameEl = document.createElement("div");
+    nameEl.className = "wh-slot-name";
+    nameEl.textContent = itemName;
+    nameEl.title = (prefixName ? prefixName + " " : "") + itemName + " · " + (slot.min_tier_label || slot.min_tier || "");
+    cell.appendChild(nameEl);
+
+    if (slot.min_tier_label && slot.min_tier !== "none") {
+      const tierEl = document.createElement("div");
+      const rank = TIER_RANK.has(String(slot.min_tier)) ? TIER_RANK.get(String(slot.min_tier)) : -1;
+      tierEl.className = "tier-chip" + (rank >= 0 ? " tier-" + rank : " tier-none");
+      tierEl.textContent = slot.min_tier_label;
+      cell.appendChild(tierEl);
+    }
+
+    if (Number(slot.value || 0) > 0) {
+      const valueEl = document.createElement("div");
+      valueEl.className = "wh-slot-value";
+      valueEl.textContent = "💰 " + slot.value;
+      cell.appendChild(valueEl);
+    }
+
+    return cell;
+  }
+
+  // ---------- Modal ----------
+
   function openModal(slotIndex, slot) {
     state.editingSlot = slotIndex;
-    clearModalAlert();
+    hideAlert(els.modalAlert);
     els.modalTitle.textContent = slot ? "编辑物品" : "添加物品";
     els.fieldSlot.value = "#" + slotIndex;
     els.fieldItemId.value = slot ? String(slot.item_id) : "";
@@ -363,20 +266,25 @@
     els.fieldQuantity.value = slot ? String(slot.quantity) : "1";
     els.fieldValue.value = slot ? String(slot.value || 0) : "0";
     populateTierSelect(slot ? slot.min_tier : "");
-    els.modalDelete.style.display = slot ? "inline-block" : "none";
-    els.modal.style.display = "flex";
+    if (slot) {
+      els.modalDelete.classList.remove("hidden");
+    } else {
+      els.modalDelete.classList.add("hidden");
+    }
+    showModal(els.modal);
+    setTimeout(function () { els.fieldItemId.focus(); }, 30);
   }
 
   function closeModal() {
     state.editingSlot = null;
-    els.modal.style.display = "none";
-    clearModalAlert();
+    hideModal(els.modal);
+    hideAlert(els.modalAlert);
   }
 
   async function saveModal(ev) {
     ev.preventDefault();
     if (!state.user || !state.editingSlot) return;
-    clearModalAlert();
+    hideAlert(els.modalAlert);
 
     const itemId = parseInt(els.fieldItemId.value, 10);
     const prefixId = parseInt(els.fieldPrefixId.value, 10);
@@ -384,11 +292,11 @@
     const value = parseInt(els.fieldValue.value, 10);
     const minTier = els.fieldMinTier.value;
 
-    if (isNaN(itemId) || itemId < 1) return showModalAlert("物品 ID 必须为正整数");
-    if (isNaN(prefixId) || prefixId < 0) return showModalAlert("前缀 ID 必须为非负整数");
-    if (isNaN(quantity) || quantity < 1) return showModalAlert("数量必须为正整数");
-    if (isNaN(value) || value < 0) return showModalAlert("单价必须为非负整数");
-    if (!minTier) return showModalAlert("请选择最低进度");
+    if (isNaN(itemId) || itemId < 1) return showAlert(els.modalAlert, "保存失败，物品 ID 必须为正整数", "error");
+    if (isNaN(prefixId) || prefixId < 0) return showAlert(els.modalAlert, "保存失败，前缀 ID 必须为非负整数", "error");
+    if (isNaN(quantity) || quantity < 1) return showAlert(els.modalAlert, "保存失败，数量必须为正整数", "error");
+    if (isNaN(value) || value < 0) return showAlert(els.modalAlert, "保存失败，单价必须为非负整数", "error");
+    if (!minTier) return showAlert(els.modalAlert, "保存失败，请选择最低进度", "error");
 
     try {
       await api.apiRequest(
@@ -396,23 +304,37 @@
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ item_id: itemId, prefix_id: prefixId, quantity: quantity, value: value, min_tier: minTier }),
+          body: JSON.stringify({
+            item_id: itemId, prefix_id: prefixId, quantity: quantity,
+            value: value, min_tier: minTier,
+          }),
           action: "保存",
           expectedStatus: 200,
         }
       );
+      const slotShown = state.editingSlot;
       closeModal();
       await loadWarehouse(state.user.user_id);
-      showAlert("保存成功，#" + (state.editingSlot || ""), "success");
+      showAlert(els.alert, "保存成功，#" + slotShown, "success");
     } catch (err) {
-      showModalAlert(err && err.message ? err.message : "保存失败");
+      showAlert(els.modalAlert, err && err.message ? err.message : "保存失败", "error");
     }
   }
 
-  async function deleteSlot() {
+  function openDeleteModal() {
     if (!state.user || !state.editingSlot) return;
-    if (!confirm("确认清空 #" + state.editingSlot + " 吗？")) return;
-    clearModalAlert();
+    hideAlert(els.deleteAlert);
+    els.deleteSlot.textContent = "#" + state.editingSlot;
+    showModal(els.deleteModal);
+  }
+
+  function closeDeleteModal() {
+    hideModal(els.deleteModal);
+  }
+
+  async function confirmDelete() {
+    if (!state.user || !state.editingSlot) return;
+    hideAlert(els.deleteAlert);
     try {
       await api.apiRequest(
         "/webui/api/warehouse/" + encodeURIComponent(state.user.user_id) + "/" + state.editingSlot,
@@ -424,61 +346,29 @@
         }
       );
       const slotShown = state.editingSlot;
+      closeDeleteModal();
       closeModal();
       await loadWarehouse(state.user.user_id);
-      showAlert("删除成功，#" + slotShown, "success");
+      showAlert(els.alert, "删除成功，#" + slotShown, "success");
     } catch (err) {
-      showModalAlert(err && err.message ? err.message : "删除失败");
+      showAlert(els.deleteAlert, err && err.message ? err.message : "删除失败", "error");
     }
   }
 
-  function bindElements() {
-    els.searchInput = $("wh-search-input");
-    els.searchDropdown = $("wh-search-dropdown");
-    els.summary = $("wh-summary");
-    els.summaryName = $("wh-summary-name");
-    els.summaryQq = $("wh-summary-qq");
-    els.summaryUsed = $("wh-summary-used");
-    els.summaryCapacity = $("wh-summary-capacity");
-    els.gridCard = $("wh-grid-card");
-    els.grid = $("wh-grid");
-    els.empty = $("wh-empty");
-    els.alert = $("wh-alert");
-    els.modal = $("wh-modal");
-    els.modalTitle = $("wh-modal-title");
-    els.modalAlert = $("wh-modal-alert");
-    els.modalForm = $("wh-modal-form");
-    els.modalClose = $("wh-modal-close");
-    els.modalCancel = $("wh-modal-cancel");
-    els.modalSave = $("wh-modal-save");
-    els.modalDelete = $("wh-modal-delete");
-    els.fieldSlot = $("wh-field-slot");
-    els.fieldItemId = $("wh-field-item-id");
-    els.fieldPrefixId = $("wh-field-prefix-id");
-    els.fieldQuantity = $("wh-field-quantity");
-    els.fieldValue = $("wh-field-value");
-    els.fieldMinTier = $("wh-field-min-tier");
-  }
+  // ---------- Search dropdown ----------
 
   let searchTimer = null;
   let lastSearchKeyword = "";
 
-  function showDropdown() {
-    if (els.searchDropdown) els.searchDropdown.style.display = "block";
-  }
-
-  function hideDropdown() {
-    if (els.searchDropdown) els.searchDropdown.style.display = "none";
-  }
+  function showDropdown() { els.searchDropdown.classList.remove("hidden"); }
+  function hideDropdown() { els.searchDropdown.classList.add("hidden"); }
 
   function renderDropdownMessage(text) {
     if (!els.searchDropdown) return;
     clearChildren(els.searchDropdown);
     const msg = document.createElement("div");
+    msg.className = "search-dropdown-empty";
     msg.textContent = text;
-    msg.style.padding = "10px 14px";
-    msg.style.color = "#94a3b8";
-    msg.style.fontSize = "13px";
     els.searchDropdown.appendChild(msg);
     showDropdown();
   }
@@ -492,30 +382,21 @@
     }
     users.forEach(function (u) {
       const item = document.createElement("div");
-      item.style.padding = "8px 14px";
-      item.style.cursor = "pointer";
-      item.style.borderBottom = "1px solid #f1f5f9";
-      item.style.display = "flex";
-      item.style.justifyContent = "space-between";
-      item.style.alignItems = "center";
-      item.onmouseenter = function () { item.style.background = "#f8fafc"; };
-      item.onmouseleave = function () { item.style.background = ""; };
-      item.onclick = function () {
+      item.className = "search-dropdown-item";
+      item.addEventListener("click", function () {
         els.searchInput.value = String(u.name || "");
         hideDropdown();
         loadWarehouse(String(u.user_id));
-      };
+      });
 
       const nameSpan = document.createElement("span");
+      nameSpan.className = "name";
       nameSpan.textContent = String(u.name || "(无用户名)");
-      nameSpan.style.fontWeight = "600";
-      nameSpan.style.color = "#1e293b";
       item.appendChild(nameSpan);
 
       const qqSpan = document.createElement("span");
+      qqSpan.className = "qq";
       qqSpan.textContent = String(u.user_id || "");
-      qqSpan.style.fontSize = "12px";
-      qqSpan.style.color = "#94a3b8";
       item.appendChild(qqSpan);
 
       els.searchDropdown.appendChild(item);
@@ -535,7 +416,6 @@
         expectedStatus: 200,
       });
       const users = api.unwrapData(payload) || [];
-      // Only render if the keyword still matches what's in the input
       const current = (els.searchInput.value || "").trim().toLowerCase();
       if (current === keyword) {
         renderDropdownResults(Array.isArray(users) ? users.slice(0, 20) : []);
@@ -543,6 +423,39 @@
     } catch (err) {
       renderDropdownMessage(err && err.message ? err.message : "搜索失败");
     }
+  }
+
+  // ---------- Bind ----------
+
+  function bindElements() {
+    els.searchInput = $("wh-search-input");
+    els.searchDropdown = $("wh-search-dropdown");
+    els.searchWrap = els.searchInput ? els.searchInput.closest(".search-input-wrap") : null;
+    els.reloadBtn = $("wh-reload-btn");
+    els.summary = $("wh-summary");
+    els.summaryName = $("wh-summary-name");
+    els.summaryQq = $("wh-summary-qq");
+    els.summaryUsed = $("wh-summary-used");
+    els.summaryCapacity = $("wh-summary-capacity");
+    els.gridCard = $("wh-grid-card");
+    els.grid = $("wh-grid");
+    els.empty = $("wh-empty");
+    els.alert = $("wh-alert");
+    els.modal = $("wh-modal");
+    els.modalTitle = $("wh-modal-title");
+    els.modalAlert = $("wh-modal-alert");
+    els.modalForm = $("wh-modal-form");
+    els.modalDelete = $("wh-modal-delete");
+    els.fieldSlot = $("wh-field-slot");
+    els.fieldItemId = $("wh-field-item-id");
+    els.fieldPrefixId = $("wh-field-prefix-id");
+    els.fieldQuantity = $("wh-field-quantity");
+    els.fieldValue = $("wh-field-value");
+    els.fieldMinTier = $("wh-field-min-tier");
+    els.deleteModal = $("wh-delete-modal");
+    els.deleteAlert = $("wh-delete-alert");
+    els.deleteSlot = $("wh-delete-slot");
+    els.deleteConfirm = $("wh-delete-confirm");
   }
 
   function bindEvents() {
@@ -556,21 +469,38 @@
       lastSearchKeyword = "__force__";
       searchUsers(keyword);
     });
-    document.addEventListener("click", function (ev) {
-      const wrap = $("wh-search-wrap");
-      if (wrap && !wrap.contains(ev.target)) hideDropdown();
-    });
     els.searchInput.addEventListener("keydown", function (ev) {
       if (ev.key === "Escape") hideDropdown();
     });
-
-    els.modalClose.addEventListener("click", closeModal);
-    els.modalCancel.addEventListener("click", closeModal);
-    els.modal.addEventListener("click", function (ev) {
-      if (ev.target === els.modal) closeModal();
+    document.addEventListener("click", function (ev) {
+      if (els.searchWrap && !els.searchWrap.contains(ev.target)) hideDropdown();
     });
+
+    els.reloadBtn.addEventListener("click", function () {
+      if (state.user && state.user.user_id) {
+        loadWarehouse(state.user.user_id);
+      }
+    });
+
     els.modalForm.addEventListener("submit", saveModal);
-    els.modalDelete.addEventListener("click", deleteSlot);
+    els.modalDelete.addEventListener("click", openDeleteModal);
+    els.deleteConfirm.addEventListener("click", confirmDelete);
+
+    document.querySelectorAll("[data-modal-close]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        const targetId = el.getAttribute("data-modal-close");
+        const target = document.getElementById(targetId);
+        if (target) target.classList.add("hidden");
+      });
+    });
+
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape") {
+        document.querySelectorAll(".modal:not(.hidden)").forEach(function (m) {
+          m.classList.add("hidden");
+        });
+      }
+    });
   }
 
   document.addEventListener("DOMContentLoaded", async function () {
@@ -578,7 +508,6 @@
     bindEvents();
     await Promise.all([loadDicts(), loadTiers()]);
 
-    // Auto-load if `?user_id=X` is present in URL
     try {
       const params = new URLSearchParams(window.location.search);
       const presetUserId = (params.get("user_id") || "").trim();

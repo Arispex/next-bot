@@ -187,6 +187,7 @@ def render_warehouse_page() -> str:
         content_template="warehouse_content.html",
         page_style_urls=(
             _asset_url("css/app-shell.css"),
+            _asset_url("css/warehouse.css"),
         ),
         page_script_urls=(
             _asset_url("js/warehouse.js"),

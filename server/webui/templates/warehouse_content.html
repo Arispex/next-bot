@@ -1,105 +1,121 @@
-<section class="warehouse-layout" style="display:flex; flex-direction:column; gap:16px;">
+<section class="warehouse-layout">
 
-  <!-- Toolbar (combobox: type to search users, click to select) -->
-  <div class="warehouse-toolbar"
-       style="display:flex; flex-direction:column; gap:6px; padding:14px 18px; border:1px solid var(--color-border, #e2e8f0); border-radius:12px; background:var(--color-surface, #fff);">
-    <label for="wh-search-input" style="font-size:12px; font-weight:600; color:var(--color-text-muted, #64748b);">选择用户</label>
-    <div id="wh-search-wrap" style="position:relative;">
-      <input id="wh-search-input" type="text" class="form-input" autocomplete="off"
-             placeholder="输入 QQ 号或用户名搜索…"
-             style="width:100%; padding:8px 12px; border:1px solid var(--color-border, #e2e8f0); border-radius:8px; font-size:14px; background:#fff;" />
-      <div id="wh-search-dropdown"
-           style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; max-height:280px; overflow-y:auto; background:#fff; border:1px solid var(--color-border, #e2e8f0); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.08); z-index:20;"></div>
+  <div class="warehouse-toolbar">
+    <div class="warehouse-toolbar-search">
+      <div class="search-input-wrap">
+        <span class="search-input-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m20 20-3.5-3.5"></path>
+          </svg>
+        </span>
+        <input id="wh-search-input" class="input search-input" type="text" autocomplete="off"
+               placeholder="搜索用户 QQ 号 / 用户名称…" />
+        <div id="wh-search-dropdown" class="search-dropdown hidden"></div>
+      </div>
+    </div>
+    <div class="panel-head-actions">
+      <button id="wh-reload-btn" type="button" class="btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+          <path d="M21 3v6h-6"></path>
+        </svg>
+        刷新
+      </button>
     </div>
   </div>
 
-  <!-- Header summary -->
-  <div id="wh-summary" style="display:none; padding:12px 18px; border:1px solid var(--color-border, #e2e8f0); border-radius:12px; background:var(--color-surface, #fff);">
-    <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:baseline;">
-      <div>
-        <span style="font-size:12px; color:var(--color-text-muted, #64748b);">用户：</span>
-        <span id="wh-summary-name" style="font-weight:700; font-size:15px;"></span>
-        <span id="wh-summary-qq" style="font-size:12px; color:var(--color-text-muted, #94a3b8);"></span>
-      </div>
-      <div>
-        <span style="font-size:12px; color:var(--color-text-muted, #64748b);">已使用：</span>
-        <span id="wh-summary-used" style="font-weight:700;"></span>
-        <span style="color:var(--color-text-muted, #94a3b8);"> / </span>
-        <span id="wh-summary-capacity" style="color:var(--color-text-muted, #94a3b8);"></span>
-      </div>
+  <div id="wh-summary" class="warehouse-summary hidden">
+    <div class="summary-chip">
+      <span>用户：</span><strong id="wh-summary-name">—</strong>
+    </div>
+    <div class="summary-chip">
+      <span>QQ：</span><strong id="wh-summary-qq">—</strong>
+    </div>
+    <div class="summary-chip">
+      <span>已使用：</span><strong id="wh-summary-used">0</strong>
+      <span> / </span><strong id="wh-summary-capacity">100</strong>
     </div>
   </div>
 
-  <!-- Grid container -->
-  <div id="wh-grid-card"
-       style="display:none; padding:14px; border:1px solid var(--color-border, #e2e8f0); border-radius:12px; background:var(--color-surface, #fff);">
-    <div id="wh-grid"
-         style="display:grid; grid-template-columns:repeat(10, 1fr); gap:8px;"></div>
+  <div id="wh-alert" class="alert hidden" role="status" aria-live="polite">
+    <span id="wh-alert-message" class="alert-message"></span>
   </div>
 
-  <!-- Empty state -->
-  <div id="wh-empty" style="padding:48px; text-align:center; color:var(--color-text-muted, #94a3b8);">
-    在上方搜索框输入 QQ 号或用户名，从下拉列表中选择用户开始管理。
+  <div id="wh-grid-card" class="warehouse-grid-card hidden">
+    <div id="wh-grid" class="wh-grid"></div>
   </div>
 
-  <!-- Alert -->
-  <div id="wh-alert" class="alert hidden" role="alert" style="display:none; padding:10px 14px; border-radius:8px; font-size:13px;"></div>
-
+  <div id="wh-empty" class="empty">
+    在上方输入用户 QQ 号或用户名称搜索，从下拉列表中选择用户开始管理。
+  </div>
 </section>
 
-<!-- Slot edit modal -->
-<div id="wh-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="wh-modal-title"
-     style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:1000; align-items:center; justify-content:center;">
-  <div class="modal-content" style="background:var(--color-surface, #fff); border-radius:12px; width:min(480px, calc(100vw - 32px)); padding:20px; box-shadow:0 20px 50px rgba(0,0,0,0.3);">
-    <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-      <h3 id="wh-modal-title" class="modal-title" style="margin:0; font-size:18px; font-weight:700;">编辑物品</h3>
-      <button id="wh-modal-close" type="button" aria-label="关闭" style="background:none; border:none; font-size:22px; cursor:pointer; color:#94a3b8;">×</button>
+<div id="wh-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="wh-modal-title">
+  <div class="modal-mask" data-modal-close="wh-modal"></div>
+  <div class="modal-card modal-card-narrow">
+    <div class="modal-head">
+      <h3 id="wh-modal-title" class="modal-title">编辑物品</h3>
+      <button type="button" class="btn btn-icon modal-close-btn" data-modal-close="wh-modal" aria-label="关闭">✕</button>
     </div>
-
-    <div id="wh-modal-alert" class="alert hidden" role="alert" style="display:none; padding:8px 12px; margin-bottom:12px; border-radius:6px; font-size:13px;"></div>
-
-    <form id="wh-modal-form" style="display:flex; flex-direction:column; gap:12px;">
-      <div>
-        <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px;">格子 ID</label>
-        <input id="wh-field-slot" type="text" readonly
-               style="width:100%; padding:8px 12px; border:1px solid #e2e8f0; border-radius:6px; background:#f8fafc; font-size:14px;" />
-      </div>
-      <div>
-        <label for="wh-field-item-id" style="display:block; font-size:12px; font-weight:600; margin-bottom:4px;">物品 ID</label>
-        <input id="wh-field-item-id" type="number" min="1" required
-               style="width:100%; padding:8px 12px; border:1px solid #e2e8f0; border-radius:6px; font-size:14px;" />
-      </div>
-      <div>
-        <label for="wh-field-prefix-id" style="display:block; font-size:12px; font-weight:600; margin-bottom:4px;">前缀 ID（0 = 无前缀）</label>
-        <input id="wh-field-prefix-id" type="number" min="0" value="0" required
-               style="width:100%; padding:8px 12px; border:1px solid #e2e8f0; border-radius:6px; font-size:14px;" />
-      </div>
-      <div>
-        <label for="wh-field-quantity" style="display:block; font-size:12px; font-weight:600; margin-bottom:4px;">数量</label>
-        <input id="wh-field-quantity" type="number" min="1" value="1" required
-               style="width:100%; padding:8px 12px; border:1px solid #e2e8f0; border-radius:6px; font-size:14px;" />
-      </div>
-      <div>
-        <label for="wh-field-value" style="display:block; font-size:12px; font-weight:600; margin-bottom:4px;">单价（金币 / 件，0 表示无价值不可回收）</label>
-        <input id="wh-field-value" type="number" min="0" value="0" required
-               style="width:100%; padding:8px 12px; border:1px solid #e2e8f0; border-radius:6px; font-size:14px;" />
-      </div>
-      <div>
-        <label for="wh-field-min-tier" style="display:block; font-size:12px; font-weight:600; margin-bottom:4px;">最低进度</label>
-        <select id="wh-field-min-tier" required
-                style="width:100%; padding:8px 12px; border:1px solid #e2e8f0; border-radius:6px; font-size:14px; background:#fff;"></select>
-      </div>
-
-      <div class="modal-actions" style="display:flex; justify-content:space-between; gap:8px; margin-top:8px;">
-        <button id="wh-modal-delete" type="button"
-                style="padding:8px 14px; border:1px solid #fecaca; color:#dc2626; background:#fff; border-radius:6px; cursor:pointer; font-weight:600; display:none;">删除</button>
-        <div style="display:flex; gap:8px; margin-left:auto;">
-          <button id="wh-modal-cancel" type="button"
-                  style="padding:8px 14px; border:1px solid #e2e8f0; background:#fff; border-radius:6px; cursor:pointer;">取消</button>
-          <button id="wh-modal-save" type="submit"
-                  style="padding:8px 14px; background:#3b82f6; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600;">保存</button>
-        </div>
+    <div id="wh-modal-alert" class="alert hidden modal-alert" role="status" aria-live="polite">
+      <span class="alert-message"></span>
+    </div>
+    <form id="wh-modal-form" class="modal-body">
+      <div class="form-grid">
+        <label class="form-item form-item-full">
+          <span class="form-label">格子 ID</span>
+          <input id="wh-field-slot" class="input" type="text" readonly />
+        </label>
+        <label class="form-item">
+          <span class="form-label">物品 ID<span class="form-required">*</span></span>
+          <input id="wh-field-item-id" class="input" type="number" min="1" required />
+        </label>
+        <label class="form-item">
+          <span class="form-label">前缀 ID（0 = 无前缀）</span>
+          <input id="wh-field-prefix-id" class="input" type="number" min="0" value="0" />
+        </label>
+        <label class="form-item">
+          <span class="form-label">数量<span class="form-required">*</span></span>
+          <input id="wh-field-quantity" class="input" type="number" min="1" value="1" required />
+        </label>
+        <label class="form-item">
+          <span class="form-label">单价（金币 / 件，0 = 不可回收）</span>
+          <input id="wh-field-value" class="input" type="number" min="0" value="0" />
+        </label>
+        <label class="form-item form-item-full">
+          <span class="form-label">最低进度<span class="form-required">*</span></span>
+          <select id="wh-field-min-tier" class="select" required></select>
+        </label>
       </div>
     </form>
+    <div class="modal-foot">
+      <button id="wh-modal-delete" type="button" class="btn btn-danger hidden">删除</button>
+      <div class="modal-foot-spacer"></div>
+      <button type="button" class="btn" data-modal-close="wh-modal">取消</button>
+      <button id="wh-modal-save" type="submit" form="wh-modal-form" class="btn btn-primary">保存</button>
+    </div>
+  </div>
+</div>
+
+<div id="wh-delete-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="wh-delete-title">
+  <div class="modal-mask" data-modal-close="wh-delete-modal"></div>
+  <div class="modal-card confirm-modal-card">
+    <div class="modal-head">
+      <h3 id="wh-delete-title" class="modal-title">删除物品</h3>
+      <button type="button" class="btn btn-icon modal-close-btn" data-modal-close="wh-delete-modal" aria-label="关闭">✕</button>
+    </div>
+    <div id="wh-delete-alert" class="alert hidden modal-alert" role="status" aria-live="polite">
+      <span class="alert-message"></span>
+    </div>
+    <div class="modal-body confirm-modal-body">
+      <p class="confirm-modal-text">
+        确定清空格子「<span id="wh-delete-slot" class="confirm-modal-highlight"></span>」吗？此操作不可恢复。
+      </p>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn" data-modal-close="wh-delete-modal">取消</button>
+      <button id="wh-delete-confirm" type="button" class="btn btn-danger">确认删除</button>
+    </div>
   </div>
 </div>
