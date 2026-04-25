@@ -1,0 +1,53 @@
+# nextbot + NapCat (QQ adapter) reference stack.
+#
+# 1. First boot:  `docker compose up -d napcat`
+#    Open http://<host>:6099 to scan the QR code with the QQ phone client and
+#    log the bot account in. NapCat's WebUI exposes the WS server settings —
+#    enable a forward WS server on port 3001 (default below).
+#
+# 2. Edit `./data/.env` (auto-created on first nextbot launch) to set:
+#       ONEBOT_WS_URLS=["ws://napcat:3001"]
+#       ONEBOT_ACCESS_TOKEN=<must match the token configured in NapCat>
+#       OWNER_ID=[<your QQ number>]
+#       GROUP_ID=[<group ids the bot listens to>]
+#       WEB_SERVER_PUBLIC_BASE_URL=http://<your host>:18081
+#
+# 3. Start everything:  `docker compose up -d`
+#    Admin WebUI at http://<host>:18081/webui (token printed in
+#    `./data/.webui_auth.json`).
+
+services:
+  nextbot:
+    image: ghcr.io/arispex/nextbot:latest
+    container_name: nextbot
+    restart: unless-stopped
+    depends_on:
+      - napcat
+    ports:
+      - "18081:18081"
+    volumes:
+      - ./data:/app/data
+    environment:
+      TZ: Asia/Shanghai
+    networks:
+      - nextbot-net
+
+  napcat:
+    image: mlikiowa/napcat-docker:latest
+    container_name: napcat
+    restart: unless-stopped
+    ports:
+      - "6099:6099"   # NapCat web dashboard (QR login + adapter config)
+      - "3001:3001"   # OneBot V11 forward WS exposed by NapCat
+    volumes:
+      - ./napcat/QQ:/app/.config/QQ          # QQ 登录态 / Bot Cookie，持久化以免下次扫码
+      - ./napcat/config:/app/napcat/config   # NapCat 主配置
+      - ./napcat/plugins:/app/napcat/plugins # NapCat 插件目录
+    environment:
+      TZ: Asia/Shanghai
+    networks:
+      - nextbot-net
+
+networks:
+  nextbot-net:
+    driver: bridge

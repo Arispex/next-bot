@@ -1,0 +1,49 @@
+# Git metadata
+.git
+.gitignore
+.gitattributes
+
+# CI / GitHub
+.github
+
+# Python build artefacts
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.egg-info
+build/
+dist/
+
+# Tooling caches
+.pytest_cache
+.ruff_cache
+.mypy_cache
+
+# Local virtualenvs (the image builds a fresh one)
+.venv
+venv
+env
+
+# IDE / editor
+.vscode
+.idea
+*.swp
+*.swo
+
+# Persistent state — must be supplied via volume, never baked in
+.env
+.env.*
+app.db
+app.db-journal
+.webui_auth.json
+
+# Project-specific tooling
+.trellis
+
+# Claude / agent harness
+.claude
+
+# Misc
+.DS_Store
+*.log
