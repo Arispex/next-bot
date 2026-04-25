@@ -196,14 +196,13 @@ async def handle_lottery_list(bot: Bot, event: Event, arg: Message = CommandArg(
             .all()
         )
         all_entries: list[dict[str, object]] = []
-        for idx, pool in enumerate(pools, 1):
+        for pool in pools:
             count = (
                 session.query(LotteryPrize)
                 .filter(LotteryPrize.pool_id == pool.id, LotteryPrize.enabled.is_(True))
                 .count()
             )
             all_entries.append({
-                "display_index": idx,
                 "pool_id": int(pool.id),
                 "name": str(pool.name),
                 "description": str(pool.description or ""),
@@ -315,9 +314,8 @@ async def handle_lottery_view(bot: Bot, event: Event, arg: Message = CommandArg(
         prob_by_id = {p.id: prob for p, prob in resolved}
 
         all_entries: list[dict[str, object]] = []
-        for idx, prize in enumerate(prizes, 1):
+        for prize in prizes:
             entry: dict[str, object] = {
-                "display_index": idx,
                 "name": str(prize.name),
                 "description": str(prize.description or ""),
                 "kind": str(prize.kind),

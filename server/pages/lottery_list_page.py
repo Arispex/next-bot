@@ -16,21 +16,18 @@ def _normalize_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if not isinstance(raw, dict):
             continue
         try:
-            display_index = int(raw.get("display_index", 0))
             pool_id = int(raw.get("pool_id", 0))
             prize_count = max(0, int(raw.get("prize_count", 0)))
             cost_per_draw = max(0, int(raw.get("cost_per_draw", 0)))
         except (TypeError, ValueError):
             continue
         out.append({
-            "display_index": display_index,
             "pool_id": pool_id,
             "name": str(raw.get("name", "")).strip() or "未命名奖池",
             "description": str(raw.get("description", "")).strip(),
             "prize_count": prize_count,
             "cost_per_draw": cost_per_draw,
         })
-    out.sort(key=lambda e: e["display_index"])
     return out
 
 

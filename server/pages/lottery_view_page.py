@@ -20,12 +20,10 @@ def _normalize_prizes(prizes: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if kind not in {"item", "command", "coin"}:
             continue
         try:
-            display_index = int(raw.get("display_index", 0))
             probability = float(raw.get("probability", 0.0))
         except (TypeError, ValueError):
             continue
         entry: dict[str, Any] = {
-            "display_index": display_index,
             "name": str(raw.get("name", "")).strip(),
             "description": str(raw.get("description", "")).strip(),
             "kind": kind,
@@ -63,7 +61,6 @@ def _normalize_prizes(prizes: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 coin_amount = 0
             entry["coin_amount"] = coin_amount
         out.append(entry)
-    out.sort(key=lambda e: e["display_index"])
     return out
 
 
