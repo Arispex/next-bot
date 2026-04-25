@@ -88,6 +88,7 @@ def build_payload(
     total_cost: int,
     coin_delta: int,
     outcomes: list[dict[str, Any]],
+    item_value_gained: int = 0,
     item_slots_used: int = 0,
     command_results: list[dict[str, Any]] | None = None,
     theme: str = "light",
@@ -104,6 +105,7 @@ def build_payload(
         "draw_count": max(1, int(draw_count)),
         "total_cost": int(total_cost),
         "coin_delta": int(coin_delta),
+        "item_value_gained": max(0, int(item_value_gained)),
         "outcomes": normalized,
         "item_slots_used": int(item_slots_used),
         "command_results": [
@@ -131,6 +133,7 @@ def render(payload: dict[str, Any]) -> bytes:
         "draw_count": int(payload.get("draw_count", 1)),
         "total_cost": int(payload.get("total_cost", 0)),
         "coin_delta": int(payload.get("coin_delta", 0)),
+        "item_value_gained": max(0, int(payload.get("item_value_gained", 0))),
         "outcomes": payload.get("outcomes", []),
         "item_slots_used": int(payload.get("item_slots_used", 0)),
         "command_results": payload.get("command_results", []),

@@ -583,8 +583,9 @@ async def handle_lottery_draw(bot: Bot, event: Event, arg: Message = CommandArg(
                     return
 
                 user.coins = current_coins - total_cost
-                # Insert item prizes
+                # Insert item prizes (tracking total appraised value gained)
                 slot_iter = iter(empty_slots)
+                item_value_gained = 0
                 for pid in item_prize_ids:
                     snap = prize_snapshots[pid]
                     count = bucket[pid]
@@ -595,6 +596,7 @@ async def handle_lottery_draw(bot: Bot, event: Event, arg: Message = CommandArg(
                     else:
                         per_pack = max(1, snap["quantity"])
                         unit_value = snap["unit_price"] // per_pack if per_pack > 0 else 0
+                    item_value_gained += unit_value * total_qty
                     session.add(WarehouseItem(
                         user_id=user_id,
                         slot_index=next(slot_iter),
@@ -622,6 +624,7 @@ async def handle_lottery_draw(bot: Bot, event: Event, arg: Message = CommandArg(
                 session.close()
     else:
         # No item prizes — still need to charge + apply coin prizes
+        item_value_gained = 0
         session = get_session()
         try:
             user = session.query(User).filter(User.user_id == user_id).first()
@@ -701,13 +704,15 @@ async def handle_lottery_draw(bot: Bot, event: Event, arg: Message = CommandArg(
         user_user_id=user_id, user_user_name=player_name,
         user_coins_after=final_coins, draw_count=draw_count,
         total_cost=total_cost, coin_delta=coin_delta,
+        item_value_gained=item_value_gained,
         outcomes=outcomes, item_slots_used=needed_slots,
         command_results=cmd_results, theme=resolve_render_theme(),
     )
     logger.info(
         f"抽奖结果渲染地址：user_id={user_id} pool_id={pool_id} draws={draw_count} "
-        f"cost={total_cost} coin_delta={coin_delta} item_slots={needed_slots} "
-        f"cmd_executions={len(cmd_results)} skipped={len(cmd_skip_reasons)} internal_url={page_url}"
+        f"cost={total_cost} coin_delta={coin_delta} item_value_gained={item_value_gained} "
+        f"item_slots={needed_slots} cmd_executions={len(cmd_results)} "
+        f"skipped={len(cmd_skip_reasons)} internal_url={page_url}"
     )
 
     screenshot_path = Path("/tmp") / f"lottery-result-{pool_id}-{beijing_filename_timestamp()}.png"

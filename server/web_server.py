@@ -306,6 +306,7 @@ def create_lottery_result_page(
     total_cost: int,
     coin_delta: int,
     outcomes: list[dict[str, Any]],
+    item_value_gained: int = 0,
     item_slots_used: int = 0,
     command_results: list[dict[str, Any]] | None = None,
     theme: str = "light",
@@ -314,7 +315,8 @@ def create_lottery_result_page(
         pool_id=pool_id, pool_name=pool_name,
         user_user_id=user_user_id, user_user_name=user_user_name,
         user_coins_after=user_coins_after, draw_count=draw_count,
-        total_cost=total_cost, coin_delta=coin_delta, outcomes=outcomes,
+        total_cost=total_cost, coin_delta=coin_delta,
+        item_value_gained=item_value_gained, outcomes=outcomes,
         item_slots_used=item_slots_used, command_results=command_results,
         theme=theme,
     )
