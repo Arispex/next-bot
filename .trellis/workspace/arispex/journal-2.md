@@ -718,3 +718,135 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 64: 奖池系统 #N 清理 + 抽奖系统使用教程 + v1.4.0 release
+
+**Date**: 2026-04-25
+**Task**: 奖池系统 #N 清理 + 抽奖系统使用教程 + v1.4.0 release
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+## 概要
+
+延续上一会话的 #N 清理思路把奖池系统也对齐；编写抽奖系统的使用教程；最后打 v1.4.0 tag 并发布 GitHub Release。
+
+## Commit 1：`refactor(lottery): drop decorative #N display_index from list and view images` (ce89fcf)
+
+### 起因
+上一会话刚完成商店系统的 #N → ID 统一后，用户指出奖池系统也存在同样问题。
+
+### 跟商店方案的差别
+| 层级 | 商店系统 | 奖池系统 |
+|---|---|---|
+| 顶层（list） | `#N` 删，`ID xx` 留 | 同 |
+| 详情（view） | `#N` 改为 `ID xx`（因 `购买商品` 用） | `#N` **直接删，无替代** |
+
+奖池详情不需要奖品 ID 是因为 `抽奖` 本质是随机抽取，从来不让用户指定具体奖品 —— 显示奖品 DB ID 反而是无用的内部信息。每个奖品行现在用「名称 + 类型徽章 + 概率」三件套自然区分。
+
+### 改动文件
+- `server/templates/lottery_list.html`：删除奖池卡片左侧 `#N` index-pill
+- `server/templates/lottery_view.html`：删除奖品行 `#N` index-pill
+- `server/pages/lottery_list_page.py`：payload 不再带 `display_index` 字段及排序
+- `server/pages/lottery_view_page.py`：同上（item / command / coin 三种 kind 都覆盖）
+- `nextbot/plugins/lottery.py`：`奖池列表` / `查看奖池` 两个 handler 都停止 emit `display_index`
+
+### 校验
+- ruff per-file vs HEAD baseline：74 = 74，净增 0
+- pyright：2 = 2，无新增（既有 `lottery.py:477` 的 `int | None` 类型问题）
+
+## Commit 2：`feat(tutorial): add 抽奖系统 walkthrough with verbatim bot replies` (0c23633)
+
+### 教程结构
+插入位置：第 4 位（介于「商店系统」和「红包系统」之间），形成自然的金币消费链顺序：仓库 → 商店 → 抽奖 → 红包 → 小游戏。
+
+| # | 标题 | 重点 |
+|---|---|---|
+| 1 | 什么是抽奖 | 三命令总览 + 三类奖品 + 「未中奖」概念 |
+| 2 | 看有哪些奖池 | `奖池列表 [页数]`，💰 / 次 价格徽章 |
+| 3 | 看奖池里有啥奖品 | `查看奖池 <ID/名称>`、概率列、未中奖率、神秘奖品盲盒 |
+| 4 | 真正抽一次 | `抽奖 <ID/名称> [次数]`、单/多抽、扣币时机、3 种抽中行为、3 个失败 mock |
+| 5 | 看懂抽奖结果图 | meta / 5 stat tiles / 稀有度配色 / 卡片角标 / 跳过指令的二次文本 |
+| 6 | 常见错误和提示 | 抽奖失败 + 查询失败 + 格式错误的 verbatim |
+
+### 校对方法
+- 通过 `feature-dev:code-explorer` 子 agent 对抽奖系统做深度分析（一次返回所有命令的 verbatim 回复字符串）
+- 直接读取 `lottery.py` 关键段落确认成功是 image-only（无附加文本）、跳过指令的二次消息格式 (`at + " ⚠️ 部分指令奖品已跳过：" + "；".join(...)`)
+- 7 条 mock 回复逐一对照源码验证字面一致
+
+### 抽奖教程相比商店教程的额外细节
+- 概率机制：解释了「全部奖品中奖率加起来 < 100% 时多出来的部分 = 未中奖」
+- 稀有度配色：把图片里星星颜色跟概率档位明确对应（≤1% 金 / ≤5% 紫 / ≤15% 蓝 / ≤40% 绿 / 其余白）
+- 奖品估值正负：明确说明这是「金币奖品净额 + 物品估价总和」，可以是负数
+- 扣币时机 + 不退款：抽中的指令奖品在 TShock 侧失败不退款这个坑专门 warn 出来
+- 跳过指令的二次消息：抽奖成功是 image-only，但跳过指令时会跟着发一条文本
+
+## v1.4.0 Release
+
+### Tag 和推送
+- `git tag v1.4.0 0c23633` (lightweight tag，跟 v1.2.0 / v1.3.0 同样风格)
+- `git push origin main v1.4.0` —— 40 个本地提交全部上行 + tag 同步推送
+
+### Release Notes 编写过程
+- 草稿 v1：列出全部三大系统 + 5 个教程 + 修复 + 改进
+- 用户反馈：「修复」段不应该列仓库 / 商店并发漏洞、显示对齐这些 —— 因为这些功能在 v1.3.0 根本不存在，对用户来说没有「之前 vs 现在」对比
+- 草稿 v2：删掉所有针对新功能的修复和改进；保留唯一一条对 v1.3.0 已有功能的修复（`使用教程` 默认 guest 权限），合并到「使用教程扩展」段末尾；「改进」段只保留两条真正修改既有命令行为的（命令占位符标准化、管理类回复字段化）
+
+### 发布
+- `gh release create v1.4.0 --title "v1.4.0" --notes "..."` 直接挂 GitHub Release
+- URL: https://github.com/Arispex/nextbot/releases/tag/v1.4.0
+
+## v1.4.0 release 范围回顾
+
+从 v1.3.0 → v1.4.0 共 40 个 commit，对外可感知的内容：
+
+**三大金币消费系统首次发布**
+- 📦 仓库系统：100 格仓库 + 格子表达式 + 领取 / 回收 / 丢弃
+- 🛒 商店系统：物品 / 指令两类商品、神秘盲盒、进度门槛、单服 / 全服等
+- 🎰 抽奖系统：item / command / coin 三类奖品、gacha 风格结果图、稀有度配色
+
+**5 个使用教程**
+仓库 / 商店 / 抽奖 / 红包 / 小游戏，全部图文渲染。
+
+**菜单调整**
+猜数字 / 掷骰子 / 抢劫拆出独立的「小游戏系统」分类。
+
+**已有功能修复 + 改进**
+- 修复 `使用教程` guest 权限
+- 命令占位符标准化
+- 管理类回复字段化
+
+## 文件清单总计
+
+| 文件 | 改动 |
+|---|---|
+| `nextbot/plugins/lottery.py` | 两个 handler 移除 display_index |
+| `nextbot/plugins/tutorial_data.py` | 抽奖系统教程条目（+76 行） |
+| `server/pages/lottery_list_page.py` | 移除 display_index |
+| `server/pages/lottery_view_page.py` | 移除 display_index |
+| `server/templates/lottery_list.html` | 删除 #N pill |
+| `server/templates/lottery_view.html` | 删除 #N pill |
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ce89fcf` | (see git log) |
+| `0c23633` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

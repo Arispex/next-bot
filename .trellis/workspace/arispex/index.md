@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 63
+- **Total Sessions**: 64
 - **Last Active**: 2026-04-25
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~720 | Active |
+| `journal-2.md` | ~852 | Active |
 | `journal-1.md` | ~1999 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits |
 |---|------|-------|---------|
+| 64 | 2026-04-25 | 奖池系统 #N 清理 + 抽奖系统使用教程 + v1.4.0 release | `ce89fcf`, `0c23633` |
 | 63 | 2026-04-25 | 商店系统使用教程编写 + 商店/商品标识符统一为稳定 DB ID | `7c1dd03`, `18e85d0` |
 | 62 | 2026-04-25 | 抽奖结果页 UI 重构 + 奖品估值口径修正 | `1526e16`, `008b7b9` |
 | 61 | 2026-04-23 | 新增「使用教程 仓库系统」并收紧仓库截图高度 | `0955d45`, `6d11b04` |
