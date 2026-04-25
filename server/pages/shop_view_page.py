@@ -20,12 +20,12 @@ def _normalize_items(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if kind not in {"item", "command"}:
             continue
         try:
-            display_index = int(raw.get("display_index", 0))
+            shop_item_id = int(raw.get("shop_item_id", 0))
             price = max(0, int(raw.get("price", 0)))
         except (TypeError, ValueError):
             continue
         entry: dict[str, Any] = {
-            "display_index": display_index,
+            "shop_item_id": shop_item_id,
             "name": str(raw.get("name", "")).strip(),
             "description": str(raw.get("description", "")).strip(),
             "kind": kind,
@@ -57,7 +57,6 @@ def _normalize_items(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "command_template": str(raw.get("command_template", "")),
             })
         out.append(entry)
-    out.sort(key=lambda e: e["display_index"])
     return out
 
 

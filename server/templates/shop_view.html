@@ -248,7 +248,7 @@
         idx.style.fontWeight = "700";
         idx.style.padding = "2px 8px";
         idx.style.borderRadius = "6px";
-        idx.textContent = "#" + it.display_index;
+        idx.textContent = "ID " + it.shop_item_id;
         head.appendChild(idx);
 
         const name = document.createElement("span");
@@ -347,7 +347,7 @@
         const buyHint = document.createElement("div");
         buyHint.className = "item-meta";
         buyHint.style.fontSize = "11px";
-        buyHint.textContent = "购买商品 " + (data.shop_id || "-") + " " + it.display_index;
+        buyHint.textContent = "购买商品 " + (data.shop_id || "-") + " " + it.shop_item_id;
         right.appendChild(buyHint);
 
         row.appendChild(right);

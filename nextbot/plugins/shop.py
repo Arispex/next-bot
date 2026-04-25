@@ -175,14 +175,13 @@ async def handle_shop_list(bot: Bot, event: Event, arg: Message = CommandArg()) 
             .all()
         )
         all_entries: list[dict[str, object]] = []
-        for idx, shop in enumerate(shops, 1):
+        for shop in shops:
             count = (
                 session.query(ShopItem)
                 .filter(ShopItem.shop_id == shop.id, ShopItem.enabled.is_(True))
                 .count()
             )
             all_entries.append({
-                "display_index": idx,
                 "shop_id": int(shop.id),
                 "name": str(shop.name),
                 "description": str(shop.description or ""),
@@ -298,9 +297,9 @@ async def handle_shop_view(bot: Bot, event: Event, arg: Message = CommandArg()) 
             int(s.id): str(s.name) for s in session.query(Server).all()
         }
         all_entries = []
-        for idx, it in enumerate(items, 1):
+        for it in items:
             entry = {
-                "display_index": idx,
+                "shop_item_id": int(it.id),
                 "name": str(it.name),
                 "description": str(it.description or ""),
                 "kind": str(it.kind),
@@ -380,7 +379,7 @@ async def handle_shop_view(bot: Bot, event: Event, arg: Message = CommandArg()) 
     display_name="购买商品",
     permission="shop.buy",
     description="购买某个商店的指定商品；物品送入仓库，指令立即执行",
-    usage="购买商品 <商店 ID> <商品序号> [数量]",
+    usage="购买商品 <商店 ID> <商品 ID> [数量]",
     category="商店系统",
 )
 @require_permission("shop.buy")
@@ -394,30 +393,34 @@ async def handle_shop_buy(bot: Bot, event: Event, arg: Message = CommandArg()) -
 
     try:
         shop_id = int(args[0])
-        display_index = int(args[1])
+        shop_item_id = int(args[1])
         buy_count = int(args[2]) if len(args) == 3 else 1
     except ValueError:
-        await bot.send(event, at + " " + reply_failure("购买", "商店 ID、商品序号、数量必须为正整数"))
+        await bot.send(event, at + " " + reply_failure("购买", "商店 ID、商品 ID、数量必须为正整数"))
         return
-    if shop_id < 1 or display_index < 1 or buy_count < 1:
-        await bot.send(event, at + " " + reply_failure("购买", "商店 ID、商品序号、数量必须为正整数"))
+    if shop_id < 1 or shop_item_id < 1 or buy_count < 1:
+        await bot.send(event, at + " " + reply_failure("购买", "商店 ID、商品 ID、数量必须为正整数"))
         return
 
-    # First pass: load shop, validate, pick the target item by display_index
+    # First pass: load shop, validate, pick the target item by shop_item_id
     session = get_session()
     try:
         shop = session.query(Shop).filter(Shop.id == shop_id).first()
         if shop is None or not shop.enabled:
             await bot.send(event, at + " " + reply_failure("购买", "商店不存在或未上架"))
             return
-        items = _list_active_items(session, shop_id)
-        if display_index > len(items):
-            await bot.send(
-                event,
-                at + " " + reply_failure("购买", f"商品序号超出范围（共 {len(items)} 件）"),
+        target = (
+            session.query(ShopItem)
+            .filter(
+                ShopItem.id == shop_item_id,
+                ShopItem.shop_id == shop_id,
+                ShopItem.enabled.is_(True),
             )
+            .first()
+        )
+        if target is None:
+            await bot.send(event, at + " " + reply_failure("购买", "商品不存在或未上架"))
             return
-        target = items[display_index - 1]
         target_id = int(target.id)
         target_name = str(target.name)
         target_kind = str(target.kind)

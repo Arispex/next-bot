@@ -16,19 +16,16 @@ def _normalize_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if not isinstance(raw, dict):
             continue
         try:
-            display_index = int(raw.get("display_index", 0))
             shop_id = int(raw.get("shop_id", 0))
             item_count = max(0, int(raw.get("item_count", 0)))
         except (TypeError, ValueError):
             continue
         out.append({
-            "display_index": display_index,
             "shop_id": shop_id,
             "name": str(raw.get("name", "")).strip() or "未命名商店",
             "description": str(raw.get("description", "")).strip(),
             "item_count": item_count,
         })
-    out.sort(key=lambda e: e["display_index"])
     return out
 
 
