@@ -487,6 +487,7 @@ async def handle_lottery_draw(bot: Bot, event: Event, arg: Message = CommandArg(
             {"id": int(s.id), "name": str(s.name)} for s in session.query(Server).all()
         ]
         resolved, miss_pct = _resolve_probabilities(prizes)
+        draw_prob_by_id = {int(p.id): float(prob) for p, prob in resolved}
     finally:
         session.close()
 
@@ -674,7 +675,10 @@ async def handle_lottery_draw(bot: Bot, event: Event, arg: Message = CommandArg(
     )
     for pid, count in items_sorted:
         if pid is None:
-            outcomes.append({"kind": "miss", "count": count, "name": "谢谢参与"})
+            outcomes.append({
+                "kind": "miss", "count": count, "name": "谢谢参与",
+                "probability": float(miss_pct),
+            })
         else:
             snap = prize_snapshots[pid]
             entry: dict[str, object] = {
@@ -682,6 +686,7 @@ async def handle_lottery_draw(bot: Bot, event: Event, arg: Message = CommandArg(
                 "count": count,
                 "name": snap["name"],
                 "is_mystery": snap["is_mystery"],
+                "probability": float(draw_prob_by_id.get(pid, 0.0)),
             }
             if snap["kind"] == "item":
                 entry["item_id"] = snap["item_id"]

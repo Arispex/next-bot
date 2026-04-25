@@ -9,6 +9,28 @@ from nextbot.time_utils import beijing_now_text
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 TEMPLATE_PATH = BASE_DIR / "server" / "templates" / "lottery_result.html"
 
+# Rarity tier thresholds — upper bound (inclusive) of draw probability percent.
+# Bucket: 0=miss, 1=common, 2=uncommon, 3=rare, 4=epic, 5=legendary.
+_TIER_LEGENDARY_MAX_PCT = 1.0
+_TIER_EPIC_MAX_PCT = 5.0
+_TIER_RARE_MAX_PCT = 15.0
+_TIER_UNCOMMON_MAX_PCT = 40.0
+
+
+def _rarity_tier(kind: str, prob_pct: float) -> int:
+    """Map (kind, draw probability %) to a 0-5 rarity tier."""
+    if kind == "miss":
+        return 0
+    if prob_pct <= _TIER_LEGENDARY_MAX_PCT:
+        return 5
+    if prob_pct <= _TIER_EPIC_MAX_PCT:
+        return 4
+    if prob_pct <= _TIER_RARE_MAX_PCT:
+        return 3
+    if prob_pct <= _TIER_UNCOMMON_MAX_PCT:
+        return 2
+    return 1
+
 
 def _normalize_outcomes(outcomes: list[dict[str, Any]]) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
@@ -22,11 +44,18 @@ def _normalize_outcomes(outcomes: list[dict[str, Any]]) -> list[dict[str, Any]]:
             count = max(1, int(raw.get("count", 1)))
         except (TypeError, ValueError):
             continue
+        try:
+            probability = float(raw.get("probability", 0.0))
+        except (TypeError, ValueError):
+            probability = 0.0
+        probability = max(0.0, min(100.0, probability))
         entry: dict[str, Any] = {
             "kind": kind,
             "count": count,
             "name": str(raw.get("name", "")).strip(),
             "is_mystery": bool(raw.get("is_mystery", False)),
+            "probability": probability,
+            "rarity_tier": _rarity_tier(kind, probability),
         }
         if kind == "item":
             try:
@@ -43,6 +72,8 @@ def _normalize_outcomes(outcomes: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 continue
             entry["total_coin"] = entry["coin_amount"] * count
         out.append(entry)
+    # Sort by rarity desc, then count desc (rarest big-count first)
+    out.sort(key=lambda e: (-e["rarity_tier"], -e["count"]))
     return out
 
 
