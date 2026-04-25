@@ -4,9 +4,10 @@ import json
 import secrets
 import threading
 from dataclasses import dataclass
-from pathlib import Path
 
 from nonebot import get_driver
+
+from nextbot.data_dir import DATA_DIR
 
 
 @dataclass(frozen=True)
@@ -24,8 +25,7 @@ class WebServerSettings:
 _settings_lock = threading.Lock()
 _cached_settings: WebServerSettings | None = None
 _WEBUI_AUTH_FILENAME = ".webui_auth.json"
-_PROJECT_ROOT = Path(__file__).resolve().parent.parent
-_WEBUI_AUTH_FILE = _PROJECT_ROOT / _WEBUI_AUTH_FILENAME
+_WEBUI_AUTH_FILE = DATA_DIR / _WEBUI_AUTH_FILENAME
 
 
 def _parse_port(raw_value: object, default: int = 18081) -> int:

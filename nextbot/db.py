@@ -9,10 +9,11 @@ from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text, UniqueCo
 from sqlalchemy.engine import Engine, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
+from nextbot.data_dir import DATA_DIR
 from nextbot.time_utils import db_now_utc_naive
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DB_PATH = BASE_DIR / "app.db"
+DB_PATH = DATA_DIR / "app.db"
 DATABASE_URL = f"sqlite:///{DB_PATH}"
 STAT_COMMAND_EXECUTE_TOTAL = "command.execute.total"
 

@@ -1,6 +1,5 @@
 import json
 import nonebot
-from pathlib import Path
 from nonebot.adapters.console import Adapter as ConsoleAdapter
 from nonebot.adapters.onebot.v11 import Adapter as OneBotV11Adapter
 from nonebot.adapters import Event
@@ -9,6 +8,7 @@ from nonebot.log import logger
 from nonebot.message import event_preprocessor
 
 from nextbot.command_config import sync_registered_commands_to_db
+from nextbot.data_dir import DATA_DIR
 from nextbot.signin_reset import start_signin_reset_worker
 from server.web_server import start_web_server
 from nextbot.access_control import get_group_ids, get_owner_ids
@@ -30,7 +30,7 @@ from nextbot.db import (
     init_db,
 )
 
-ENV_PATH = Path(__file__).resolve().parent / ".env"
+ENV_PATH = DATA_DIR / ".env"
 DEFAULT_ENV_CONTENT = (
     "DRIVER=~websockets\n"
     "LOCALSTORE_USE_CWD=true\n"

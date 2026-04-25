@@ -4,14 +4,14 @@ import json
 import re
 import threading
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
 from nonebot import get_driver
 
-_PROJECT_ROOT = Path(__file__).resolve().parent.parent
-_ENV_PATH = _PROJECT_ROOT / ".env"
+from nextbot.data_dir import DATA_DIR
+
+_ENV_PATH = DATA_DIR / ".env"
 _WRITE_LOCK = threading.RLock()
 _ENV_KEY_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _QQ_ID_PATTERN = re.compile(r"^\d{5,20}$")
