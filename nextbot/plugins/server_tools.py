@@ -65,7 +65,7 @@ def _extract_response_text(payload: dict[str, object]) -> str:
     display_name="执行",
     permission="server_tools.execute",
     description="在指定服务器执行指令",
-    usage="执行 <服务器 ID> <命令>",
+    usage="执行 <服务器 ID> <TShock 命令>",
     category="服务器工具",
 )
 @require_permission("server_tools.execute")

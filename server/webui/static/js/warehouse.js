@@ -284,7 +284,7 @@
 
         const itemName = itemNameMap.get(Number(slot.item_id)) || ("ID:" + slot.item_id);
         const prefixId = Number(slot.prefix_id || 0);
-        const prefixName = prefixId > 0 ? (prefixNameMap.get(prefixId) || "前缀ID:" + prefixId) : "";
+        const prefixName = prefixId > 0 ? (prefixNameMap.get(prefixId) || "前缀 ID:" + prefixId) : "";
 
         if (prefixName) {
           const prefixEl = document.createElement("div");

@@ -81,7 +81,7 @@ def _item_display_name(item_id: int) -> str:
     global _item_name_map
     if _item_name_map is None:
         _item_name_map = _load_dict_file("item.json")
-    return _item_name_map.get(int(item_id), f"物品ID:{item_id}")
+    return _item_name_map.get(int(item_id), f"物品 ID:{item_id}")
 
 
 def _prefix_display_name(prefix_id: int) -> str:
@@ -90,7 +90,7 @@ def _prefix_display_name(prefix_id: int) -> str:
         _prefix_name_map = _load_dict_file("prefix.json")
     if int(prefix_id) <= 0:
         return ""
-    return _prefix_name_map.get(int(prefix_id), f"前缀ID:{prefix_id}")
+    return _prefix_name_map.get(int(prefix_id), f"前缀 ID:{prefix_id}")
 
 
 def _format_item_label(item_id: int, prefix_id: int, quantity: int) -> str:
@@ -276,7 +276,7 @@ async def handle_list_self(bot: Bot, event: Event, arg: Message = CommandArg()) 
     display_name="用户仓库",
     permission="warehouse.list_user",
     description="查看指定用户的仓库（网页渲染）",
-    usage="用户仓库 <用户名/QQ/@用户>",
+    usage="用户仓库 <用户 QQ/@用户/用户名称>",
     category="仓库系统",
 )
 @require_permission("warehouse.list_user")
@@ -323,7 +323,7 @@ async def handle_list_user(bot: Bot, event: Event, arg: Message = CommandArg()) 
     display_name="添加仓库物品",
     permission="warehouse.add",
     description="将物品添加到指定用户仓库的第一个空格",
-    usage="添加仓库物品 <用户名/QQ/@用户> <物品ID> <数量> <前缀ID> <进度> <价值>",
+    usage="添加仓库物品 <用户 QQ/@用户/用户名称> <物品 ID> <数量> <前缀 ID> <进度名称> <物品价值>",
     category="仓库系统",
 )
 @require_permission("warehouse.add")
@@ -487,7 +487,7 @@ async def handle_add(bot: Bot, event: Event, arg: Message = CommandArg()) -> Non
     display_name="删除仓库物品",
     permission="warehouse.remove",
     description="清空指定用户仓库的物品，支持单格 / 区间 / 列表 / 全部，单格可指定数量",
-    usage="删除仓库物品 <用户名/QQ/@用户> <格子表达式> [数量]",
+    usage="删除仓库物品 <用户 QQ/@用户/用户名称> <格子表达式> [数量]",
     category="仓库系统",
 )
 @require_permission("warehouse.remove")
@@ -1128,7 +1128,7 @@ async def _issue_give_command(
     display_name="领取仓库物品",
     permission="warehouse.claim_self",
     description="从仓库领取物品到指定服务器，需玩家在线且服务器进度满足要求",
-    usage="领取仓库物品 <服务器ID> <格子表达式> [数量]",
+    usage="领取仓库物品 <服务器 ID> <格子表达式> [数量]",
     category="仓库系统",
 )
 @require_permission("warehouse.claim_self")

@@ -171,7 +171,7 @@ async def handle_menu(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
             reply_list(
                 "命令菜单",
                 items,
-                hint="输入 `菜单 编号` 或 `菜单 分类名` 查看具体命令",
+                hint="输入 `菜单 分类编号` 或 `菜单 分类名` 查看具体命令",
             ),
         )
         return

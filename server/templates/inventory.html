@@ -348,8 +348,8 @@
 
     function buildItemHint(slot) {
       if (slot.netId <= 0) return "";
-      const itemName   = itemNameMap.get(slot.netId)   || `物品ID:${slot.netId}`;
-      const prefixName = slot.prefixId > 0 ? (prefixNameMap.get(slot.prefixId) || `前缀ID:${slot.prefixId}`) : "";
+      const itemName   = itemNameMap.get(slot.netId)   || `物品 ID:${slot.netId}`;
+      const prefixName = slot.prefixId > 0 ? (prefixNameMap.get(slot.prefixId) || `前缀 ID:${slot.prefixId}`) : "";
       return prefixName ? `${prefixName} ${itemName}` : itemName;
     }
 

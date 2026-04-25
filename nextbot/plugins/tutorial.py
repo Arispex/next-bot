@@ -63,7 +63,7 @@ async def handle_tutorial(bot: Bot, event: Event, arg: Message = CommandArg()) -
                 "使用教程",
                 items,
                 title_emoji=EMOJI_GUIDE,
-                hint="输入「使用教程 <名称或序号>」查看具体教程",
+                hint="输入「使用教程 <名称/序号>」查看具体教程",
             ),
         )
         return

@@ -23,7 +23,7 @@ rob_matcher = on_command("抢劫")
     display_name="抢劫",
     permission="economy.rob",
     description="抢劫其他用户的金币",
-    usage="抢劫 <用户名称/QQ/@用户>",
+    usage="抢劫 <用户 QQ/@用户/用户名称>",
     params={
         "cooldown_minutes": {
             "type": "int",

@@ -172,7 +172,7 @@ async def handle_shop_list(bot: Bot, event: Event, arg: Message = CommandArg()) 
             "商店列表",
             items,
             title_emoji=EMOJI_SHOP,
-            hint="查看：「查看商店 <商店 ID/商店名称>」 / 购买：「购买商品 <商店 ID> <序号> [数量]」",
+            hint="查看：「查看商店 <商店 ID/商店名称>」 / 购买：「购买商品 <商店 ID> <商品序号> [数量]」",
         ),
     )
 
@@ -183,7 +183,7 @@ async def handle_shop_list(bot: Bot, event: Event, arg: Message = CommandArg()) 
     display_name="查看商店",
     permission="shop.view",
     description="查看具体商店内容（图片）",
-    usage="查看商店 <商店 ID/名称>",
+    usage="查看商店 <商店 ID/商店名称>",
     category="商店系统",
 )
 @require_permission("shop.view")

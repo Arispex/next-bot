@@ -94,7 +94,7 @@ def _claim_slot_atomic(session, packet_id: int, draw_amount: int) -> bool:
     display_name="发红包",
     permission="economy.red_packet.send",
     description="发一个红包让别人抢",
-    usage="发红包 <平分/拼手气> <名称> <总金额> <个数>",
+    usage="发红包 <平分/拼手气> <红包名称> <红包总金额> <红包个数>",
     params={
         "max_count": {
             "type": "int",
@@ -219,7 +219,7 @@ async def handle_send(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     display_name="抢红包",
     permission="economy.red_packet.grab",
     description="凭红包名称抢红包",
-    usage="抢红包 <名称>",
+    usage="抢红包 <红包名称>",
     category="红包系统",
 )
 @require_permission("economy.red_packet.grab")
@@ -335,7 +335,7 @@ async def handle_grab(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     display_name="收回红包",
     permission="economy.red_packet.withdraw",
     description="收回自己发出的红包，剩余金额退回",
-    usage="收回红包 <名称>",
+    usage="收回红包 <红包名称>",
     category="红包系统",
 )
 @require_permission("economy.red_packet.withdraw")

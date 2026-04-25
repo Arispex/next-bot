@@ -234,7 +234,7 @@ async def handle_sign(bot: Bot, event: Event, arg: Message = CommandArg()) -> No
     display_name="转账",
     permission="economy.transfer",
     description="向其他用户转账金币",
-    usage="转账 <用户 QQ/@用户/用户名称> <数量>",
+    usage="转账 <用户 QQ/@用户/用户名称> <金币数量>",
     category="经济系统",
 )
 @require_permission("economy.transfer")
@@ -321,7 +321,7 @@ async def handle_transfer(bot: Bot, event: Event, arg: Message = CommandArg()) -
     display_name="添加金币",
     permission="economy.coins.add",
     description="为指定用户增加金币",
-    usage="添加金币 <用户 QQ/@用户/用户名称> <数量>",
+    usage="添加金币 <用户 QQ/@用户/用户名称> <金币数量>",
     category="经济系统",
 )
 @require_permission("economy.coins.add")
@@ -391,7 +391,7 @@ async def handle_add_coins(
     display_name="扣除金币",
     permission="economy.coins.remove",
     description="为指定用户扣减金币",
-    usage="扣除金币 <用户 QQ/@用户/用户名称> <数量>",
+    usage="扣除金币 <用户 QQ/@用户/用户名称> <金币数量>",
     category="经济系统",
 )
 @require_permission("economy.coins.remove")

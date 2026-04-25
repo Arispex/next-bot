@@ -47,7 +47,7 @@ def _parse_send_arg_text(text: str) -> tuple[int, str] | None:
     display_name="发送",
     permission="server.send",
     description="在指定服务器的游戏内广播一条 QQ 消息",
-    usage="发送 <服务器 ID> <内容>",
+    usage="发送 <服务器 ID> <消息内容>",
     category="服务器工具",
 )
 @require_permission("server.send")

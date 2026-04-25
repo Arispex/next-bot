@@ -26,7 +26,7 @@ _cooldown_map: dict[str, datetime] = {}
     display_name="猜数字",
     permission="economy.guess_number",
     description="猜数字小游戏，根据猜测与答案的接近程度获得不同倍率奖励",
-    usage="猜数字 <数字> <金币>",
+    usage="猜数字 <猜测数字> <投入金币>",
     params={
         "min_cost": {
             "type": "int",

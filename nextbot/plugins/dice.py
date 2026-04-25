@@ -33,7 +33,7 @@ _VALID_CHOICES = {"大", "小", "豹子"}
     display_name="掷骰子",
     permission="economy.dice",
     description="掷骰子小游戏，猜大小或豹子",
-    usage="掷骰子 <大/小/豹子> <金币>",
+    usage="掷骰子 <大/小/豹子> <投入金币>",
     params={
         "min_cost": {
             "type": "int",
