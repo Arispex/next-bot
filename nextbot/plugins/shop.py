@@ -33,14 +33,13 @@ from nextbot.text_utils import (
     EMOJI_WAREHOUSE,
     reply_block,
     reply_failure,
-    reply_list,
     reply_success,
 )
 from nextbot.time_utils import beijing_filename_timestamp, db_now_utc_naive
 from nextbot.tshock_api import TShockRequestError, get_error_reason, is_success, request_server_api
 from nextbot.warehouse_lock import warehouse_lock
 from server.screenshot import RenderScreenshotError, ScreenshotOptions, screenshot_url
-from server.web_server import create_shop_view_page
+from server.web_server import create_shop_list_page, create_shop_view_page
 
 shop_list_matcher = on_command("商店列表")
 shop_view_matcher = on_command("查看商店")
@@ -48,6 +47,12 @@ shop_buy_matcher = on_command("购买商品")
 
 SHOP_VIEW_SCREENSHOT_OPTIONS = ScreenshotOptions(
     viewport_width=1200,
+    viewport_height=600,
+    full_page=True,
+)
+
+SHOP_LIST_SCREENSHOT_OPTIONS = ScreenshotOptions(
+    viewport_width=900,
     viewport_height=600,
     full_page=True,
 )
@@ -127,15 +132,39 @@ def _find_first_empty_slot(session, user_id: str) -> int | None:
     command_key="shop.list",
     display_name="商店列表",
     permission="shop.list",
-    description="查看所有上架商店",
-    usage="商店列表",
+    description="查看所有上架商店（图片）",
+    usage="商店列表 [页数]",
+    params={
+        "limit": {
+            "type": "int",
+            "label": "每页条数",
+            "description": "每页显示的商店数量",
+            "required": False,
+            "default": 10,
+            "min": 1,
+            "max": 50,
+        },
+    },
     category="商店系统",
 )
 @require_permission("shop.list")
 async def handle_shop_list(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
     args = parse_command_args_with_fallback(event, arg, "商店列表")
-    if args:
+    if len(args) > 1:
         raise_command_usage()
+
+    page = 1
+    if args:
+        try:
+            page = int(args[0])
+        except ValueError:
+            await bot.send(event, reply_failure("查询", "页数必须为正整数"))
+            return
+        if page <= 0:
+            await bot.send(event, reply_failure("查询", "页数必须为正整数"))
+            return
+
+    limit = max(1, min(int(get_current_param("limit", 10)), 50))
 
     session = get_session()
     try:
@@ -145,37 +174,64 @@ async def handle_shop_list(bot: Bot, event: Event, arg: Message = CommandArg()) 
             .order_by(Shop.sort_order.asc(), Shop.id.asc())
             .all()
         )
-        rows: list[tuple[int, str, str, int]] = []
+        all_entries: list[dict[str, object]] = []
         for idx, shop in enumerate(shops, 1):
             count = (
                 session.query(ShopItem)
                 .filter(ShopItem.shop_id == shop.id, ShopItem.enabled.is_(True))
                 .count()
             )
-            rows.append((shop.id, str(shop.name), str(shop.description or ""), count))
+            all_entries.append({
+                "display_index": idx,
+                "shop_id": int(shop.id),
+                "name": str(shop.name),
+                "description": str(shop.description or ""),
+                "item_count": int(count),
+            })
     finally:
         session.close()
 
-    if not rows:
+    total = len(all_entries)
+    if total == 0:
         await bot.send(event, reply_failure("查询", "暂无可用商店"))
         return
 
-    items = []
-    for idx, (shop_id, name, desc, count) in enumerate(rows, 1):
-        line = f"🏪 {idx}. {name}（{count} 件 · ID {shop_id}）"
-        if desc:
-            line += f"\n   📝 {desc}"
-        items.append(line)
+    total_pages = max(1, math.ceil(total / limit))
+    if page > total_pages:
+        await bot.send(event, reply_failure("查询", f"超出总页数（共 {total_pages} 页）"))
+        return
+    offset = (page - 1) * limit
+    render_entries = all_entries[offset:offset + limit]
 
-    await bot.send(
-        event,
-        reply_list(
-            "商店列表",
-            items,
-            title_emoji=EMOJI_SHOP,
-            hint="查看：「查看商店 <商店 ID/商店名称> [页数]」 / 购买：「购买商品 <商店 ID> <商品序号> [数量]」",
-        ),
+    page_url = create_shop_list_page(
+        entries=render_entries,
+        page=page,
+        total_pages=total_pages,
+        total=total,
+        theme=resolve_render_theme(),
     )
+    logger.info(
+        f"商店列表渲染地址：page={page}/{total_pages} total={total} "
+        f"item_count={len(render_entries)} internal_url={page_url}"
+    )
+
+    screenshot_path = Path("/tmp") / f"shop-list-{beijing_filename_timestamp()}.png"
+    try:
+        await screenshot_url(page_url, screenshot_path, options=SHOP_LIST_SCREENSHOT_OPTIONS)
+    except RenderScreenshotError as exc:
+        await bot.send(event, reply_failure("查询", str(exc)))
+        return
+
+    if bot.adapter.get_name() == "OneBot V11":
+        try:
+            image_uri = _to_base64_image_uri(screenshot_path)
+        except OSError:
+            await bot.send(event, reply_failure("查询", "读取截图文件失败"))
+            return
+        await bot.send(event, OBV11MessageSegment.image(file=image_uri))
+        return
+
+    await bot.send(event, f"✅ 截图成功，文件：{screenshot_path}")
 
 
 @shop_view_matcher.handle()

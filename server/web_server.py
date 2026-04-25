@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from nonebot.log import logger
 
 from server.page_store import create_page
-from server.pages import about_page, admin_list_page, ban_list_page, inventory_page, leaderboard_page, menu_page, progress_page, red_packet_all_page, red_packet_own_page, shop_view_page, tutorial_page, user_info_page, warehouse_page
+from server.pages import about_page, admin_list_page, ban_list_page, inventory_page, leaderboard_page, menu_page, progress_page, red_packet_all_page, red_packet_own_page, shop_list_page, shop_view_page, tutorial_page, user_info_page, warehouse_page
 from server.routes.render import router as render_router
 from server.routes.webui_commands import router as webui_commands_router
 from server.routes.webui_dashboard import router as webui_dashboard_router
@@ -253,6 +253,26 @@ def create_warehouse_page(
     token = create_page("warehouse", payload)
     settings = get_server_settings()
     return f"{_build_internal_base_url(settings)}/render/warehouse/{token}"
+
+
+def create_shop_list_page(
+    *,
+    entries: list[dict[str, Any]],
+    page: int = 1,
+    total_pages: int = 1,
+    total: int = 0,
+    theme: str = "light",
+) -> str:
+    payload = shop_list_page.build_payload(
+        entries=entries,
+        page=page,
+        total_pages=total_pages,
+        total=total,
+        theme=theme,
+    )
+    token = create_page("shop_list", payload)
+    settings = get_server_settings()
+    return f"{_build_internal_base_url(settings)}/render/shop_list/{token}"
 
 
 def create_shop_view_page(
