@@ -608,3 +608,113 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 63: 商店系统使用教程编写 + 商店/商品标识符统一为稳定 DB ID
+
+**Date**: 2026-04-25
+**Task**: 商店系统使用教程编写 + 商店/商品标识符统一为稳定 DB ID
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+## 概要
+
+为商店系统编写新手向使用教程；过程中发现商店列表用「ID xx」、查看商店却用「#N 序号」的不一致问题，进而把整个标识符体系统一到数据库稳定 ID。
+
+## Commit 1：`feat(tutorial): add 商店系统 walkthrough with verbatim bot replies` (7c1dd03)
+
+### 改动文件
+- `nextbot/plugins/tutorial_data.py`：在 `TUTORIALS` dict 第 3 位（仓库系统之后、红包系统之前）插入 "商店系统" 条目，+80 行
+
+### 教程结构（6 步）
+| # | 标题 | 重点 |
+|---|---|---|
+| 1 | 什么是商店 | 三命令总览 + 物品/指令两类 |
+| 2 | 看有哪些商店 | `商店列表 [页数]` |
+| 3 | 进入某个商店看商品 | `查看商店 <ID/名称> [页数]`、神秘商品 |
+| 4 | 购买物品类商品 | 入仓库、min_tier、双失败演示（金币不足 / 仓库满） |
+| 5 | 购买指令类商品 | 单服/全服、需要在线、扣币不退款 |
+| 6 | 常见错误和提示 | 各类 verbatim 错误回复 |
+
+### 校对方法
+- 通过 `feature-dev:code-explorer` 子 agent 对教程系统和商店系统做并行深度分析
+- 直接读取 `tutorial_data.py`（4 个现有教程作为风格基线）、`shop.py`（所有 reply 字符串）、`text_utils.py`（reply_failure / reply_success 构造规则）、`command_config.py`（raise_command_usage 的 `_build_usage_message` 输出）
+- 9 条 mock 回复逐一对照源码验证字面一致
+
+## Commit 2：`refactor(shop): unify shop and item selectors on stable database IDs` (18e85d0)
+
+### 起因
+教程写完发现的设计漏洞：
+- `商店列表` 卡片同时显示 `#N`（display_index 装饰）和 `ID xx`（DB id），但只有 ID 是后续命令用的 → `#N` 是死 UI
+- `查看商店` 卡片显示 `#N`（display_index），且 `购买商品` 用 `#N` 选商品 → 跟商店级 ID 不对称
+- 用户认知负担：商店级用稳定 ID、商品级用易变 #N
+
+### 解法
+两层都改用数据库稳定 ID，end-to-end。
+
+### 改动文件
+| 文件 | 改动 |
+|---|---|
+| `server/templates/shop_list.html` | 删除卡片 `#N` index-pill |
+| `server/pages/shop_list_page.py` | payload 不再带 `display_index` |
+| `server/templates/shop_view.html` | 物品 `#N` 改为 `ID xx`（用 `it.shop_item_id`），底部购买提示同步 |
+| `server/pages/shop_view_page.py` | 字段 `display_index` → `shop_item_id`，原 `item_id`（Terraria 物品 ID）保留 |
+| `nextbot/plugins/shop.py` | `购买商品` handler 从 `items[display_index - 1]` 改为按 ID + shop_id + enabled 直接 SQL 查询；usage `<商品序号>` → `<商品 ID>`；错误 `商品序号超出范围（共 N 件）` → `商品不存在或未上架`（与 `商店不存在或未上架` 对称） |
+| `nextbot/plugins/tutorial_data.py` | 6 步全部同步：所有 `<商品序号>` → `<商品 ID>`，移除 `#N` 提及，step 4 例子换成 ID 查找口径，step 6 错误说明对齐 |
+
+### 关键设计决定
+- **命名空间分离**：`shop_item_id` 是 ShopItem 数据库 PK（用户输入），原 `item_id` 是 Terraria 物品 ID（sprite 图片查找），互不干扰
+- **错误语义对称**：`商品不存在或未上架` 跟 `商店不存在或未上架` 用同一种含糊化口径，用户不需要管"该商品到底属于哪个店"
+- **稳定 ID 双向一致**：商店级和商品级现在都用 DB 主键，永不变化；教程明确告知"ID 可能不连续"避免用户期望连号
+
+### ⚠️ 用户层面的破坏性变化
+`购买商品 1 1` 之前 = "在 1 号商店买第 1 个商品"，现在 = "在 1 号商店买 ID 为 1 的商品"。如果商店里商品 ID 是 47、102、203 等，旧用法会回 `商品不存在或未上架`。
+
+## 校验
+
+| 项目 | 结果 |
+|---|---|
+| ruff per-file vs HEAD baseline | 商店相关 4 个 Python 文件 201 = 201，净增 0 ✅ |
+| pyright | 13 errors 都是 `at: object` 类型签名引起的既有问题，非本次引入 |
+| `shop_list_page` build → render 烟雾测试 | 无 `display_index` 残留 ✅ |
+| `shop_view_page` build → render 烟雾测试 | `shop_item_id` 写入 HTML，原 `item_id`（Terraria）保留 ✅ |
+| `tutorial_page` 渲染 | 无 `#N` / `商品序号` 残留，`<商店 ID> <商品 ID>` 新语法正确 ✅ |
+
+## 工作流
+
+按 `feature-dev` 7 阶段流程跑：发现 → 探索（2 个子 agent 并行）→ 读源码 → 澄清问题（位置 + 步数 + 是否拆细）→ 设计 → 实现 → 验证 → 总结。第二个 commit 是用户在第一个完成后发现 UX 不一致提出的，按相同的"先调研再动手"模式重新走了一轮。
+
+## 文件清单总计
+
+| 文件 | 用途 |
+|---|---|
+| `nextbot/plugins/tutorial_data.py` | 教程内容（两轮迭代） |
+| `nextbot/plugins/shop.py` | 商店三个 chat handler（购买改 ID 查询） |
+| `server/pages/shop_list_page.py` | 商店列表 payload builder |
+| `server/pages/shop_view_page.py` | 查看商店 payload builder |
+| `server/templates/shop_list.html` | 商店列表图片模板 |
+| `server/templates/shop_view.html` | 查看商店图片模板 |
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7c1dd03` | (see git log) |
+| `18e85d0` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
