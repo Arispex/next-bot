@@ -16,9 +16,12 @@ NextBot 是一个基于 <a href="https://nonebot.dev/">NoneBot2</a> 的 Terraria
 
 ## 快速开始
 
-Windows 小白向安装教程（含 TShock 插件、NapCat、NextBot 全流程）：[docs/windows_install.md](docs/windows_install.md)
+按你的运行平台挑一个：
 
-Windows 小白向视频安装教程：[Bilibili](https://b23.tv/eiU2zqO)
+- **Windows** 小白向安装教程（含 TShock 插件、NapCat、NextBot 全流程）：[docs/windows_install.md](docs/windows_install.md)
+- **Windows** 小白向视频安装教程：[Bilibili](https://b23.tv/eiU2zqO)
+- **Linux / macOS（Docker）** 安装教程：[docs/docker_install.md](docs/docker_install.md)
+  镜像发布在 GitHub Container Registry：`ghcr.io/arispex/nextbot:latest`（linux/amd64 + linux/arm64）
 
 ## 相关文档
 
