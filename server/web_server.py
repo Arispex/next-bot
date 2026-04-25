@@ -264,6 +264,9 @@ def create_shop_view_page(
     user_user_name: str,
     user_coins: int,
     items: list[dict[str, Any]],
+    page: int = 1,
+    total_pages: int = 1,
+    total: int = 0,
     theme: str = "light",
 ) -> str:
     payload = shop_view_page.build_payload(
@@ -274,6 +277,9 @@ def create_shop_view_page(
         user_user_name=user_user_name,
         user_coins=user_coins,
         items=items,
+        page=page,
+        total_pages=total_pages,
+        total=total,
         theme=theme,
     )
     token = create_page("shop_view", payload)

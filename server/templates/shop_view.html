@@ -111,9 +111,7 @@
         <div id="shop-desc" class="header-subtitle text-sm font-medium mt-1"></div>
       </div>
       <div style="flex:0 0 auto; text-align:right;">
-        <div id="user-coins-line" class="header-title text-base font-bold"></div>
-        <div id="user-name-line" class="header-subtitle text-xs font-medium mt-1"></div>
-        <div class="header-time text-xs mt-1" id="generated-at"></div>
+        <div class="header-time text-xs" id="generated-at"></div>
       </div>
     </div>
   </div>
@@ -124,6 +122,7 @@
   </div>
 
   <div class="mx-auto max-w-[1080px] mt-4 flex flex-col items-center gap-1">
+    <div id="shop-pagination" class="item-meta text-sm font-semibold" style="display:none;"></div>
     <div class="page-footer text-xs font-medium tracking-widest">Powered by NextBot</div>
   </div>
 
@@ -136,11 +135,18 @@
       document.documentElement.setAttribute("data-theme", theme);
 
       document.getElementById("shop-name").textContent = data.shop_name || "未命名商店";
-      document.getElementById("shop-id-line").textContent = "ID：" + (data.shop_id || "-") + "  ·  共 " + items.length + " 件商品";
+      const total = Number(data.total || items.length || 0);
+      const totalPages = Number(data.total_pages || 1);
+      const page = Number(data.page || 1);
+      document.getElementById("shop-id-line").textContent = "ID：" + (data.shop_id || "-") + "  ·  共 " + total + " 件商品";
       document.getElementById("shop-desc").textContent = data.shop_description || "";
-      document.getElementById("user-coins-line").textContent = "💰 " + (data.user_coins || 0);
-      document.getElementById("user-name-line").textContent = (data.user_user_name || "") + "（" + (data.user_user_id || "-") + "）";
       document.getElementById("generated-at").textContent = data.generated_at || "";
+
+      const pagination = document.getElementById("shop-pagination");
+      if (totalPages > 1) {
+        pagination.textContent = "第 " + page + " 页 / 共 " + totalPages + " 页";
+        pagination.style.display = "block";
+      }
 
       const itemNameMap = new Map();
       const prefixNameMap = new Map();

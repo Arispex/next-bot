@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import math
 from pathlib import Path
 
 from nonebot import on_command
@@ -9,7 +10,7 @@ from nonebot.adapters.onebot.v11 import MessageSegment as OBV11MessageSegment
 from nonebot.log import logger
 from nonebot.params import CommandArg
 
-from nextbot.command_config import command_control, raise_command_usage
+from nextbot.command_config import command_control, get_current_param, raise_command_usage
 from nextbot.db import (
     WAREHOUSE_CAPACITY,
     Server,
@@ -172,7 +173,7 @@ async def handle_shop_list(bot: Bot, event: Event, arg: Message = CommandArg()) 
             "商店列表",
             items,
             title_emoji=EMOJI_SHOP,
-            hint="查看：「查看商店 <商店 ID/商店名称>」 / 购买：「购买商品 <商店 ID> <商品序号> [数量]」",
+            hint="查看：「查看商店 <商店 ID/商店名称> [页数]」 / 购买：「购买商品 <商店 ID> <商品序号> [数量]」",
         ),
     )
 
@@ -183,17 +184,41 @@ async def handle_shop_list(bot: Bot, event: Event, arg: Message = CommandArg()) 
     display_name="查看商店",
     permission="shop.view",
     description="查看具体商店内容（图片）",
-    usage="查看商店 <商店 ID/商店名称>",
+    usage="查看商店 <商店 ID/商店名称> [页数]",
+    params={
+        "limit": {
+            "type": "int",
+            "label": "每页条数",
+            "description": "每页显示的商品数量",
+            "required": False,
+            "default": 10,
+            "min": 1,
+            "max": 50,
+        },
+    },
     category="商店系统",
 )
 @require_permission("shop.view")
 async def handle_shop_view(bot: Bot, event: Event, arg: Message = CommandArg()) -> None:
     args = parse_command_args_with_fallback(event, arg, "查看商店")
-    if len(args) != 1:
+    if not (1 <= len(args) <= 2):
         raise_command_usage()
     selector = args[0].strip()
     if not selector:
         raise_command_usage()
+
+    page = 1
+    if len(args) == 2:
+        try:
+            page = int(args[1])
+        except ValueError:
+            await bot.send(event, reply_failure("查询", "页数必须为正整数"))
+            return
+        if page <= 0:
+            await bot.send(event, reply_failure("查询", "页数必须为正整数"))
+            return
+
+    limit = max(1, min(int(get_current_param("limit", 10)), 50))
 
     user_id = event.get_user_id()
     session = get_session()
@@ -216,7 +241,7 @@ async def handle_shop_view(bot: Bot, event: Event, arg: Message = CommandArg()) 
         server_label_map: dict[int, str] = {
             int(s.id): str(s.name) for s in session.query(Server).all()
         }
-        render_items = []
+        all_entries = []
         for idx, it in enumerate(items, 1):
             entry = {
                 "display_index": idx,
@@ -245,9 +270,17 @@ async def handle_shop_view(bot: Bot, event: Event, arg: Message = CommandArg()) 
                     )
                 show_command = bool(getattr(it, "show_command", False))
                 entry["command_template"] = str(it.command_template or "") if show_command else ""
-            render_items.append(entry)
+            all_entries.append(entry)
     finally:
         session.close()
+
+    total = len(all_entries)
+    total_pages = max(1, math.ceil(total / limit)) if total > 0 else 1
+    if total > 0 and page > total_pages:
+        await bot.send(event, reply_failure("查询", f"超出总页数（共 {total_pages} 页）"))
+        return
+    offset = (page - 1) * limit
+    render_items = all_entries[offset:offset + limit]
 
     page_url = create_shop_view_page(
         shop_id=shop_id,
@@ -257,11 +290,14 @@ async def handle_shop_view(bot: Bot, event: Event, arg: Message = CommandArg()) 
         user_user_name=user_name,
         user_coins=user_coins,
         items=render_items,
+        page=page,
+        total_pages=total_pages,
+        total=total,
         theme=resolve_render_theme(),
     )
     logger.info(
-        f"商店详情渲染地址：shop_id={shop_id} item_count={len(render_items)} "
-        f"internal_url={page_url}"
+        f"商店详情渲染地址：shop_id={shop_id} page={page}/{total_pages} "
+        f"total={total} item_count={len(render_items)} internal_url={page_url}"
     )
     screenshot_path = Path("/tmp") / f"shop-{shop_id}-{beijing_filename_timestamp()}.png"
     try:

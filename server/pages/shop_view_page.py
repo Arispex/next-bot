@@ -70,6 +70,9 @@ def build_payload(
     user_user_name: str,
     user_coins: int,
     items: list[dict[str, Any]],
+    page: int = 1,
+    total_pages: int = 1,
+    total: int = 0,
     theme: str = "light",
 ) -> dict[str, Any]:
     normalized = _normalize_items(items)
@@ -82,6 +85,9 @@ def build_payload(
         "user_user_name": str(user_user_name),
         "user_coins": int(user_coins),
         "items": normalized,
+        "page": max(1, int(page)),
+        "total_pages": max(1, int(total_pages)),
+        "total": max(0, int(total)),
         "theme": str(theme).strip() if str(theme).strip() in {"dark", "light"} else "light",
     }
 
@@ -97,6 +103,9 @@ def render(payload: dict[str, Any]) -> bytes:
         "user_user_name": str(payload.get("user_user_name", "")),
         "user_coins": int(payload.get("user_coins", 0)),
         "items": payload.get("items", []),
+        "page": int(payload.get("page", 1)),
+        "total_pages": int(payload.get("total_pages", 1)),
+        "total": int(payload.get("total", 0)),
         "theme": str(payload.get("theme", "light")),
     }
     data_json = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
