@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse, Response
 
 from server.page_store import get_page
-from server.pages import about_page, admin_list_page, ban_list_page, inventory_page, leaderboard_page, menu_page, progress_page, red_packet_all_page, red_packet_own_page, shop_list_page, shop_view_page, tutorial_page, user_info_page, warehouse_page
+from server.pages import about_page, admin_list_page, ban_list_page, inventory_page, leaderboard_page, lottery_list_page, lottery_result_page, lottery_view_page, menu_page, progress_page, red_packet_all_page, red_packet_own_page, shop_list_page, shop_view_page, tutorial_page, user_info_page, warehouse_page
 
 router = APIRouter()
 
@@ -115,6 +115,21 @@ async def render_shop_list(token: str) -> Response:
 @router.get("/render/shop_view/{token}")
 async def render_shop_view(token: str) -> Response:
     return _render_page(token, page_type="shop_view", renderer=shop_view_page.render)
+
+
+@router.get("/render/lottery_list/{token}")
+async def render_lottery_list(token: str) -> Response:
+    return _render_page(token, page_type="lottery_list", renderer=lottery_list_page.render)
+
+
+@router.get("/render/lottery_view/{token}")
+async def render_lottery_view(token: str) -> Response:
+    return _render_page(token, page_type="lottery_view", renderer=lottery_view_page.render)
+
+
+@router.get("/render/lottery_result/{token}")
+async def render_lottery_result(token: str) -> Response:
+    return _render_page(token, page_type="lottery_result", renderer=lottery_result_page.render)
 
 
 @router.get("/assets/items/{file_path:path}")

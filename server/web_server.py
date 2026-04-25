@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from nonebot.log import logger
 
 from server.page_store import create_page
-from server.pages import about_page, admin_list_page, ban_list_page, inventory_page, leaderboard_page, menu_page, progress_page, red_packet_all_page, red_packet_own_page, shop_list_page, shop_view_page, tutorial_page, user_info_page, warehouse_page
+from server.pages import about_page, admin_list_page, ban_list_page, inventory_page, leaderboard_page, lottery_list_page, lottery_result_page, lottery_view_page, menu_page, progress_page, red_packet_all_page, red_packet_own_page, shop_list_page, shop_view_page, tutorial_page, user_info_page, warehouse_page
 from server.routes.render import router as render_router
 from server.routes.webui_commands import router as webui_commands_router
 from server.routes.webui_dashboard import router as webui_dashboard_router
@@ -18,6 +18,7 @@ from server.routes.webui_player_events import router as webui_player_events_rout
 from server.routes.webui_servers import router as webui_servers_router
 from server.routes.webui_settings import router as webui_settings_router
 from server.routes.webui_users import router as webui_users_router
+from server.routes.webui_lottery import router as webui_lottery_router
 from server.routes.webui_shop import router as webui_shop_router
 from server.routes.webui_warehouse import router as webui_warehouse_router
 from server.routes.webui import add_webui_auth_middleware, router as webui_router
@@ -255,6 +256,73 @@ def create_warehouse_page(
     return f"{_build_internal_base_url(settings)}/render/warehouse/{token}"
 
 
+def create_lottery_list_page(
+    *,
+    entries: list[dict[str, Any]],
+    page: int = 1,
+    total_pages: int = 1,
+    total: int = 0,
+    theme: str = "light",
+) -> str:
+    payload = lottery_list_page.build_payload(
+        entries=entries, page=page, total_pages=total_pages, total=total, theme=theme,
+    )
+    token = create_page("lottery_list", payload)
+    settings = get_server_settings()
+    return f"{_build_internal_base_url(settings)}/render/lottery_list/{token}"
+
+
+def create_lottery_view_page(
+    *,
+    pool_id: int,
+    pool_name: str,
+    pool_description: str,
+    cost_per_draw: int,
+    prizes: list[dict[str, Any]],
+    miss_probability: float = 0.0,
+    page: int = 1,
+    total_pages: int = 1,
+    total: int = 0,
+    theme: str = "light",
+) -> str:
+    payload = lottery_view_page.build_payload(
+        pool_id=pool_id, pool_name=pool_name, pool_description=pool_description,
+        cost_per_draw=cost_per_draw, prizes=prizes, miss_probability=miss_probability,
+        page=page, total_pages=total_pages, total=total, theme=theme,
+    )
+    token = create_page("lottery_view", payload)
+    settings = get_server_settings()
+    return f"{_build_internal_base_url(settings)}/render/lottery_view/{token}"
+
+
+def create_lottery_result_page(
+    *,
+    pool_id: int,
+    pool_name: str,
+    user_user_id: str,
+    user_user_name: str,
+    user_coins_after: int,
+    draw_count: int,
+    total_cost: int,
+    coin_delta: int,
+    outcomes: list[dict[str, Any]],
+    item_slots_used: int = 0,
+    command_results: list[dict[str, Any]] | None = None,
+    theme: str = "light",
+) -> str:
+    payload = lottery_result_page.build_payload(
+        pool_id=pool_id, pool_name=pool_name,
+        user_user_id=user_user_id, user_user_name=user_user_name,
+        user_coins_after=user_coins_after, draw_count=draw_count,
+        total_cost=total_cost, coin_delta=coin_delta, outcomes=outcomes,
+        item_slots_used=item_slots_used, command_results=command_results,
+        theme=theme,
+    )
+    token = create_page("lottery_result", payload)
+    settings = get_server_settings()
+    return f"{_build_internal_base_url(settings)}/render/lottery_result/{token}"
+
+
 def create_shop_list_page(
     *,
     entries: list[dict[str, Any]],
@@ -331,6 +399,7 @@ def create_app(settings: WebServerSettings | None = None) -> FastAPI:
     app.include_router(webui_settings_router)
     app.include_router(webui_warehouse_router)
     app.include_router(webui_shop_router)
+    app.include_router(webui_lottery_router)
 
     @app.get("/health")
     async def health() -> dict[str, str]:

@@ -26,6 +26,7 @@ EMOJI_CALENDAR = "📅"
 EMOJI_GUIDE = "📚"
 EMOJI_WAREHOUSE = "📦"
 EMOJI_SHOP = "🛒"
+EMOJI_LOTTERY = "🎰"
 
 
 def reply_success(action: str, detail: str | None = None) -> str:

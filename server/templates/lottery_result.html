@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    [data-theme="dark"] body { background: linear-gradient(160deg, #0f0a14 0%, #15101e 50%, #0a050d 100%); }
+    [data-theme="dark"] .page-header { background: linear-gradient(90deg, rgba(168,85,247,0.0) 0%, rgba(236,72,153,0.10) 50%, rgba(168,85,247,0.0) 100%); border-color: rgba(236,72,153,0.20); }
+    [data-theme="dark"] .header-title { color: #f0abfc; text-shadow: 0 2px 20px rgba(236,72,153,0.30); }
+    [data-theme="dark"] .header-subtitle { color: #cbd5e1; }
+    [data-theme="dark"] .header-rule { background: linear-gradient(90deg, #a855f7, #ec4899, transparent); }
+    [data-theme="dark"] .header-time { color: #64748b; }
+    [data-theme="dark"] .summary-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(236,72,153,0.18); }
+    [data-theme="dark"] .summary-label { color: #94a3b8; }
+    [data-theme="dark"] .summary-value { color: #f5d0fe; }
+    [data-theme="dark"] .summary-value.gain { color: #86efac; }
+    [data-theme="dark"] .summary-value.loss { color: #fca5a5; }
+    [data-theme="dark"] .list-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(236,72,153,0.15); }
+    [data-theme="dark"] .outcome-row { background: rgba(255,255,255,0.03); border: 1px solid rgba(148,163,184,0.18); }
+    [data-theme="dark"] .outcome-row.miss { background: rgba(255,255,255,0.02); border: 1px dashed rgba(148,163,184,0.28); }
+    [data-theme="dark"] .outcome-name { color: #f5d0fe; }
+    [data-theme="dark"] .outcome-meta { color: #94a3b8; }
+    [data-theme="dark"] .count-pill { background: linear-gradient(135deg, rgba(236,72,153,0.20), rgba(168,85,247,0.20)); color: #f5d0fe; border: 1px solid rgba(236,72,153,0.40); }
+    [data-theme="dark"] .kind-item { background: rgba(59,130,246,0.20); color: #bfdbfe; }
+    [data-theme="dark"] .kind-command { background: rgba(168,85,247,0.20); color: #e9d5ff; }
+    [data-theme="dark"] .kind-coin-pos { background: rgba(34,197,94,0.20); color: #86efac; }
+    [data-theme="dark"] .kind-coin-neg { background: rgba(220,38,38,0.20); color: #fca5a5; }
+    [data-theme="dark"] .kind-miss { background: rgba(148,163,184,0.20); color: #cbd5e1; }
+    [data-theme="dark"] .cmd-result-ok { color: #86efac; }
+    [data-theme="dark"] .cmd-result-fail { color: #fca5a5; }
+    [data-theme="dark"] .page-footer { color: #1f2937; }
+
+    [data-theme="light"] body { background: linear-gradient(135deg, #fdf4ff 0%, #fef3f8 40%, #fdf4ff 100%); }
+    [data-theme="light"] .page-header { background: linear-gradient(90deg, rgba(168,85,247,0.0) 0%, rgba(236,72,153,0.08) 50%, rgba(168,85,247,0.0) 100%); border-color: rgba(236,72,153,0.25); }
+    [data-theme="light"] .header-title { color: #a21caf; }
+    [data-theme="light"] .header-subtitle { color: #86198f; }
+    [data-theme="light"] .header-rule { background: linear-gradient(90deg, #a855f7, #ec4899, transparent); }
+    [data-theme="light"] .header-time { color: #a8a29e; }
+    [data-theme="light"] .summary-card { background: #ffffff; border: 1px solid #fae8ff; box-shadow: 0 2px 12px rgba(236,72,153,0.06); }
+    [data-theme="light"] .summary-label { color: #78716c; }
+    [data-theme="light"] .summary-value { color: #1e293b; }
+    [data-theme="light"] .summary-value.gain { color: #15803d; }
+    [data-theme="light"] .summary-value.loss { color: #b91c1c; }
+    [data-theme="light"] .list-card { background: #ffffff; border: 1px solid #fae8ff; box-shadow: 0 2px 12px rgba(236,72,153,0.06); }
+    [data-theme="light"] .outcome-row { background: #fafaf9; border: 1px solid #e7e5e4; }
+    [data-theme="light"] .outcome-row.miss { background: #fafaf9; border: 1px dashed #d6d3d1; }
+    [data-theme="light"] .outcome-name { color: #1e293b; }
+    [data-theme="light"] .outcome-meta { color: #78716c; }
+    [data-theme="light"] .count-pill { background: linear-gradient(135deg, #fdf4ff, #fae8ff); color: #a21caf; border: 1px solid #f0abfc; }
+    [data-theme="light"] .kind-item { background: #dbeafe; color: #1e40af; }
+    [data-theme="light"] .kind-command { background: #ede9fe; color: #6d28d9; }
+    [data-theme="light"] .kind-coin-pos { background: #dcfce7; color: #166534; }
+    [data-theme="light"] .kind-coin-neg { background: #fee2e2; color: #b91c1c; }
+    [data-theme="light"] .kind-miss { background: #f1f5f9; color: #475569; }
+    [data-theme="light"] .cmd-result-ok { color: #15803d; }
+    [data-theme="light"] .cmd-result-fail { color: #b91c1c; }
+    [data-theme="light"] .page-footer { color: #e7e5e4; }
+  </style>
+</head>
+<body class="px-8 py-6">
+
+  <div class="page-header mx-auto max-w-[820px] rounded-2xl px-8 py-4 mb-4 border">
+    <div class="flex items-end justify-between gap-6">
+      <div>
+        <div class="header-rule h-1 w-16 rounded-full mb-3"></div>
+        <h1 class="header-title text-4xl font-black tracking-tight" style="letter-spacing:-0.02em;">抽奖结果</h1>
+        <div id="result-summary" class="header-subtitle text-sm font-medium mt-1"></div>
+      </div>
+      <div class="text-right"><div class="header-time text-xs" id="generated-at"></div></div>
+    </div>
+  </div>
+
+  <div id="summary-card" class="summary-card mx-auto max-w-[820px] rounded-2xl px-6 py-4 mb-4">
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px;">
+      <div>
+        <div class="summary-label" style="font-size:11px;">抽奖次数</div>
+        <div class="summary-value" id="sum-draw-count" style="font-size:18px; font-weight:800; margin-top:2px;"></div>
+      </div>
+      <div>
+        <div class="summary-label" style="font-size:11px;">花费金币</div>
+        <div class="summary-value loss" id="sum-cost" style="font-size:18px; font-weight:800; margin-top:2px;"></div>
+      </div>
+      <div>
+        <div class="summary-label" style="font-size:11px;">奖品金币</div>
+        <div class="summary-value" id="sum-coin-delta" style="font-size:18px; font-weight:800; margin-top:2px;"></div>
+      </div>
+      <div>
+        <div class="summary-label" style="font-size:11px;">入库格数</div>
+        <div class="summary-value" id="sum-slots" style="font-size:18px; font-weight:800; margin-top:2px;"></div>
+      </div>
+      <div>
+        <div class="summary-label" style="font-size:11px;">当前金币</div>
+        <div class="summary-value" id="sum-coins-after" style="font-size:18px; font-weight:800; margin-top:2px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="list-card mx-auto max-w-[820px] rounded-2xl p-4">
+    <div id="outcome-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+  </div>
+
+  <div id="cmd-results-card" class="list-card mx-auto max-w-[820px] rounded-2xl p-4 mt-3" style="display:none;">
+    <div class="outcome-meta" style="font-size:13px; font-weight:700; margin-bottom:8px;">指令执行明细</div>
+    <div id="cmd-results-list" style="display:flex; flex-direction:column; gap:4px; font-size:12px;"></div>
+  </div>
+
+  <div class="mx-auto max-w-[820px] mt-4 flex flex-col items-center gap-1">
+    <div class="page-footer text-xs font-medium tracking-widest">Powered by NextBot</div>
+  </div>
+
+  <script id="lottery-result-data" type="application/json">__LOTTERY_RESULT_DATA_JSON__</script>
+  <script>
+    (function () {
+      const data = JSON.parse(document.getElementById("lottery-result-data").textContent);
+      const outcomes = Array.isArray(data.outcomes) ? data.outcomes : [];
+      document.documentElement.setAttribute("data-theme", String(data.theme || "light"));
+
+      document.getElementById("result-summary").textContent = (data.pool_name || "") + "（ID " + (data.pool_id || "-") + "）  ·  " + (data.user_user_name || "") + "（" + (data.user_user_id || "-") + "）";
+      document.getElementById("generated-at").textContent = data.generated_at || "";
+
+      document.getElementById("sum-draw-count").textContent = (data.draw_count || 1) + " 次";
+      document.getElementById("sum-cost").textContent = "- " + (data.total_cost || 0);
+      const delta = Number(data.coin_delta || 0);
+      const deltaEl = document.getElementById("sum-coin-delta");
+      deltaEl.textContent = (delta >= 0 ? "+ " : "- ") + Math.abs(delta);
+      deltaEl.classList.remove("gain", "loss");
+      if (delta > 0) deltaEl.classList.add("gain");
+      else if (delta < 0) deltaEl.classList.add("loss");
+      document.getElementById("sum-slots").textContent = (data.item_slots_used || 0) + " 格";
+      document.getElementById("sum-coins-after").textContent = "💰 " + (data.user_coins_after || 0);
+
+      const list = document.getElementById("outcome-list");
+      outcomes.forEach((o) => list.appendChild(renderOutcome(o)));
+
+      const cmds = Array.isArray(data.command_results) ? data.command_results : [];
+      if (cmds.length > 0) {
+        const card = document.getElementById("cmd-results-card");
+        const lst = document.getElementById("cmd-results-list");
+        cmds.forEach((r) => {
+          const line = document.createElement("div");
+          const mark = r.ok ? "✅" : "❌";
+          const cls = r.ok ? "cmd-result-ok" : "cmd-result-fail";
+          line.className = cls;
+          line.textContent = "  " + mark + " " + (r.server_label || "") + (r.ok ? "" : (r.reason ? "（" + r.reason + "）" : "（失败）"));
+          lst.appendChild(line);
+        });
+        card.style.display = "block";
+      }
+
+      function renderOutcome(o) {
+        const isMiss = o.kind === "miss";
+        const row = document.createElement("div");
+        row.className = "outcome-row" + (isMiss ? " miss" : "") + " rounded-xl";
+        row.style.cssText = "padding:12px 16px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;";
+
+        const count = document.createElement("span");
+        count.className = "count-pill";
+        count.style.cssText = "font-size:13px; font-weight:800; padding:4px 12px; border-radius:8px; min-width:50px; text-align:center;";
+        count.textContent = "× " + o.count;
+        row.appendChild(count);
+
+        const kindLabel = (function () {
+          if (o.kind === "item") return { text: "物品", cls: "kind-item" };
+          if (o.kind === "command") return { text: "指令", cls: "kind-command" };
+          if (o.kind === "coin") {
+            const positive = Number(o.coin_amount || 0) >= 0;
+            return { text: positive ? "金币奖励" : "金币扣除", cls: positive ? "kind-coin-pos" : "kind-coin-neg" };
+          }
+          return { text: "未中奖", cls: "kind-miss" };
+        })();
+        const kind = document.createElement("span");
+        kind.className = kindLabel.cls;
+        kind.style.cssText = "font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px;";
+        kind.textContent = kindLabel.text;
+        row.appendChild(kind);
+
+        const name = document.createElement("span");
+        name.className = "outcome-name";
+        name.style.cssText = "font-size:15px; font-weight:700;";
+        name.textContent = isMiss ? "💨 谢谢参与" : (o.name || "未命名");
+        row.appendChild(name);
+
+        const meta = document.createElement("span");
+        meta.className = "outcome-meta";
+        meta.style.cssText = "font-size:12px;";
+        if (o.kind === "item") {
+          meta.textContent = "入库 " + o.total_quantity + " 件";
+        } else if (o.kind === "coin") {
+          const total = Number(o.total_coin || 0);
+          meta.textContent = (total >= 0 ? "金币 + " : "金币 - ") + Math.abs(total);
+        } else if (o.kind === "command") {
+          meta.textContent = "已执行 " + o.count + " 次";
+        } else {
+          meta.textContent = "";
+        }
+        if (meta.textContent) row.appendChild(meta);
+
+        return row;
+      }
+    })();
+  </script>
+</body>
+</html>

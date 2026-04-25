@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    [data-theme="dark"] body { background: linear-gradient(160deg, #0f0a14 0%, #15101e 50%, #0a050d 100%); }
+    [data-theme="dark"] .page-header { background: linear-gradient(90deg, rgba(168,85,247,0.0) 0%, rgba(236,72,153,0.10) 50%, rgba(168,85,247,0.0) 100%); border-color: rgba(236,72,153,0.20); }
+    [data-theme="dark"] .header-title { color: #f0abfc; text-shadow: 0 2px 20px rgba(236,72,153,0.30); }
+    [data-theme="dark"] .header-subtitle { color: #cbd5e1; }
+    [data-theme="dark"] .header-rule { background: linear-gradient(90deg, #a855f7, #ec4899, transparent); }
+    [data-theme="dark"] .header-time { color: #64748b; }
+    [data-theme="dark"] .list-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(236,72,153,0.15); }
+    [data-theme="dark"] .prize-row { background: rgba(255,255,255,0.03); border: 1px solid rgba(148,163,184,0.18); }
+    [data-theme="dark"] .prize-name { color: #f5d0fe; }
+    [data-theme="dark"] .prize-desc { color: #cbd5e1; }
+    [data-theme="dark"] .prize-meta { color: #94a3b8; }
+    [data-theme="dark"] .prob-pill { background: linear-gradient(135deg, rgba(236,72,153,0.20), rgba(168,85,247,0.20)); color: #f5d0fe; border: 1px solid rgba(236,72,153,0.40); }
+    [data-theme="dark"] .index-pill { background: rgba(148,163,184,0.18); color: #cbd5e1; }
+    [data-theme="dark"] .kind-item { background: rgba(59,130,246,0.20); color: #bfdbfe; }
+    [data-theme="dark"] .kind-command { background: rgba(168,85,247,0.20); color: #e9d5ff; }
+    [data-theme="dark"] .kind-coin-pos { background: rgba(34,197,94,0.20); color: #86efac; }
+    [data-theme="dark"] .kind-coin-neg { background: rgba(220,38,38,0.20); color: #fca5a5; }
+    [data-theme="dark"] .cmd-block { background: rgba(15,23,42,0.85); color: #e2e8f0; border: 1px solid rgba(148,163,184,0.18); }
+    [data-theme="dark"] .miss-row { background: rgba(255,255,255,0.02); border: 1px dashed rgba(148,163,184,0.28); color: #94a3b8; }
+    [data-theme="dark"] .pagination { color: #cbd5e1; }
+    [data-theme="dark"] .hint-line { color: #94a3b8; }
+    [data-theme="dark"] .page-footer { color: #1f2937; }
+
+    [data-theme="light"] body { background: linear-gradient(135deg, #fdf4ff 0%, #fef3f8 40%, #fdf4ff 100%); }
+    [data-theme="light"] .page-header { background: linear-gradient(90deg, rgba(168,85,247,0.0) 0%, rgba(236,72,153,0.08) 50%, rgba(168,85,247,0.0) 100%); border-color: rgba(236,72,153,0.25); }
+    [data-theme="light"] .header-title { color: #a21caf; }
+    [data-theme="light"] .header-subtitle { color: #86198f; }
+    [data-theme="light"] .header-rule { background: linear-gradient(90deg, #a855f7, #ec4899, transparent); }
+    [data-theme="light"] .header-time { color: #a8a29e; }
+    [data-theme="light"] .list-card { background: #ffffff; border: 1px solid #fae8ff; box-shadow: 0 2px 12px rgba(236,72,153,0.06); }
+    [data-theme="light"] .prize-row { background: #fafaf9; border: 1px solid #e7e5e4; }
+    [data-theme="light"] .prize-name { color: #1e293b; }
+    [data-theme="light"] .prize-desc { color: #475569; }
+    [data-theme="light"] .prize-meta { color: #78716c; }
+    [data-theme="light"] .prob-pill { background: linear-gradient(135deg, #fdf4ff, #fae8ff); color: #a21caf; border: 1px solid #f0abfc; }
+    [data-theme="light"] .index-pill { background: #f1f5f9; color: #475569; }
+    [data-theme="light"] .kind-item { background: #dbeafe; color: #1e40af; }
+    [data-theme="light"] .kind-command { background: #ede9fe; color: #6d28d9; }
+    [data-theme="light"] .kind-coin-pos { background: #dcfce7; color: #166534; }
+    [data-theme="light"] .kind-coin-neg { background: #fee2e2; color: #b91c1c; }
+    [data-theme="light"] .cmd-block { background: #f8fafc; color: #1e293b; border: 1px solid #e2e8f0; }
+    [data-theme="light"] .miss-row { background: #fafaf9; border: 1px dashed #d6d3d1; color: #78716c; }
+    [data-theme="light"] .pagination { color: #475569; }
+    [data-theme="light"] .hint-line { color: #78716c; }
+    [data-theme="light"] .page-footer { color: #e7e5e4; }
+
+    .tier-chip { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 6px; line-height: 1.4; background: #f1f5f9; color: #475569; }
+    .tier-chip.tier-none { background: #f1f5f9; color: #64748b; }
+    .tier-chip.tier-0,.tier-chip.tier-1,.tier-chip.tier-2,.tier-chip.tier-3,.tier-chip.tier-4,.tier-chip.tier-5 { background: #dbeafe; color: #1e40af; }
+    .tier-chip.tier-6,.tier-chip.tier-7,.tier-chip.tier-8,.tier-chip.tier-9,.tier-chip.tier-10 { background: #ede9fe; color: #6d28d9; }
+    .tier-chip.tier-11,.tier-chip.tier-12,.tier-chip.tier-13,.tier-chip.tier-14,.tier-chip.tier-15 { background: #fce7f3; color: #be185d; }
+    .tier-chip.tier-16,.tier-chip.tier-17,.tier-chip.tier-18,.tier-chip.tier-19,.tier-chip.tier-20 { background: linear-gradient(135deg, #fde68a, #fbbf24); color: #78350f; }
+    [data-theme="dark"] .tier-chip { background: rgba(148,163,184,0.18); color: #cbd5e1; }
+    [data-theme="dark"] .tier-chip.tier-none { background: rgba(148,163,184,0.18); color: #94a3b8; }
+    [data-theme="dark"] .tier-chip.tier-0,[data-theme="dark"] .tier-chip.tier-1,[data-theme="dark"] .tier-chip.tier-2,[data-theme="dark"] .tier-chip.tier-3,[data-theme="dark"] .tier-chip.tier-4,[data-theme="dark"] .tier-chip.tier-5 { background: rgba(59,130,246,0.18); color: #bfdbfe; }
+    [data-theme="dark"] .tier-chip.tier-6,[data-theme="dark"] .tier-chip.tier-7,[data-theme="dark"] .tier-chip.tier-8,[data-theme="dark"] .tier-chip.tier-9,[data-theme="dark"] .tier-chip.tier-10 { background: rgba(139,92,246,0.18); color: #ddd6fe; }
+    [data-theme="dark"] .tier-chip.tier-11,[data-theme="dark"] .tier-chip.tier-12,[data-theme="dark"] .tier-chip.tier-13,[data-theme="dark"] .tier-chip.tier-14,[data-theme="dark"] .tier-chip.tier-15 { background: rgba(236,72,153,0.18); color: #fbcfe8; }
+    [data-theme="dark"] .tier-chip.tier-16,[data-theme="dark"] .tier-chip.tier-17,[data-theme="dark"] .tier-chip.tier-18,[data-theme="dark"] .tier-chip.tier-19,[data-theme="dark"] .tier-chip.tier-20 { background: linear-gradient(135deg, #fcd34d, #f59e0b); color: #1f2937; }
+  </style>
+</head>
+<body class="px-8 py-6">
+
+  <div class="page-header mx-auto max-w-[1080px] rounded-2xl px-8 py-4 mb-4 border">
+    <div class="flex items-start justify-between gap-6">
+      <div style="flex:0 0 auto;">
+        <div class="header-rule h-1 w-16 rounded-full mb-3"></div>
+        <h1 class="header-title text-4xl font-black tracking-tight" style="letter-spacing:-0.02em;">奖池</h1>
+      </div>
+      <div style="flex:1 1 auto; text-align:center; align-self:center;">
+        <div id="pool-name" class="header-title text-3xl font-black tracking-tight" style="letter-spacing:-0.02em; line-height:1.1;"></div>
+        <div id="pool-id-line" class="header-subtitle text-sm font-medium mt-1"></div>
+        <div id="pool-desc" class="header-subtitle text-sm font-medium mt-1"></div>
+      </div>
+      <div style="flex:0 0 auto; text-align:right;">
+        <div class="header-time text-xs" id="generated-at"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="list-card mx-auto max-w-[1080px] rounded-2xl p-4">
+    <div id="prize-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+    <div id="empty-state" style="display:none; padding:40px 0; text-align:center;" class="prize-meta">该奖池暂无奖品</div>
+  </div>
+
+  <div class="mx-auto max-w-[1080px] mt-4 flex flex-col items-center gap-1">
+    <div id="hint-line" class="hint-line text-xs" style="display:none;"></div>
+    <div id="lottery-pagination" class="pagination text-sm font-semibold" style="display:none;"></div>
+    <div class="page-footer text-xs font-medium tracking-widest mt-1">Powered by NextBot</div>
+  </div>
+
+  <script id="lottery-view-data" type="application/json">__LOTTERY_VIEW_DATA_JSON__</script>
+  <script>
+    (async function () {
+      const data = JSON.parse(document.getElementById("lottery-view-data").textContent);
+      const prizes = Array.isArray(data.prizes) ? data.prizes : [];
+      const theme = String(data.theme || "light");
+      document.documentElement.setAttribute("data-theme", theme);
+
+      const total = Number(data.total || prizes.length || 0);
+      const totalPages = Number(data.total_pages || 1);
+      const page = Number(data.page || 1);
+      const cost = Number(data.cost_per_draw || 0);
+      const missPct = Number(data.miss_probability || 0);
+
+      document.getElementById("pool-name").textContent = data.pool_name || "未命名奖池";
+      let idLine = "ID：" + (data.pool_id || "-") + "  ·  共 " + total + " 件奖品  ·  💰 " + cost + " / 次";
+      if (missPct > 0) idLine += "  ·  💨 未中奖 " + missPct.toFixed(1) + "%";
+      document.getElementById("pool-id-line").textContent = idLine;
+      document.getElementById("pool-desc").textContent = data.pool_description || "";
+      document.getElementById("generated-at").textContent = data.generated_at || "";
+
+      const itemNameMap = new Map();
+      const prefixNameMap = new Map();
+      try {
+        const [itemRes, prefixRes] = await Promise.all([
+          fetch("/assets/dicts/item.json"),
+          fetch("/assets/dicts/prefix.json"),
+        ]);
+        if (itemRes.ok) {
+          const list = await itemRes.json();
+          if (Array.isArray(list)) list.forEach((e) => {
+            const id = Number(e?.id || 0);
+            const name = String(e?.name || "").trim();
+            if (id > 0 && name) itemNameMap.set(id, name);
+          });
+        }
+        if (prefixRes.ok) {
+          const list = await prefixRes.json();
+          if (Array.isArray(list)) list.forEach((e) => {
+            const id = Number(e?.id || 0);
+            const name = String(e?.name || "").trim();
+            if (id > 0 && name) prefixNameMap.set(id, name);
+          });
+        }
+      } catch (e) {}
+
+      const list = document.getElementById("prize-list");
+      const empty = document.getElementById("empty-state");
+      if (prizes.length === 0) {
+        empty.style.display = "block";
+      } else {
+        prizes.forEach((p) => list.appendChild(renderRow(p)));
+      }
+
+      const hintLine = document.getElementById("hint-line");
+      hintLine.textContent = "抽奖：「抽奖 <奖池 ID/奖池名称> [次数]」";
+      hintLine.style.display = "block";
+
+      const pagination = document.getElementById("lottery-pagination");
+      if (totalPages > 1) {
+        pagination.textContent = "第 " + page + " 页 / 共 " + totalPages + " 页";
+        pagination.style.display = "block";
+      }
+
+      function renderRow(p) {
+        const row = document.createElement("div");
+        row.className = "prize-row rounded-xl";
+        row.style.cssText = "padding:14px 16px; display:flex; align-items:stretch; gap:16px;";
+
+        // Left: icon
+        const left = document.createElement("div");
+        left.style.cssText = "flex:0 0 auto; display:flex; align-items:center; justify-content:center; width:64px; height:64px;";
+        if (p.kind === "item" && p.is_mystery) {
+          const mystery = document.createElement("div");
+          mystery.style.cssText = "width:56px; height:56px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:900;"
+            + (theme === "dark" ? " background:rgba(236,72,153,0.16); color:#f5d0fe; border:2px dashed rgba(236,72,153,0.35);"
+                                : " background:#fdf4ff; color:#a21caf; border:2px dashed #f0abfc;");
+          mystery.textContent = "?";
+          left.appendChild(mystery);
+        } else if (p.kind === "item" && Number(p.item_id || 0) > 0) {
+          const img = document.createElement("img");
+          img.src = "/assets/items/Item_" + p.item_id + ".png";
+          img.alt = String(p.item_id);
+          img.style.cssText = "width:56px; height:56px; object-fit:contain; image-rendering:pixelated;";
+          left.appendChild(img);
+        } else if (p.kind === "command") {
+          const icon = document.createElement("div");
+          icon.style.cssText = "font-size:40px; line-height:1;";
+          icon.textContent = "⚙️";
+          left.appendChild(icon);
+        } else if (p.kind === "coin") {
+          const icon = document.createElement("div");
+          icon.style.cssText = "font-size:40px; line-height:1;";
+          icon.textContent = "💰";
+          left.appendChild(icon);
+        }
+        row.appendChild(left);
+
+        // Middle: text block
+        const mid = document.createElement("div");
+        mid.style.cssText = "flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:4px;";
+
+        const head = document.createElement("div");
+        head.style.cssText = "display:flex; align-items:center; gap:8px; flex-wrap:wrap;";
+
+        const idx = document.createElement("span");
+        idx.className = "index-pill";
+        idx.style.cssText = "font-size:12px; font-weight:700; padding:2px 8px; border-radius:6px;";
+        idx.textContent = "#" + p.display_index;
+        head.appendChild(idx);
+
+        const name = document.createElement("span");
+        name.className = "prize-name";
+        name.style.cssText = "font-size:16px; font-weight:800;";
+        name.textContent = p.name || "未命名";
+        head.appendChild(name);
+
+        const kindLabel = (function () {
+          if (p.kind === "item") return { text: "物品", cls: "kind-item" };
+          if (p.kind === "command") return { text: "指令", cls: "kind-command" };
+          // coin
+          const positive = Number(p.coin_amount || 0) >= 0;
+          return { text: positive ? "金币奖励" : "金币扣除", cls: positive ? "kind-coin-pos" : "kind-coin-neg" };
+        })();
+        const kind = document.createElement("span");
+        kind.className = kindLabel.cls;
+        kind.style.cssText = "font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px;";
+        kind.textContent = kindLabel.text;
+        head.appendChild(kind);
+        mid.appendChild(head);
+
+        if (p.description) {
+          const desc = document.createElement("div");
+          desc.className = "prize-desc";
+          desc.style.cssText = "font-size:13px;";
+          desc.textContent = p.description;
+          mid.appendChild(desc);
+        }
+
+        const meta = document.createElement("div");
+        meta.className = "prize-meta";
+        meta.style.cssText = "font-size:12px; display:flex; align-items:center; flex-wrap:wrap; gap:10px;";
+        if (p.kind === "item") {
+          if (p.is_mystery) {
+            const span = document.createElement("span");
+            span.textContent = "? ? ?  ·  数量 ×" + p.quantity;
+            meta.appendChild(span);
+          } else {
+            const itemName = itemNameMap.get(Number(p.item_id)) || ("ID:" + p.item_id);
+            const prefixId = Number(p.prefix_id || 0);
+            const prefixName = prefixId > 0 ? (prefixNameMap.get(prefixId) || ("前缀 ID:" + prefixId)) : "";
+            const span = document.createElement("span");
+            span.textContent = (prefixName ? prefixName + " " : "") + itemName + "  ·  数量 ×" + p.quantity;
+            meta.appendChild(span);
+          }
+          if (p.min_tier_zh) {
+            const chip = document.createElement("span");
+            const rank = Number(p.min_tier_rank);
+            chip.className = "tier-chip" + (rank >= 0 ? " tier-" + rank : " tier-none");
+            chip.textContent = "进度：" + p.min_tier_zh;
+            meta.appendChild(chip);
+          }
+        } else if (p.kind === "command") {
+          const span = document.createElement("span");
+          span.textContent = "目标：" + (p.target_server_label || "全部服务器");
+          meta.appendChild(span);
+        } else if (p.kind === "coin") {
+          const amt = Number(p.coin_amount || 0);
+          const span = document.createElement("span");
+          span.textContent = (amt >= 0 ? "奖励 +" : "扣除 ") + amt + " 金币";
+          meta.appendChild(span);
+        }
+        mid.appendChild(meta);
+
+        if (p.kind === "command" && p.command_template) {
+          const cmd = document.createElement("div");
+          cmd.className = "cmd-block";
+          cmd.style.cssText = "font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; padding:6px 10px; border-radius:6px; white-space:pre-wrap; word-break:break-all;";
+          cmd.textContent = p.command_template;
+          mid.appendChild(cmd);
+        }
+        row.appendChild(mid);
+
+        // Right: probability pill
+        const right = document.createElement("div");
+        right.style.cssText = "flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; justify-content:center;";
+        const prob = document.createElement("div");
+        prob.className = "prob-pill";
+        prob.style.cssText = "font-size:14px; font-weight:800; padding:6px 12px; border-radius:10px; min-width:74px; text-align:center;";
+        prob.textContent = (Number(p.probability) || 0).toFixed(1) + "%";
+        right.appendChild(prob);
+        row.appendChild(right);
+
+        return row;
+      }
+    })();
+  </script>
+</body>
+</html>

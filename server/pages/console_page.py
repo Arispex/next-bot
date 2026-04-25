@@ -16,6 +16,7 @@ AppShellMenu = Literal[
     "groups",
     "warehouse",
     "shop",
+    "lottery",
     "settings",
 ]
 
@@ -60,6 +61,7 @@ def _render_app_shell_page(  # noqa: PLR0913
     groups_active = "is-active" if active_menu == "groups" else ""
     warehouse_active = "is-active" if active_menu == "warehouse" else ""
     shop_active = "is-active" if active_menu == "shop" else ""
+    lottery_active = "is-active" if active_menu == "lottery" else ""
     settings_active = "is-active" if active_menu == "settings" else ""
 
     return (
@@ -73,6 +75,7 @@ def _render_app_shell_page(  # noqa: PLR0913
         .replace("__NAV_GROUPS_ACTIVE__", groups_active)
         .replace("__NAV_WAREHOUSE_ACTIVE__", warehouse_active)
         .replace("__NAV_SHOP_ACTIVE__", shop_active)
+        .replace("__NAV_LOTTERY_ACTIVE__", lottery_active)
         .replace("__NAV_SETTINGS_ACTIVE__", settings_active)
         .replace("__MAIN_CONTENT__", content_html)
         .replace(
@@ -207,6 +210,22 @@ def render_shop_page() -> str:
         ),
         page_script_urls=(
             _asset_url("js/shop.js"),
+        ),
+    )
+
+
+def render_lottery_page() -> str:
+    return _render_app_shell_page(
+        page_title="NextBot WebUI - 抽奖管理",
+        header_title="抽奖管理",
+        active_menu="lottery",
+        content_template="lottery_content.html",
+        page_style_urls=(
+            _asset_url("css/app-shell.css"),
+            _asset_url("css/lottery.css"),
+        ),
+        page_script_urls=(
+            _asset_url("js/lottery.js"),
         ),
     )
 
