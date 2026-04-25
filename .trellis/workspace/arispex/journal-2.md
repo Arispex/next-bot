@@ -520,3 +520,91 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 62: 抽奖结果页 UI 重构 + 奖品估值口径修正
+
+**Date**: 2026-04-25
+**Task**: 抽奖结果页 UI 重构 + 奖品估值口径修正
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+## 概要
+
+针对抽奖结果页（`lottery_result.html`）做了一次完整 UI 重构，并修正了"奖品净收益"字段只统计金币、不算物品价值的语义问题。
+
+## Commit 1：`refactor(lottery): redesign result page UI and clean up payload` (1526e16)
+
+### 视觉/布局
+| 项目 | 改动 |
+|---|---|
+| 主题色 | 与 `lottery_list.html` / `lottery_view.html` 对齐为粉紫渐变（`#fdf4ff → #fef3f8`，pill `#ec4899`/`#a855f7`） |
+| Header | 单行 3 段式：标题 + meta pills + 时间戳；高度 ~110px → ~60px |
+| Meta pills | 从单行字符串拼接（`"测试奖池 ID 1• 抽 10 次• -1000• gianyi (1291525582)"`）改为独立 pill；最终保留 `奖池` / `玩家` 两个，删除 `抽奖` / `花费`（已在 stats tiles 展示） |
+| Hero card "本次最佳" | 整体删除（HTML + CSS + JS 全部清理） |
+| Section label "本次开出 N 项" | 删除 |
+| Stats | 重做为 5 列水平 stat tiles，每个左侧带 3px 颜色色条（紫/红/绿/粉/金） |
+| 容器宽度 | 860px → 920px |
+
+### 数据通路清理
+- `lottery_result_page.py`：抽出 4 个模块级常量 `_TIER_LEGENDARY_MAX_PCT` / `_TIER_EPIC_MAX_PCT` / `_TIER_RARE_MAX_PCT` / `_TIER_UNCOMMON_MAX_PCT`，消掉 3 条 PLR2004
+- 缩短 `_rarity_tier()` docstring 修掉 E501
+- 删除 `build_payload` 中的 `featured = next(...)` 选择逻辑及 `render()` 的 `featured` 字段（HTML 已不再消费）
+
+## Commit 2：`feat(lottery): include item appraised value in result prize total` (008b7b9)
+
+### 问题
+"奖品净收益" tile 只累计 `coin_delta`（kind == "coin" 的奖品金额），物品奖品的估值没算进去。比如抽到一把估值 5000 的剑，UI 显示净收益 0。
+
+### 解法
+- `lottery.py`：在物品入库循环中累计 `item_value_gained = Σ(unit_value × total_qty)`，与 WarehouseItem 入库 value 同源（优先 `actual_value`，否则 `unit_price / quantity`）
+- 新字段 `item_value_gained` 通过 `create_lottery_result_page` → `build_payload` → `render` 通路传到前端
+- HTML 端 stats tile 计算 `delta = coin_delta + item_value_gained`
+- 字段名从"奖品净收益"改为"奖品估值"，匹配毛值（gross value）语义而非"净收益"
+
+### 数据契约
+| 字段 | 含义 | 范围 |
+|---|---|---|
+| `coin_delta` | 真实金币余额变化（用户钱包加减） | int (可负) |
+| `item_value_gained` | 物品估价总和（仅 kind == "item"） | int ≥ 0 |
+| 前端"奖品估值" | `coin_delta + item_value_gained` | int (可负) |
+
+## 文件清单
+
+| 文件 | Commit |
+|---|---|
+| `server/templates/lottery_result.html` | 1526e16 + 008b7b9 |
+| `server/pages/lottery_result_page.py` | 1526e16 + 008b7b9 |
+| `nextbot/plugins/lottery.py` | 008b7b9 |
+| `server/web_server.py` | 008b7b9 |
+
+## 校验
+
+- ruff per-file vs HEAD baseline：净增 0
+- pyright：2 errors（均为 `lottery.py:477` 既有的 `int | None`，与本会话无关）
+- 视觉：全程通过 Launch 预览面板逐步迭代验证
+- 数据流：手工演练 4 个场景（纯物品 / 物品+金币 / 负值金币 / 全 miss）均符合预期
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1526e16` | (see git log) |
+| `008b7b9` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
