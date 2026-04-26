@@ -17,6 +17,7 @@
     editingPrizeId: null,
     pendingDeletePool: null,
     pendingDeletePrize: null,
+    pendingImport: null,
   };
 
   const els = {};
@@ -566,6 +567,142 @@
     }
   }
 
+  // ---------- Export ----------
+
+  async function handleExport() {
+    hideAlert(els.alert);
+    try {
+      const res = await callApi("/webui/api/lottery/export", { action: "导出" });
+      const data = api.unwrapData(res);
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const stamp = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `nextbot-lottery-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showAlert(els.alert, "导出成功", "success");
+    } catch (err) {
+      showAlert(els.alert, err.message || "导出失败", "error");
+    }
+  }
+
+  // ---------- Import ----------
+
+  function handleImportFileChosen(ev) {
+    const input = ev.target;
+    const file = input && input.files && input.files[0];
+    if (input) input.value = "";
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      let parsed;
+      try {
+        parsed = JSON.parse(String(reader.result || ""));
+      } catch (_e) {
+        showAlert(els.alert, api.buildActionFailureMessage("导入", "文件不是有效的 JSON"), "error");
+        return;
+      }
+      if (!parsed || typeof parsed !== "object") {
+        showAlert(els.alert, api.buildActionFailureMessage("导入", "文件内容不是 JSON 对象"), "error");
+        return;
+      }
+      if (parsed.kind !== "lottery_pools") {
+        showAlert(els.alert, api.buildActionFailureMessage("导入", "kind 必须为 lottery_pools"), "error");
+        return;
+      }
+      if (parsed.version !== 1) {
+        showAlert(els.alert, api.buildActionFailureMessage("导入", "version 必须为 1"), "error");
+        return;
+      }
+      const pools = Array.isArray(parsed.pools) ? parsed.pools : [];
+      const prizeCount = pools.reduce(
+        (sum, p) => sum + ((p && Array.isArray(p.prizes)) ? p.prizes.length : 0), 0,
+      );
+      state.pendingImport = {
+        fileName: file.name,
+        payload: parsed,
+        poolCount: pools.length,
+        prizeCount,
+        exportedAt: typeof parsed.exported_at === "string" ? parsed.exported_at : "",
+      };
+      openImportModal();
+    };
+    reader.onerror = () => {
+      showAlert(els.alert, api.buildActionFailureMessage("导入", "无法读取文件"), "error");
+    };
+    reader.readAsText(file, "utf-8");
+  }
+
+  function openImportModal() {
+    if (!state.pendingImport) return;
+    hideAlert(els.lotteryImportAlert);
+    clearChildren(els.lotteryImportSummary);
+
+    const lines = [
+      ["文件", state.pendingImport.fileName],
+      ["奖池数", String(state.pendingImport.poolCount)],
+      ["奖品总数", String(state.pendingImport.prizeCount)],
+    ];
+    if (state.pendingImport.exportedAt) {
+      lines.push(["导出时间", state.pendingImport.exportedAt]);
+    }
+    lines.forEach(([label, value]) => {
+      const row = document.createElement("div");
+      row.className = "form-item form-item-full";
+      const labelEl = document.createElement("span");
+      labelEl.className = "form-label";
+      labelEl.textContent = label;
+      const valueEl = document.createElement("span");
+      valueEl.textContent = value;
+      row.appendChild(labelEl);
+      row.appendChild(valueEl);
+      els.lotteryImportSummary.appendChild(row);
+    });
+
+    const defaultRadio = document.querySelector('input[name="lottery-import-mode"][value="merge"]');
+    if (defaultRadio) defaultRadio.checked = true;
+    refreshImportReplaceWarn();
+    showModal(els.lotteryImportModal);
+  }
+
+  function refreshImportReplaceWarn() {
+    const isReplace = document.querySelector('input[name="lottery-import-mode"]:checked')?.value === "replace_all";
+    if (isReplace) {
+      els.lotteryImportReplaceWarn.classList.remove("hidden");
+    } else {
+      els.lotteryImportReplaceWarn.classList.add("hidden");
+    }
+  }
+
+  async function confirmImport() {
+    if (!state.pendingImport) return;
+    const mode = document.querySelector('input[name="lottery-import-mode"]:checked')?.value || "merge";
+    hideAlert(els.lotteryImportAlert);
+    try {
+      await callApi(
+        "/webui/api/lottery/import?mode=" + encodeURIComponent(mode),
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(state.pendingImport.payload),
+          action: "导入",
+        },
+      );
+      hideModal(els.lotteryImportModal);
+      state.pendingImport = null;
+      showAlert(els.alert, "导入成功", "success");
+      await loadPools();
+    } catch (err) {
+      showAlert(els.lotteryImportAlert, err.message || "导入失败", "error");
+    }
+  }
+
   // ---------- Bind ----------
 
   function bindEls() {
@@ -630,6 +767,15 @@
     els.prizeDeleteAlert = $("prize-delete-alert");
     els.prizeDeleteName = $("prize-delete-name");
     els.prizeDeleteConfirm = $("prize-delete-confirm");
+
+    els.lotteryExportBtn = $("lottery-export-btn");
+    els.lotteryImportBtn = $("lottery-import-btn");
+    els.lotteryImportFile = $("lottery-import-file");
+    els.lotteryImportModal = $("lottery-import-modal");
+    els.lotteryImportAlert = $("lottery-import-alert");
+    els.lotteryImportSummary = $("lottery-import-summary");
+    els.lotteryImportReplaceWarn = $("lottery-import-replace-warn");
+    els.lotteryImportConfirm = $("lottery-import-confirm");
   }
 
   function bindEvents() {
@@ -644,6 +790,14 @@
     els.prizeModalDelete.addEventListener("click", openPrizeDeleteModal);
     els.prizeDeleteConfirm.addEventListener("click", confirmDeletePrize);
     els.prizeFieldKind.addEventListener("change", applyKindVisibility);
+
+    els.lotteryExportBtn.addEventListener("click", handleExport);
+    els.lotteryImportBtn.addEventListener("click", () => els.lotteryImportFile.click());
+    els.lotteryImportFile.addEventListener("change", handleImportFileChosen);
+    els.lotteryImportConfirm.addEventListener("click", confirmImport);
+    document.querySelectorAll('input[name="lottery-import-mode"]').forEach((r) => {
+      r.addEventListener("change", refreshImportReplaceWarn);
+    });
 
     document.querySelectorAll("[data-modal-close]").forEach((el) => {
       el.addEventListener("click", () => {

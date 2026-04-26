@@ -8,6 +8,7 @@ from nonebot.log import logger
 
 from nextbot.db import LotteryPool, LotteryPrize, Server, get_session
 from nextbot.progression import PROGRESSION_KEY_TO_ZH, TIER_OPTIONS
+from nextbot.time_utils import beijing_now
 from server.routes import api_error, api_success, read_json_object
 
 router = APIRouter()
@@ -16,6 +17,15 @@ _VALID_KINDS = {"item", "command", "coin"}
 _NAME_MAX_LEN = 50
 _DESC_MAX_LEN = 200
 _CMD_MAX_LEN = 500
+_EXPORT_VERSION = 1
+_EXPORT_KIND = "lottery_pools"
+_IMPORT_MODES = {"merge", "replace_all"}
+
+
+def _validation_error_response(details: list[dict[str, str]]) -> JSONResponse:
+    return api_error(
+        status_code=422, code="validation_error", message="参数校验失败", details=details,
+    )
 
 
 def _serialize_pool(pool: LotteryPool, *, prize_count: int | None = None) -> dict[str, Any]:
@@ -67,7 +77,8 @@ def _serialize_prize(prize: LotteryPrize, *, target_server_label: str | None = N
 
 def _validate_pool_payload(
     data: dict[str, Any], *, partial: bool = False,
-) -> tuple[dict[str, Any] | None, JSONResponse | None]:
+) -> tuple[dict[str, Any] | None, list[dict[str, str]]]:
+    """Validate pool metadata. Returns (validated, []) on success, (None, details) on failure."""
     details: list[dict[str, str]] = []
     out: dict[str, Any] = {}
 
@@ -107,17 +118,15 @@ def _validate_pool_payload(
             out["cost_per_draw"] = cost
 
     if details:
-        return None, api_error(
-            status_code=422, code="validation_error", message="参数校验失败", details=details,
-        )
-    return out, None
+        return None, details
+    return out, []
 
 
 def _validate_prize_payload(
     data: dict[str, Any],
     *,
     valid_server_ids: set[int],
-) -> tuple[dict[str, Any] | None, JSONResponse | None]:
+) -> tuple[dict[str, Any] | None, list[dict[str, str]]]:
     details: list[dict[str, str]] = []
 
     name = str(data.get("name", "")).strip()
@@ -238,9 +247,7 @@ def _validate_prize_payload(
             details.append({"field": "coin_amount", "message": "金币数量不能为 0"})
 
     if details:
-        return None, api_error(
-            status_code=422, code="validation_error", message="参数校验失败", details=details,
-        )
+        return None, details
 
     return {
         "name": name,
@@ -260,7 +267,7 @@ def _validate_prize_payload(
         "show_command": show_command,
         "require_online": require_online,
         "coin_amount": coin_amount,
-    }, None
+    }, []
 
 
 def _load_server_id_set() -> set[int]:
@@ -322,9 +329,9 @@ async def create_pool(request: Request) -> JSONResponse:
         return error
     assert payload is not None
 
-    validated, verror = _validate_pool_payload(payload)
-    if verror is not None:
-        return verror
+    validated, details = _validate_pool_payload(payload)
+    if details:
+        return _validation_error_response(details)
     assert validated is not None
     if "name" not in validated:
         return api_error(
@@ -356,6 +363,272 @@ async def create_pool(request: Request) -> JSONResponse:
             data=_serialize_pool(pool, prize_count=0),
             headers={"Location": f"/webui/api/lottery/{pool.id}"},
         )
+    finally:
+        session.close()
+
+# ---------- Export / Import ----------
+
+
+def _export_prize_dict(prize: LotteryPrize) -> dict[str, Any]:
+    """Return the import-friendly subset of fields for a LotteryPrize."""
+    return {
+        "name": str(prize.name),
+        "description": str(prize.description or ""),
+        "kind": str(prize.kind),
+        "sort_order": int(prize.sort_order or 0),
+        "enabled": bool(prize.enabled),
+        "weight": float(prize.weight) if getattr(prize, "weight", None) is not None else None,
+        "item_id": int(prize.item_id or 0),
+        "prefix_id": int(prize.prefix_id or 0),
+        "quantity": int(prize.quantity or 1),
+        "min_tier": str(prize.min_tier or "none"),
+        "actual_value": int(prize.actual_value) if getattr(prize, "actual_value", None) is not None else None,
+        "is_mystery": bool(getattr(prize, "is_mystery", False)),
+        "target_server_id": int(prize.target_server_id) if prize.target_server_id is not None else None,
+        "command_template": str(prize.command_template or ""),
+        "show_command": bool(getattr(prize, "show_command", False)),
+        "require_online": bool(getattr(prize, "require_online", False)),
+        "coin_amount": int(prize.coin_amount or 0),
+    }
+
+
+@router.get("/webui/api/lottery/export")
+async def export_lottery(request: Request) -> JSONResponse:
+    session = get_session()
+    try:
+        pools = (
+            session.query(LotteryPool)
+            .order_by(LotteryPool.sort_order.asc(), LotteryPool.id.asc())
+            .all()
+        )
+        pool_ids = [int(p.id) for p in pools]
+        prizes_by_pool: dict[int, list[LotteryPrize]] = {}
+        if pool_ids:
+            prizes = (
+                session.query(LotteryPrize)
+                .filter(LotteryPrize.pool_id.in_(pool_ids))
+                .order_by(
+                    LotteryPrize.pool_id.asc(),
+                    LotteryPrize.sort_order.asc(),
+                    LotteryPrize.id.asc(),
+                )
+                .all()
+            )
+            for prize in prizes:
+                prizes_by_pool.setdefault(int(prize.pool_id), []).append(prize)
+
+        exported: list[dict[str, Any]] = []
+        for pool in pools:
+            pool_prizes = prizes_by_pool.get(int(pool.id), [])
+            exported.append({
+                "name": str(pool.name),
+                "description": str(pool.description or ""),
+                "sort_order": int(pool.sort_order or 0),
+                "enabled": bool(pool.enabled),
+                "cost_per_draw": int(pool.cost_per_draw or 0),
+                "prizes": [_export_prize_dict(p) for p in pool_prizes],
+            })
+
+        logger.info(
+            f"WebUI 奖池 export：pool_count={len(exported)} "
+            f"prize_count={sum(len(p['prizes']) for p in exported)}"
+        )
+        return api_success(data={
+            "version": _EXPORT_VERSION,
+            "kind": _EXPORT_KIND,
+            "exported_at": beijing_now().isoformat(),
+            "pools": exported,
+        })
+    finally:
+        session.close()
+
+
+@router.post("/webui/api/lottery/import")
+async def import_lottery(request: Request) -> JSONResponse:
+    payload, error = await read_json_object(request)
+    if error is not None:
+        return error
+    assert payload is not None
+
+    mode = (request.query_params.get("mode") or "merge").strip() or "merge"
+    if mode not in _IMPORT_MODES:
+        return api_error(
+            status_code=400,
+            code="invalid_query_parameter",
+            message="mode 必须为 merge 或 replace_all",
+            details=[{"field": "mode", "message": "mode 必须为 merge 或 replace_all"}],
+        )
+
+    # ---- Top-level structural checks ----
+    structural: list[dict[str, str]] = []
+    raw_version = payload.get("version")
+    if raw_version != _EXPORT_VERSION:
+        structural.append({
+            "field": "version",
+            "message": f"version 必须为 {_EXPORT_VERSION}",
+        })
+    raw_kind = payload.get("kind")
+    if raw_kind not in (None, _EXPORT_KIND):
+        structural.append({
+            "field": "kind",
+            "message": f"kind 必须为 {_EXPORT_KIND}",
+        })
+    raw_pools = payload.get("pools")
+    if not isinstance(raw_pools, list):
+        structural.append({"field": "pools", "message": "pools 必须为数组"})
+    if structural:
+        return _validation_error_response(structural)
+
+    server_ids = _load_server_id_set()
+
+    # ---- Validate every pool + prize, aggregate errors with path prefixes ----
+    aggregated: list[dict[str, str]] = []
+    validated_pools: list[tuple[dict[str, Any], list[dict[str, Any]]]] = []
+    seen_names: set[str] = set()
+
+    assert isinstance(raw_pools, list)
+    for pool_idx, raw_pool in enumerate(raw_pools):
+        pool_path = f"pools[{pool_idx}]"
+        if not isinstance(raw_pool, dict):
+            aggregated.append({"field": pool_path, "message": "必须为对象"})
+            continue
+
+        pool_validated, pool_details = _validate_pool_payload(raw_pool)
+        if pool_details:
+            aggregated.extend({
+                "field": f"{pool_path}.{d.get('field', '')}",
+                "message": str(d.get("message", "")),
+            } for d in pool_details)
+            pool_validated = None
+
+        if pool_validated is not None:
+            name = str(pool_validated.get("name", ""))
+            if name in seen_names:
+                aggregated.append({
+                    "field": f"{pool_path}.name",
+                    "message": f"奖池名称「{name}」在 JSON 中重复",
+                })
+            else:
+                seen_names.add(name)
+
+        raw_prizes = raw_pool.get("prizes", [])
+        prizes_validated: list[dict[str, Any]] = []
+        if not isinstance(raw_prizes, list):
+            aggregated.append({
+                "field": f"{pool_path}.prizes",
+                "message": "prizes 必须为数组",
+            })
+            raw_prizes = []
+
+        for prize_idx, raw_prize in enumerate(raw_prizes):
+            prize_path = f"{pool_path}.prizes[{prize_idx}]"
+            if not isinstance(raw_prize, dict):
+                aggregated.append({"field": prize_path, "message": "必须为对象"})
+                continue
+            prize_validated, prize_details = _validate_prize_payload(
+                raw_prize, valid_server_ids=server_ids,
+            )
+            if prize_details:
+                aggregated.extend({
+                    "field": f"{prize_path}.{d.get('field', '')}",
+                    "message": str(d.get("message", "")),
+                } for d in prize_details)
+            elif prize_validated is not None:
+                prizes_validated.append(prize_validated)
+
+        if pool_validated is not None:
+            validated_pools.append((pool_validated, prizes_validated))
+
+    if aggregated:
+        return _validation_error_response(aggregated)
+
+    # ---- Apply changes in a single transaction ----
+    session = get_session()
+    try:
+        created = 0
+        updated = 0
+        prizes_total = 0
+
+        if mode == "replace_all":
+            session.query(LotteryPrize).delete(synchronize_session=False)
+            session.query(LotteryPool).delete(synchronize_session=False)
+            session.flush()
+
+        existing_by_name: dict[str, LotteryPool] = (
+            {str(p.name): p for p in session.query(LotteryPool).all()}
+            if mode == "merge"
+            else {}
+        )
+
+        for pool_data, prizes_data in validated_pools:
+            name = str(pool_data["name"])
+            existing = existing_by_name.get(name)
+
+            if existing is not None:
+                if "description" in pool_data:
+                    existing.description = pool_data["description"]
+                if "sort_order" in pool_data:
+                    existing.sort_order = int(pool_data["sort_order"])
+                if "enabled" in pool_data:
+                    existing.enabled = bool(pool_data["enabled"])
+                if "cost_per_draw" in pool_data:
+                    existing.cost_per_draw = int(pool_data["cost_per_draw"])
+                # Replace all prizes belonging to this pool.
+                session.query(LotteryPrize).filter(
+                    LotteryPrize.pool_id == existing.id,
+                ).delete(synchronize_session=False)
+                pool_id = int(existing.id)
+                updated += 1
+            else:
+                pool = LotteryPool(
+                    name=name,
+                    description=pool_data.get("description", ""),
+                    sort_order=int(pool_data.get("sort_order", 0)),
+                    enabled=bool(pool_data.get("enabled", True)),
+                    cost_per_draw=int(pool_data.get("cost_per_draw", 0)),
+                )
+                session.add(pool)
+                session.flush()
+                pool_id = int(pool.id)
+                created += 1
+
+            for prize_data in prizes_data:
+                session.add(LotteryPrize(
+                    pool_id=pool_id,
+                    sort_order=int(prize_data["sort_order"]),
+                    name=str(prize_data["name"]),
+                    description=str(prize_data["description"]),
+                    kind=str(prize_data["kind"]),
+                    enabled=bool(prize_data["enabled"]),
+                    weight=prize_data["weight"],
+                    item_id=int(prize_data["item_id"]),
+                    prefix_id=int(prize_data["prefix_id"]),
+                    quantity=int(prize_data["quantity"]),
+                    min_tier=str(prize_data["min_tier"]),
+                    actual_value=prize_data["actual_value"],
+                    is_mystery=bool(prize_data["is_mystery"]),
+                    target_server_id=prize_data["target_server_id"],
+                    command_template=str(prize_data["command_template"]),
+                    show_command=bool(prize_data["show_command"]),
+                    require_online=bool(prize_data["require_online"]),
+                    coin_amount=int(prize_data["coin_amount"]),
+                ))
+                prizes_total += 1
+
+        session.commit()
+        logger.info(
+            f"WebUI 奖池 import：mode={mode} created={created} updated={updated} "
+            f"prizes_total={prizes_total}"
+        )
+        return api_success(data={
+            "mode": mode,
+            "created": created,
+            "updated": updated,
+            "prizes_total": prizes_total,
+        })
+    except Exception:
+        session.rollback()
+        raise
     finally:
         session.close()
 
@@ -394,9 +667,9 @@ async def update_pool(pool_id: int, request: Request) -> JSONResponse:
         return error
     assert payload is not None
 
-    validated, verror = _validate_pool_payload(payload, partial=True)
-    if verror is not None:
-        return verror
+    validated, details = _validate_pool_payload(payload, partial=True)
+    if details:
+        return _validation_error_response(details)
     assert validated is not None
 
     session = get_session()
@@ -456,9 +729,9 @@ async def create_prize(pool_id: int, request: Request) -> JSONResponse:
     assert payload is not None
 
     server_ids = _load_server_id_set()
-    validated, verror = _validate_prize_payload(payload, valid_server_ids=server_ids)
-    if verror is not None:
-        return verror
+    validated, details = _validate_prize_payload(payload, valid_server_ids=server_ids)
+    if details:
+        return _validation_error_response(details)
     assert validated is not None
 
     session = get_session()
@@ -515,9 +788,9 @@ async def update_prize(pool_id: int, prize_id: int, request: Request) -> JSONRes
     assert payload is not None
 
     server_ids = _load_server_id_set()
-    validated, verror = _validate_prize_payload(payload, valid_server_ids=server_ids)
-    if verror is not None:
-        return verror
+    validated, details = _validate_prize_payload(payload, valid_server_ids=server_ids)
+    if details:
+        return _validation_error_response(details)
     assert validated is not None
 
     session = get_session()

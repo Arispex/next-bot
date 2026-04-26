@@ -8,6 +8,7 @@ from nonebot.log import logger
 
 from nextbot.db import Server, Shop, ShopItem, get_session
 from nextbot.progression import PROGRESSION_KEY_TO_ZH, TIER_OPTIONS
+from nextbot.time_utils import beijing_now
 from server.routes import api_error, api_success, read_json_object
 
 router = APIRouter()
@@ -16,6 +17,15 @@ _VALID_KINDS = {"item", "command"}
 _NAME_MAX_LEN = 50
 _DESC_MAX_LEN = 200
 _CMD_MAX_LEN = 500
+_EXPORT_VERSION = 1
+_EXPORT_KIND = "shops"
+_IMPORT_MODES = {"merge", "replace_all"}
+
+
+def _validation_error_response(details: list[dict[str, str]]) -> JSONResponse:
+    return api_error(
+        status_code=422, code="validation_error", message="参数校验失败", details=details,
+    )
 
 
 def _serialize_shop(shop: Shop, *, item_count: int | None = None) -> dict[str, Any]:
@@ -65,7 +75,8 @@ def _serialize_shop_item(item: ShopItem, *, target_server_label: str | None = No
 
 def _validate_shop_payload(
     data: dict[str, Any], *, partial: bool = False,
-) -> tuple[dict[str, Any] | None, JSONResponse | None]:
+) -> tuple[dict[str, Any] | None, list[dict[str, str]]]:
+    """Validate shop metadata. Returns (validated, []) on success, (None, details) on failure."""
     details: list[dict[str, str]] = []
     out: dict[str, Any] = {}
 
@@ -95,17 +106,15 @@ def _validate_shop_payload(
         out["enabled"] = bool(data["enabled"])
 
     if details:
-        return None, api_error(
-            status_code=422, code="validation_error", message="参数校验失败", details=details,
-        )
-    return out, None
+        return None, details
+    return out, []
 
 
 def _validate_shop_item_payload(
     data: dict[str, Any],
     *,
     valid_server_ids: set[int],
-) -> tuple[dict[str, Any] | None, JSONResponse | None]:
+) -> tuple[dict[str, Any] | None, list[dict[str, str]]]:
     details: list[dict[str, str]] = []
 
     name = str(data.get("name", "")).strip()
@@ -212,9 +221,7 @@ def _validate_shop_item_payload(
         require_online = bool(data.get("require_online", False))
 
     if details:
-        return None, api_error(
-            status_code=422, code="validation_error", message="参数校验失败", details=details,
-        )
+        return None, details
 
     return {
         "name": name,
@@ -233,7 +240,7 @@ def _validate_shop_item_payload(
         "command_template": command_template,
         "show_command": show_command,
         "require_online": require_online,
-    }, None
+    }, []
 
 
 def _load_server_id_set() -> set[int]:
@@ -295,9 +302,9 @@ async def create_shop(request: Request) -> JSONResponse:
         return error
     assert payload is not None
 
-    validated, verror = _validate_shop_payload(payload)
-    if verror is not None:
-        return verror
+    validated, details = _validate_shop_payload(payload)
+    if details:
+        return _validation_error_response(details)
     assert validated is not None
     if "name" not in validated:
         return api_error(
@@ -328,6 +335,269 @@ async def create_shop(request: Request) -> JSONResponse:
             data=_serialize_shop(shop, item_count=0),
             headers={"Location": f"/webui/api/shops/{shop.id}"},
         )
+    finally:
+        session.close()
+
+
+# ---------- Export / Import ----------
+# NOTE: must be declared BEFORE the /{shop_id} routes — FastAPI matches in order.
+
+
+def _export_shop_item_dict(item: ShopItem) -> dict[str, Any]:
+    """Return the import-friendly subset of fields for a ShopItem."""
+    return {
+        "name": str(item.name),
+        "description": str(item.description or ""),
+        "kind": str(item.kind),
+        "price": int(item.price),
+        "sort_order": int(item.sort_order or 0),
+        "enabled": bool(item.enabled),
+        "item_id": int(item.item_id or 0),
+        "prefix_id": int(item.prefix_id or 0),
+        "quantity": int(item.quantity or 1),
+        "min_tier": str(item.min_tier or "none"),
+        "actual_value": int(item.actual_value) if getattr(item, "actual_value", None) is not None else None,
+        "is_mystery": bool(getattr(item, "is_mystery", False)),
+        "target_server_id": int(item.target_server_id) if item.target_server_id is not None else None,
+        "command_template": str(item.command_template or ""),
+        "show_command": bool(getattr(item, "show_command", False)),
+        "require_online": bool(getattr(item, "require_online", False)),
+    }
+
+
+@router.get("/webui/api/shops/export")
+async def export_shops(request: Request) -> JSONResponse:
+    session = get_session()
+    try:
+        shops = (
+            session.query(Shop)
+            .order_by(Shop.sort_order.asc(), Shop.id.asc())
+            .all()
+        )
+        shop_ids = [int(s.id) for s in shops]
+        items_by_shop: dict[int, list[ShopItem]] = {}
+        if shop_ids:
+            items = (
+                session.query(ShopItem)
+                .filter(ShopItem.shop_id.in_(shop_ids))
+                .order_by(
+                    ShopItem.shop_id.asc(),
+                    ShopItem.sort_order.asc(),
+                    ShopItem.id.asc(),
+                )
+                .all()
+            )
+            for item in items:
+                items_by_shop.setdefault(int(item.shop_id), []).append(item)
+
+        exported: list[dict[str, Any]] = []
+        for shop in shops:
+            shop_items = items_by_shop.get(int(shop.id), [])
+            exported.append({
+                "name": str(shop.name),
+                "description": str(shop.description or ""),
+                "sort_order": int(shop.sort_order or 0),
+                "enabled": bool(shop.enabled),
+                "items": [_export_shop_item_dict(it) for it in shop_items],
+            })
+
+        logger.info(
+            f"WebUI 商店 export：shop_count={len(exported)} "
+            f"item_count={sum(len(s['items']) for s in exported)}"
+        )
+        return api_success(data={
+            "version": _EXPORT_VERSION,
+            "kind": _EXPORT_KIND,
+            "exported_at": beijing_now().isoformat(),
+            "shops": exported,
+        })
+    finally:
+        session.close()
+
+
+@router.post("/webui/api/shops/import")
+async def import_shops(request: Request) -> JSONResponse:
+    payload, error = await read_json_object(request)
+    if error is not None:
+        return error
+    assert payload is not None
+
+    mode = (request.query_params.get("mode") or "merge").strip() or "merge"
+    if mode not in _IMPORT_MODES:
+        return api_error(
+            status_code=400,
+            code="invalid_query_parameter",
+            message="mode 必须为 merge 或 replace_all",
+            details=[{"field": "mode", "message": "mode 必须为 merge 或 replace_all"}],
+        )
+
+    # ---- Top-level structural checks ----
+    structural: list[dict[str, str]] = []
+    raw_version = payload.get("version")
+    if raw_version != _EXPORT_VERSION:
+        structural.append({
+            "field": "version",
+            "message": f"version 必须为 {_EXPORT_VERSION}",
+        })
+    raw_kind = payload.get("kind")
+    if raw_kind not in (None, _EXPORT_KIND):
+        structural.append({
+            "field": "kind",
+            "message": f"kind 必须为 {_EXPORT_KIND}",
+        })
+    raw_shops = payload.get("shops")
+    if not isinstance(raw_shops, list):
+        structural.append({"field": "shops", "message": "shops 必须为数组"})
+    if structural:
+        return _validation_error_response(structural)
+
+    server_ids = _load_server_id_set()
+
+    # ---- Validate every shop + item, aggregate errors with path prefixes ----
+    aggregated: list[dict[str, str]] = []
+    validated_shops: list[tuple[dict[str, Any], list[dict[str, Any]]]] = []
+    seen_names: set[str] = set()
+
+    assert isinstance(raw_shops, list)
+    for shop_idx, raw_shop in enumerate(raw_shops):
+        shop_path = f"shops[{shop_idx}]"
+        if not isinstance(raw_shop, dict):
+            aggregated.append({"field": shop_path, "message": "必须为对象"})
+            continue
+
+        shop_validated, shop_details = _validate_shop_payload(raw_shop)
+        if shop_details:
+            aggregated.extend({
+                "field": f"{shop_path}.{d.get('field', '')}",
+                "message": str(d.get("message", "")),
+            } for d in shop_details)
+            shop_validated = None
+
+        # Check duplicate names within the JSON itself
+        if shop_validated is not None:
+            name = str(shop_validated.get("name", ""))
+            if name in seen_names:
+                aggregated.append({
+                    "field": f"{shop_path}.name",
+                    "message": f"商店名称「{name}」在 JSON 中重复",
+                })
+            else:
+                seen_names.add(name)
+
+        raw_items = raw_shop.get("items", [])
+        items_validated: list[dict[str, Any]] = []
+        if not isinstance(raw_items, list):
+            aggregated.append({
+                "field": f"{shop_path}.items",
+                "message": "items 必须为数组",
+            })
+            raw_items = []
+
+        for item_idx, raw_item in enumerate(raw_items):
+            item_path = f"{shop_path}.items[{item_idx}]"
+            if not isinstance(raw_item, dict):
+                aggregated.append({"field": item_path, "message": "必须为对象"})
+                continue
+            item_validated, item_details = _validate_shop_item_payload(
+                raw_item, valid_server_ids=server_ids,
+            )
+            if item_details:
+                aggregated.extend({
+                    "field": f"{item_path}.{d.get('field', '')}",
+                    "message": str(d.get("message", "")),
+                } for d in item_details)
+            elif item_validated is not None:
+                items_validated.append(item_validated)
+
+        if shop_validated is not None:
+            validated_shops.append((shop_validated, items_validated))
+
+    if aggregated:
+        return _validation_error_response(aggregated)
+
+    # ---- Apply changes in a single transaction ----
+    session = get_session()
+    try:
+        created = 0
+        updated = 0
+        items_total = 0
+
+        if mode == "replace_all":
+            session.query(ShopItem).delete(synchronize_session=False)
+            session.query(Shop).delete(synchronize_session=False)
+            session.flush()
+
+        # Map existing shops by name for fast upsert lookup (only relevant in merge mode).
+        existing_by_name: dict[str, Shop] = (
+            {str(s.name): s for s in session.query(Shop).all()}
+            if mode == "merge"
+            else {}
+        )
+
+        for shop_data, items_data in validated_shops:
+            name = str(shop_data["name"])
+            existing = existing_by_name.get(name)
+
+            if existing is not None:
+                existing.description = shop_data.get("description", existing.description)
+                if "sort_order" in shop_data:
+                    existing.sort_order = int(shop_data["sort_order"])
+                if "enabled" in shop_data:
+                    existing.enabled = bool(shop_data["enabled"])
+                # Replace all items belonging to this shop.
+                session.query(ShopItem).filter(
+                    ShopItem.shop_id == existing.id,
+                ).delete(synchronize_session=False)
+                shop_id = int(existing.id)
+                updated += 1
+            else:
+                shop = Shop(
+                    name=name,
+                    description=shop_data.get("description", ""),
+                    sort_order=int(shop_data.get("sort_order", 0)),
+                    enabled=bool(shop_data.get("enabled", True)),
+                )
+                session.add(shop)
+                session.flush()
+                shop_id = int(shop.id)
+                created += 1
+
+            for item_data in items_data:
+                session.add(ShopItem(
+                    shop_id=shop_id,
+                    sort_order=int(item_data["sort_order"]),
+                    name=str(item_data["name"]),
+                    description=str(item_data["description"]),
+                    kind=str(item_data["kind"]),
+                    price=int(item_data["price"]),
+                    enabled=bool(item_data["enabled"]),
+                    item_id=int(item_data["item_id"]),
+                    prefix_id=int(item_data["prefix_id"]),
+                    quantity=int(item_data["quantity"]),
+                    min_tier=str(item_data["min_tier"]),
+                    actual_value=item_data["actual_value"],
+                    is_mystery=bool(item_data["is_mystery"]),
+                    target_server_id=item_data["target_server_id"],
+                    command_template=str(item_data["command_template"]),
+                    show_command=bool(item_data["show_command"]),
+                    require_online=bool(item_data["require_online"]),
+                ))
+                items_total += 1
+
+        session.commit()
+        logger.info(
+            f"WebUI 商店 import：mode={mode} created={created} updated={updated} "
+            f"items_total={items_total}"
+        )
+        return api_success(data={
+            "mode": mode,
+            "created": created,
+            "updated": updated,
+            "items_total": items_total,
+        })
+    except Exception:
+        session.rollback()
+        raise
     finally:
         session.close()
 
@@ -366,9 +636,9 @@ async def update_shop(shop_id: int, request: Request) -> JSONResponse:
         return error
     assert payload is not None
 
-    validated, verror = _validate_shop_payload(payload, partial=True)
-    if verror is not None:
-        return verror
+    validated, details = _validate_shop_payload(payload, partial=True)
+    if details:
+        return _validation_error_response(details)
     assert validated is not None
 
     session = get_session()
@@ -426,9 +696,9 @@ async def create_shop_item(shop_id: int, request: Request) -> JSONResponse:
     assert payload is not None
 
     server_ids = _load_server_id_set()
-    validated, verror = _validate_shop_item_payload(payload, valid_server_ids=server_ids)
-    if verror is not None:
-        return verror
+    validated, details = _validate_shop_item_payload(payload, valid_server_ids=server_ids)
+    if details:
+        return _validation_error_response(details)
     assert validated is not None
 
     session = get_session()
@@ -484,9 +754,9 @@ async def update_shop_item(shop_id: int, item_id: int, request: Request) -> JSON
     assert payload is not None
 
     server_ids = _load_server_id_set()
-    validated, verror = _validate_shop_item_payload(payload, valid_server_ids=server_ids)
-    if verror is not None:
-        return verror
+    validated, details = _validate_shop_item_payload(payload, valid_server_ids=server_ids)
+    if details:
+        return _validation_error_response(details)
     assert validated is not None
 
     session = get_session()

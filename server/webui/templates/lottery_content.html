@@ -10,6 +10,23 @@
         </svg>
         刷新
       </button>
+      <button id="lottery-export-btn" type="button" class="btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M12 3v12"></path>
+          <path d="M7 10l5 5 5-5"></path>
+          <path d="M5 21h14"></path>
+        </svg>
+        导出 JSON
+      </button>
+      <button id="lottery-import-btn" type="button" class="btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M12 21V9"></path>
+          <path d="M7 14l5-5 5 5"></path>
+          <path d="M5 3h14"></path>
+        </svg>
+        导入 JSON
+      </button>
+      <input id="lottery-import-file" type="file" accept=".json,application/json" hidden />
       <button id="pool-create-btn" type="button" class="btn btn-primary">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M12 5v14"></path>
@@ -273,6 +290,43 @@
     <div class="modal-foot">
       <button type="button" class="btn" data-modal-close="prize-delete-modal">取消</button>
       <button id="prize-delete-confirm" type="button" class="btn btn-danger">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import preview / confirm -->
+<div id="lottery-import-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="lottery-import-title">
+  <div class="modal-mask" data-modal-close="lottery-import-modal"></div>
+  <div class="modal-card modal-card-narrow">
+    <div class="modal-head">
+      <h3 id="lottery-import-title" class="modal-title">导入 JSON</h3>
+      <button type="button" class="btn btn-icon modal-close-btn" data-modal-close="lottery-import-modal" aria-label="关闭">✕</button>
+    </div>
+    <div id="lottery-import-alert" class="alert hidden modal-alert" role="status" aria-live="polite">
+      <span class="alert-message"></span>
+    </div>
+    <div class="modal-body">
+      <div id="lottery-import-summary" class="form-grid" style="gap:6px; font-size:13px;"></div>
+
+      <div class="field-section">
+        <div class="field-section-title">导入方式</div>
+        <label class="form-checkbox-row">
+          <input type="radio" name="lottery-import-mode" value="merge" checked />
+          <span><strong>合并</strong>（按名称匹配；新名称创建，已存在的更新元数据并整组替换奖品）</span>
+        </label>
+        <label class="form-checkbox-row">
+          <input type="radio" name="lottery-import-mode" value="replace_all" />
+          <span><strong>全量替换</strong>（先删除现有所有奖池和奖品，再按 JSON 重建）</span>
+        </label>
+        <div id="lottery-import-replace-warn" class="field-section-hint hidden" style="color:var(--danger);">
+          ⚠️ 全量替换会清空现有所有奖池、所有奖品，此操作不可撤销。建议先「导出 JSON」备份。
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div class="modal-foot-spacer"></div>
+      <button type="button" class="btn" data-modal-close="lottery-import-modal">取消</button>
+      <button id="lottery-import-confirm" type="button" class="btn btn-primary">确认导入</button>
     </div>
   </div>
 </div>
