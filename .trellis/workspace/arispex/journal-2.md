@@ -850,3 +850,122 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 65: WebUI 商店 / 抽奖管理 JSON 导入导出 + Docker 镜像稳定化 + v1.4.1 release
+
+**Date**: 2026-04-26
+**Task**: WebUI 商店 / 抽奖管理 JSON 导入导出 + Docker 镜像稳定化 + v1.4.1 release
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+## 概要
+
+跨日多任务会话。从「给项目搞 Docker 镜像」开始，落地容器化基础设施 + GHCR 自动构建管线 + v1.4.1 release，再叠加「商店和抽奖管理页面加 JSON 导入导出」功能。
+
+## 阶段 1：Docker 容器化（v1.4.1 release）
+
+### Commit 1：`refactor(core): consolidate persistent state under NEXTBOT_DATA_DIR` (29cc38f)
+新增 `nextbot/data_dir.py`：用环境变量 `NEXTBOT_DATA_DIR` 统一定位 3 个状态文件 (`.env` / `app.db` / `.webui_auth.json`)。裸机模式默认值是项目根目录，向后兼容。Wire 进 4 处路径常量（bot.py / db.py / settings_service.py / server_config.py）。
+
+### Commit 2：`chore(docker): add image build, compose stack, and GHCR publish workflow` (eac8bc8)
+- `Dockerfile`：multi-stage（python:3.11-slim builder + uv → playwright install --with-deps chromium 在 runtime 阶段）
+- `.dockerignore`：排除 `.git` / `.trellis` / `.claude` / 持久化文件等
+- `docker-compose.yml`：NextBot + NapCat 双服务栈，三处 NapCat 状态目录持久化（`/app/.config/QQ` 防止重新扫码 + `/app/napcat/config` + `/app/napcat/plugins`）
+- `.github/workflows/docker.yml`：tag-only 触发，linux/amd64 + linux/arm64 双架构，发布到 GHCR
+
+### Commit 3：`fix(core): pass NEXTBOT_DATA_DIR-resolved .env path to nonebot.init()` (4d00861)
+**关键 bug fix**：用户测试容器时发现 webui 无法访问。根因是 `nonebot.init()` 默认从 cwd 读 `.env`（容器内 cwd=`/app`），但我重构后 `.env` 在 `/app/data`。所以 `WEB_SERVER_HOST=0.0.0.0` 被忽略，uvicorn 绑了 127.0.0.1，docker port mapping 转不进流量。修复：`nonebot.init(_env_file=str(ENV_PATH))`。
+
+裸机部署没暴露这个 bug 是因为 cwd 跟 DATA_DIR 重合掩盖了。
+
+### Commit 4：`docs(docker): add Docker install guide and link from README` (97a9be9)
+新增 `docs/docker_install.md`（318 行），跟 `docs/windows_install.md` 同款的小白向风格。包含国内清华镜像源备选方案（`export DOWNLOAD_URL=https://mirrors.tuna.tsinghua.edu.cn/docker-ce`）+ 一次 `docker compose up -d` 启全套（用户原本提议把启动流程拆成多次启停，被指出"既然 docker compose 了就该一起起"后简化）+ NextBot WebUI 配置走「设置」页（跟 Windows 教程对齐，不要让用户手编辑 `.env`）。README 里把 Docker 部署方式作为引用链接放在 windows_install.md 旁边。
+
+### v1.4.1 Release
+- 多次 `v1.4.1-rc1` / `v1.4.1-rc2` 验证镜像 → 用户测试 OK → 打正式 `v1.4.1` tag → `gh release create v1.4.1`
+- Release URL：https://github.com/Arispex/nextbot/releases/tag/v1.4.1
+- 用户首次写的 release notes 草稿被打回 ——「修复段不应该列那些原本就不存在的功能内部修复」（仓库并发漏洞、商店显示对齐等都属于 v1.4.0 新引入功能，从用户视角不存在"之前的 bug"）。改后只保留唯一一条对 v1.3.0 既有功能的修复（`使用教程` 默认 guest 权限）
+
+### 容器化重构后系统性审计
+对外用户主动提出"确保重构 → 容器化已经正常了，没有其他问题吧？不会影响非容器化运行吧？"。做了一轮全面审计：
+- 扫描 4 处 write 操作 + 19 处 `Path(__file__)` 使用 → 除 `/tmp/{filename}` 临时下载文件外，零隐藏状态写入
+- 裸机模式（不设 `NEXTBOT_DATA_DIR`）路径解析正确：DATA_DIR = 项目根
+- 容器模式：完整 boot smoke + Playwright 自调用 webui 截图测试均通过
+- ruff 净增 0，pyright 既有 2 errors 都是项目历史遗留
+
+## 阶段 2：JSON 导入 / 导出功能（feature-dev 流程）
+
+### Commit 5：`feat(webui): add JSON import/export for shop and lottery management` (6159615)
+
+#### 设计决策（用户拍板）
+1. JSON 格式带元信息：`{version, kind, exported_at, shops|pools}`
+2. 冲突策略由用户每次在导入弹窗选择：`merge`（upsert by name + 整组替换 items/prizes）或 `replace_all`（先清空再重建）
+3. 加导入预览 modal（显示文件名 / 数量 / 模式选择 / replace_all 红色警告）
+4. version 字段保留以备未来 schema 演进，当前只接受 `version: 1`
+
+#### 实施
+- 4 个新 endpoint：`/webui/api/{shops,lottery}/{export,import}`，`mode` 通过 query param 传递
+- 重构既有 4 个 validator（`_validate_shop_payload` / `_validate_shop_item_payload` / `_validate_pool_payload` / `_validate_prize_payload`），把签名从 `(data, JSONResponse|None)` 改为 `(data, list[details])`，import handler 复用同一套验证 + 路径前缀化错误（如 `shops[1].items[3].kind`）
+- 导入流程：先全量预验证（聚合所有 details），再开 SQLAlchemy session 单事务写入，任何异常 rollback
+- UI：`shop_content.html` / `lottery_content.html` 工具栏加两个 `class="btn"` 中性按钮 + 隐藏 `<input type="file">` + 预览 modal；`shop.js` / `lottery.js` 加 `handleExport` / `handleImportFileChosen` / `openImportModal` / `confirmImport` / `refreshImportReplaceWarn`
+
+#### 实施过程中遇到的关键 bug
+**FastAPI 路由顺序坑**：smoke 测试时发现 `/webui/api/shops/export` 返回 422 试图把 `"export"` 解析成 `shop_id` int。根因：`/webui/api/shops/{shop_id}` 在前，FastAPI 按声明顺序匹配，先匹中带参路由后做类型校验失败就直接 422，不会回退到下一条路由。修复：把 export/import 端点用 sed + 文件重组移到 `{shop_id}` 路由之前。商店和抽奖两个文件都做了同样调整。
+
+修复后 9 项 smoke 测试全部通过：空 DB 导出、含 item+command/coin 多种 kind 的导入、merge 与 replace_all 双模式、字段保真 round-trip、JSON 内重名错误、无效 kind 错误、错误 version 错误。
+
+#### 用户文案规范审计（用户单独提出）
+对照 CLAUDE.md 里的"用户操作反馈文案规范"做了一轮审计修正：
+- 改前：`已导出 ${shopCount} 个商店、共 ${itemCount} 件商品` ❌（含对象名）
+- 改后：`导出成功` ✅（动作 + 结果）
+- client-side 验证消息从字面字符串改为统一调用 `api.buildActionFailureMessage("导入", "<原因>")` 跟 API 错误格式自动对齐
+- backend success response 全部仅返 `data={...}` 无 `message` 字段
+- backend error.message 都是纯原因（如 `mode 必须为 merge 或 replace_all` / `奖池名称「x」在 JSON 中重复`）
+
+## v1.4.0 → v1.4.1 release 净改动
+
+| 主题 | 内容 |
+|---|---|
+| Docker 镜像 | `ghcr.io/arispex/nextbot:1.4.1`（amd64 + arm64），`docker-compose.yml` 一键栈，文档完整 |
+| 持久化重构 | `NEXTBOT_DATA_DIR` 统一 3 个状态文件，向后兼容 |
+| WebUI 新功能 | 商店和抽奖管理页面加 JSON 导入 / 导出（merge / replace_all 双模式 + 预览 modal） |
+
+## 文件清单
+
+| 文件 | 用途 |
+|---|---|
+| `nextbot/data_dir.py`（新） | DATA_DIR helper |
+| `bot.py` / `nextbot/db.py` / `server/server_config.py` / `server/settings_service.py` | 4 处路径常量改用 DATA_DIR |
+| `Dockerfile` / `.dockerignore` / `docker-compose.yml` / `.github/workflows/docker.yml`（新） | 容器化 |
+| `docs/docker_install.md`（新）+ `README.md` | Docker 教程 |
+| `server/routes/webui_shop.py` / `webui_lottery.py` | validator 重构 + 4 个新 endpoint |
+| `server/webui/templates/shop_content.html` / `lottery_content.html` | 按钮 + 导入预览 modal |
+| `server/webui/static/js/shop.js` / `lottery.js` | export / import 处理逻辑 |
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `29cc38f` | (see git log) |
+| `eac8bc8` | (see git log) |
+| `4d00861` | (see git log) |
+| `97a9be9` | (see git log) |
+| `6159615` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
